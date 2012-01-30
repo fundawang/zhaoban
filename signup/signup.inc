@@ -1,4 +1,9 @@
 <?php
+
+/*
+ * This file is licensed under GPLv2+.
+ */
+
 define('signup_user_PROFESSION', 'profession');
 define('signup_user_EXAM', 'exam');
 define('signup_user_CONTACT', 'contact');

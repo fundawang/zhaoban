@@ -1,3 +1,4 @@
+; LICENSED under GPLv2+
 name = Essential Data
 description = Provides the essential data, such as provinces and nationaliteis.
 package = Zhaoban

@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * This file is licensed under GPLv2+.
+*/
+
 /**
  * Implementation of hook_schema().
  */

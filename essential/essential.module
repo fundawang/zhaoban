@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * This file is licensed under GPLv2+.
+*/
+
 /**
  * @file
  * Provides the basic information of signup program, such as provinces and nationalities.

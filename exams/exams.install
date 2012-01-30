@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * This file is licensed under GPLv2+.
+*/
+
 /**
  * @file
  * Install, update and uninstall functions for the exams module.

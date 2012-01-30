@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * This file is licensed under GPLv2+.
+*/
+
 /**
  * @file
  * Provides the operations of arrange schedules.

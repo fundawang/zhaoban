@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * This file is licensed under GPLv2+.
+*/
+
 /**
  * @file
  * Defines the the progress of signup.
