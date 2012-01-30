@@ -1,0 +1,17 @@
+fieldset.schedule_edit label, fieldset.schedule_edit select, fieldset.schedule_edit input {
+  display: inline;
+}
+
+fieldset.schedule_edit div.form-item {
+  display: inline;
+  padding-right: 20px;
+}
+
+fieldset.schedule_edit div.inline-element-div {
+  padding: 10px;
+}
+
+table.assign_students tr.selected td {
+  background-color: #005A8C;
+  color: yellow;
+}

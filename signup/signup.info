@@ -1,0 +1,8 @@
+name = Sign Up
+description = Allow user to sign up as a new user
+dependencies[] = essential
+dependencies[] = exams
+package = Zhaoban
+core = 7.x
+
+version = 2011.10.19

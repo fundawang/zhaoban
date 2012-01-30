@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the essential module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function essential_schema() {
+// province list
+$schema['vl_province'] = array(
+	'description' => t('Provides base information for provinces'),
+    'fields' => array(
+         'pid' => array(
+    		'type' => 'varchar',
+    		'length' => '6',
+    		'not null' => TRUE,
+    		'default' => '000000',
+    		'description' => t('Province ID as provided in GB 2260'),
+    	),
+         'name' => array(
+    		'type' => 'varchar',
+    		'length' => '8',
+    		'not null' => TRUE,
+    	),
+         'simplified_name' => array(
+    		'type' => 'varchar',
+    		'length' => '3',
+    		'not null' => TRUE,
+    	),
+         'isgkenabled' => array(
+    		'type' => 'int',
+    		'size' => 'tiny',
+    		'not null' => TRUE,
+    		'default' => 0,
+    		'disp-width' => '1',
+    	),
+         'ucategory' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE, 'disp-width' => '1')),
+    'primary key' => array('pid'),
+    'indexes' => array(
+         'isgkenabled' => array('isgkenabled'),
+         'name' => array('name')),
+);
+
+// city list
+$schema['vl_city_district'] = array(
+    'fields' => array(
+         'cid' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE),
+         'pid' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE),
+         'name' => array('type' => 'varchar', 'length' => '200', 'not null' => TRUE),
+         'name_simp' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE)),
+    'primary key' => array('cid'),
+    'indexes' => array(
+         'pid' => array('pid')),
+);
+
+// nationality list
+$schema['vl_nationality'] = array(
+    'fields' => array(
+         'nid' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE),
+         'name' => array('type' => 'varchar', 'length' => '5', 'not null' => TRUE)),
+    'primary key' => array('nid'),
+);
+
+// politics features list
+$schema['vl_politics_features'] = array(
+    'fields' => array(
+         'pid' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE),
+         'name' => array('type' => 'varchar', 'length' => '7', 'not null' => TRUE)),
+    'primary key' => array('pid'),
+);
+
+
+// department list
+$schema['vl_department'] = array(
+  'fields' => array(
+    'did' => array(
+      'type' => 'varchar',
+      'length' => '4',
+      'not null' => TRUE,
+    ),
+    'dname' => array(
+      'type' => 'varchar',
+      'length' => '20',
+      'not null' => TRUE,
+    ),
+    'did_exchange' => array(
+      'description' => 'Exchange code for uniexchange',
+      'type' => 'varchar',
+      'length' => '10',
+      'not null' => TRUE,
+    ),
+  ),
+  'primary key' => array('did'),
+  'indexes' => array(
+    'dname' => array('dname'),
+  ),
+);
+
+// research room list
+$schema['vl_research_sec'] = array(
+    'fields' => array(
+         'uid' => array('type' => 'varchar', 'length' => '4', 'not null' => TRUE),
+         'rname' => array('type' => 'varchar', 'length' => '10', 'not null' => TRUE),
+         'did' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE)),
+    'primary key' => array('uid'),
+    'indexes' => array(
+         'did' => array('did')),
+);
+
+
+  return $schema;
+}
+
+

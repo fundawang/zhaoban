@@ -1,0 +1,651 @@
+<?php
+
+/**
+ * @file
+ * Defines the examinations and professions.
+ */
+
+function exams_init() {
+  drupal_add_css(drupal_get_path('module', 'exams') .'/exams.css');
+}
+/**
+ * Implements hook_help().
+ */
+function exams_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case 'definations':
+      $output = t('Define examinations and professions.');
+      break;
+    case 'definations/exams':
+      $output = t('Define examinations, such as the type of the examination and the number of opus.');
+      break;
+    case 'definations/professions':
+      $output = t('Define professions, such as the exam construction of the profession, and the description of the profession.');
+      break;
+  }
+    return '<p>'.$output.'</p>';
+}
+
+/**
+ * Implements hook_permission
+ */
+function exams_permission() {
+  return array(
+    'administer exams' => array(
+      'title' => t('Administrater examinations'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function exams_menu() {
+  $items['definations'] = array(
+    'title' => 'Exams and Professions',
+    'description' => "Define examinations and professions.",
+    'page callback' => 'exams_definationlist',
+    'access callback' => 'exams_definations_perm',
+  );
+
+  $items['definations/exams'] = array(
+    'title' => 'Exams',
+    'page callback' => 'exams_examlist',
+    'weight' => 1,
+    'description' => "Define examinations, such as the type of the examination and the number of opus.",
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+  );
+  $items['definations/exams/list'] = array(
+    'title' => 'List',
+    'weight' => 0,
+    'page callback' => 'exams_examlist',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+  );
+  $items['definations/exams/add'] = array(
+    'title' => 'Add Exams',
+    'weight' => 1,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('exams_exam_edit'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['definations/exams/edit/%'] = array(
+    'title' => 'Edit Exams',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('exams_exam_edit'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['definations/exams/delete/%'] = array(
+    'title' => 'Delete Exams',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('exams_exam_delete'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['definations/professions'] = array(
+    'title' => 'Professions',
+    'weight' => 2,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'exams_professionlist',
+    'description' => "Define professions, such as the exam construction of the profession, and the description of the profession.",
+  );
+  $items['definations/professions/list'] = array(
+    'title' => 'List',
+    'weight' => 0,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'exams_professionlist',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['definations/professions/add'] = array(
+    'title' => 'Add Profession',
+    'weight' => 1,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('exams_profession_edit'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['definations/professions/edit/%'] = array(
+    'title' => 'Edit Profession',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('exams_profession_edit'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['definations/professions/delete/%'] = array(
+    'title' => 'Delete Profession',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer exams'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('exams_profession_delete'),
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+
+function exams_definations_perm () {
+	return user_access('administer exams')||user_access('administer going')||user_access('administer own going');
+}
+/**
+ * Provide a single block from the administration menu as a page.
+ * This function is often a destination for these blocks.
+ * For example, 'admin/content/types' needs to have a destination to be valid
+ * in the Drupal menu system, but too much information there might be
+ * hidden, so we supply the contents of the block.
+ *
+ * @return
+ *   The output HTML.
+ */
+function exams_definationlist() {
+  $item = menu_get_item();
+  $content = system_admin_menu_block($item);
+
+  $output = theme('admin_block_content', $content);
+  return $output;
+}
+
+function exams_examlist() {
+
+  $query = db_select('vl_exam', 'e');
+  $query->innerjoin('vl_research_sec', 'r', 'e.uid = r.uid');
+  $query = $query
+  	->fields('e')
+	->fields('r')
+	->orderBy('e.eid', 'ASC')
+	->extend('PagerDefault')->limit(30);
+
+  $result = $query->execute();
+  $rows = array();
+  foreach ($result as $exam) {
+        $rows[] = array(
+                $exam->eid,      // Examination ID
+                $exam->ename,    // Examination name
+                $exam->elevel,   // Examination level
+                $exam->etype == 1 ? t('Writing') : t('Interviewing'),    // Examination level
+                $exam->opus ? $exam->opus : t('N/A'),   // The number of opuses
+                $exam->rname,    // Research section name
+                l(t('edit'), "definations/exams/edit/$exam->eid"),
+                l(t('delete'), "definations/exams/delete/$exam->eid"),
+        );
+  }
+  if (count($rows) == 0) {
+    $rows[] = array(array('data' => t('No examinations defined.'), 'colspan' => '8'));
+  }
+
+  $header = array(t('Exam ID'), t('Exam Name'), t('Exam Difficulty'), t('Testing mode'), t('Opus'), t('Teachers'), array('data' => t('Operations'), 'colspan' => '2'));
+
+  $output = theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('pager');
+
+  return $output;
+}
+
+function exams_professionlist() { 
+  $query = db_select('vl_professions', 'p'); 
+  $query->innerjoin('vl_department', 'd', 'p.did = d.did');
+  $query->innerjoin('vl_research_sec', 'r', 'p.uid = r.uid');
+  $query = $query
+  	->fields('p')
+	->fields('d',array('dname'))
+	->fields('r',array('rname'))
+	->orderBy('p.pid','ASC')
+	->extend('PagerDefault')->limit(20);
+	
+  $result=$query->execute();
+
+  $rows = array();
+  
+  foreach ($result as $profession) {
+        $rows[] = array(
+                $profession->pid,                               // Profession ID
+                $profession->pname,                             // Profession name
+                $profession->years,                             // Examination level
+                $profession->dname,                             // Department name
+                $profession->rname,                             // Research section name
+                $profession->enabled ? t('Yes') : t('No'),
+                                                                                // If the profession has been enabled
+                //$profession->gb_pid,                  // GuoBiao profession ID
+                //$profession->gb_pname,                        // GuoBiao profession Name
+                //$profession->wb_pid,                  // WeiBiao profession ID
+                //$profession->wb_pname,                        // WeiBiao profession Name
+                l(t('edit'), "definations/professions/edit/$profession->pid"),
+                l(t('delete'), "definations/professions/delete/$profession->pid"),
+        );
+        $profession_exams = unserialize($profession->exams);
+        if(!$profession_exams) continue;
+        $edata = '<div style="padding-top: 5px; padding-left: 30px; padding-bottom: 5px">';
+        //$edata = '';
+        ksort($profession_exams);
+        foreach($profession_exams as $eid => $eweight){
+                $exam = db_query('SELECT * from {vl_exam} e WHERE e.eid=\''.$eid.'\'')->fetchObject();
+                if ($eweight)
+                        $edata .= $exam->ename.$exam->elevel.'*'.sprintf('%g%%',$eweight*100).', ';
+                else
+                        $edata .= $exam->ename.$exam->elevel.', ';
+        }
+        $edata = substr($edata, 0, strlen($edata)-2);
+        $edata .= '</div>';
+        $rows[] = array(array('data' => $edata, 'colspan' => '12'));
+  } 
+  
+   
+  if (count($rows) == 0) {
+    $rows[] = array(array('data' => t('No Professions defined.'), 'colspan' => '12'));
+  }
+
+  $header = array(t('Prof ID'), t('Name'), t('Duration'), t('Department'), t('Research Section'),
+        t('Enabled?'), /*t('Guobiao ID'), t('Guobiao Name'), t('Shengbiao ID'), t('Shengbiao Name'),*/
+  array('data' => t('Operations'), 'colspan' => '2'));
+  
+  $output = theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('pager');
+
+  return $output;
+}
+
+function exams_exam_edit() {
+	
+	// if editing existing exam, we'll need to fetch the original values at first.
+	if(!is_null(arg(3))) {
+		$default_values = db_query('SELECT * from {vl_exam} e WHERE e.eid=\''.arg(3).'\'')->fetchObject();
+		$form['eidv'] = array(
+			'#type' => 'item',
+			'#title' => t('Exam ID'),
+			'#markup' => arg(3),
+			'#required' => 'true',
+		);
+	}
+	else {
+		$default_values=array();
+		$form['eid'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Exam ID'),
+			'#maxlength' => '3',
+			'#required' => 'true',
+		);
+	}
+	$form['ename'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Exam Name'),
+		'#maxlength' => '20',
+		'#required' => 'true',
+		'#default_value' => (isset($default_values->ename) ? $default_values->ename : ''),
+	);
+
+	$form['dep'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('This exam will be arranged by departments themselves.'),
+		'#description' => t('If not selected, the exam will be arranged by administrator.'),
+		'#default_value' => isset($default_values->department) && !empty($default_values->department),
+	);
+
+	$form['elevel'] = array(
+		'#type' => 'radios',
+		'#title' => t('Difficulty'),
+		'#description' => t('Please note that the examination will be considered replacable by the examination with the same name and higher difficulty.'),
+		'#options' => array(
+			'0' => t('No Level'),
+			'A' => t('Level A'),
+			'B' => t('Level B'),
+			'C' => t('Level C'),
+			'D' => t('Level D'),
+		),
+		'#default_value' => (isset($default_values->elevel) ? $default_values->elevel : '0'),
+		'#required' => 'true',
+	);
+	$form['etype'] = array(
+		'#type' => 'radios',
+		'#title' => t('Type of examination'),
+		'#required' => 'true',
+		'#options' => array(
+			'1' => t('Writing'),
+			'2' => t('Interviewing'),
+		),
+		'#default_value' => (isset($default_values->etype) ? $default_values->etype : '2'),
+	);
+	$form['opus'] = array(
+		'#type' => 'select',
+		'#title' => t('The number of opus'),
+		'#options' => array('0', '1', '2', '3', '4', '5', '6', '7', '8'),
+		'#default_value' => (isset($default_values->opus) ? $default_values->opus : '0'),
+	);
+	
+	$research_sec = array();
+
+	$r=db_query('SELECT uid, rname FROM {vl_research_sec} ORDER BY did');
+	while ($object = $r->fetchObject()) {
+		$research_sec += array($object->uid => $object->rname);
+	}
+	$form['uid'] = array(
+		'#type' => 'select',
+		'#title' => t('Responsible Research Section'),
+		'#options' => $research_sec,
+		'#default_value' => (isset($default_values->uid) ? $default_values->uid : NULL),
+		'#required' => 'true',
+	);
+	
+	$form['eadditional'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Additional field (only for expert)'),
+		'#description' => t('The field will be inserted at the beginning of the form.'),
+		'#maxlength' => 300,
+		'#default_value' => (isset($default_values->eadditional) ? $default_values->eadditional : ''),
+	);
+	$form['submit'] = array('#type' => 'submit', '#value' =>t('Submit'));
+	
+	return $form;
+	
+}
+
+function exams_exam_edit_validate($form, &$form_state) {
+	// if adding existing exam, we should ensure the it does not conflict with exisitng exams.
+	if(is_null(arg(3))) {
+		$result=db_query('SELECT count(*) from {vl_exam} e WHERE e.eid=:eid', array(':eid'=>$form_state['input']['eid']))->fetchField();
+		if($result>0) {
+			form_set_error('eid', t('The examination ID is already taken by another exam.'));
+		}
+	}
+}
+
+function exams_exam_edit_submit($form, &$form_state) {
+	//var_dump($form_state);exit;
+	// Adding exam
+	if(is_null(arg(3))) {
+		db_insert('vl_exam')
+			->fields(array(
+			'eid' => $form_state['values']['eid'],
+			'ename' => $form_state['values']['ename'],
+			'eadditional' => $form_state['values']['eadditional'],
+			'elevel' => $form_state['values']['elevel']=='0'? null :$form_state['values']['elevel'],
+			'etype' => $form_state['values']['etype'],
+			'opus' => $form_state['values']['opus'],
+			'uid' => $form_state['values']['uid'],
+			'department' => $form_state['values']['dep']?$form_state['values']['uid']:null)
+		)->execute();
+		
+		watchdog('exam',
+			'Created new exam !ename.', array(
+				'!ename'=>$form_state['values']['ename']),
+			WATCHDOG_INFO,
+			l(t('View'), 'definations/exams')
+		);
+	}
+	// Editing exam
+	else {
+		db_update('vl_exam')
+			->fields(array(
+				'ename' => $form_state['values']['ename'],
+				'eadditional' => $form_state['values']['eadditional'],
+				'elevel' => $form_state['values']['elevel'] == '0' ? NULL:$form_state['values']['elevel'],
+				'etype' => $form_state['values']['etype'],
+				'opus' => $form_state['values']['opus'],
+				'uid' => $form_state['values']['uid'],
+				'department' => $form_state['values']['dep']?$form_state['values']['uid']:NULL))
+			->condition('eid', arg(3), '=')
+			->execute();
+		watchdog('exam',
+			'Modified exam !ename.', array(
+				'!ename'=>$form_state['values']['ename']),
+			WATCHDOG_INFO,
+			l(t('View'), 'definations/exams/edit/'.arg(3))
+		);
+	}
+	$form_state['redirect'] = 'definations/exams';
+}
+
+function exams_exam_delete() {
+	$ename = db_query('SELECT e.ename FROM {vl_exam} e WHERE e.eid=:eid', array(':eid'=>arg(3)))->fetchField();
+	$form = confirm_form(NULL, t('Are you sure you want to delete exam @ename?',array('@ename'=>$ename)), 'definations/exams', null, t('Delete'));
+	
+	return $form;
+}
+
+function exams_exam_delete_submit($form, &$form_state) {
+	$ename = db_query('SELECT e.ename FROM {vl_exam} e WHERE e.eid=:eid', array(':eid'=>arg(3)))->fetchField();
+	watchdog('exam',
+		'Deleted exam !ename.', array(
+			'!ename'=>$ename),
+		WATCHDOG_INFO
+	);
+	db_delete('vl_exam')
+		->condition('eid', arg(3))
+		->execute();
+	
+	$form_state['redirect'] = 'definations/exams';
+}
+
+function exams_profession_edit() {
+	$form=array();
+	
+	// if editing existing profession, we'll need to fetch the original values at first.
+	if(!is_null(arg(3))) {
+		$default_values = db_query('SELECT p.* from {vl_professions} p WHERE p.pid=\''.arg(3).'\'')->fetchObject();
+		
+                $defaults=unserialize($default_values->exams);
+                ksort($defaults);
+                $default_values_keys=array_keys($defaults);
+                $default_values_weights=array_values($defaults);
+		$form['pidv'] = array(
+			'#type' => 'item',
+			'#title' => t('Profession ID'),
+			'#required' => 'true',
+			'#disabled' => TRUE,
+			'#markup' => arg(3),
+		);
+	}
+	else {
+		$form['pid'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Profession ID'),
+			'#maxlength' => '4',
+			'#required' => 'true',
+		);
+	}
+      $form['pname'] = array(
+              '#type' => 'textfield',
+              '#title' => t('Profession Name'),
+              '#maxlength' => '20',
+              '#required' => 'true',
+              '#default_value' => (isset($default_values->pname) ? $default_values->pname : ''),
+      );
+      $form['years'] = array(
+              '#type' => 'select',
+              '#title' => t('Duration'),
+              '#maxlength' => '1',
+              '#required' => 'true',
+              '#options' => array('4'=>t(' 4 years '), '5'=>t(' 5 years ')),
+              '#default_value' => (isset($default_values->years) ? $default_values->years : ''),
+      );
+      $form['penabled'] = array(
+              '#type' => 'checkbox',
+              '#title' => t('This profession is available for students to sign up.'),
+              '#default_value' => (isset($default_values->enabled) ? $default_values->enabled : 1),
+      );
+      $form['irregularcounting'] = array(
+              '#type' => 'checkbox',
+              '#title' => t('This profession will use irregular counting.'),
+              '#default_value' => (isset($default_values_weights) && abs(array_sum($default_values_weights)-1)>1e-5) ? 1 : 0,
+      );
+      $form['did'] = array(
+              '#type' => 'select',
+              '#title' => t('Department this profession belongs'),
+              '#description' => t('This field is just informative.'),
+              '#options' => array(),
+              '#default_value' => (isset($default_values->did) ? $default_values->did : NULL),
+              '#required' => 'true',
+      );
+
+                $dbo = db_query('SELECT * from {vl_department}');
+                foreach ($dbo as $r)
+                        $form['did']['#options'] += array($r->did => $r->dname);
+                $form['uid'] = array(
+                        '#type' => 'select',
+                        '#title' => t('The research section who will get the students in'),
+                        '#options' => array(),
+                        '#default_value' => (isset($default_values->uid) ? $default_values->uid : NULL),
+                        '#required' => 'true',
+                );
+
+                $dbo = db_query('SELECT * from {vl_research_sec}');
+                foreach ($dbo as $r)
+                        $form['uid']['#options'] += array($r->uid => $r->rname);
+				
+                $form['exam_frame'] = array(
+                        '#type' => 'fieldset',
+                        '#title' => t('Exams and their weights that will be taken in this profession'),
+                        '#collapsible' => TRUE,
+                        '#collapsed' => FALSE,
+                        '#attributes' => array('class' => array('profession_exam_edit')),
+                );
+
+                $dbo = db_query('SELECT * from {vl_exam} ORDER BY eid');
+                $examinations=array(0=>t('N/A'));
+                foreach ($dbo as $r)
+                        $examinations+=array($r->eid => $r->ename.$r->elevel);
+                for ($i = 1; $i <=9 ;$i++) {
+                        $form['exam_frame']['exam_eid_'.$i] = array(
+                                '#type' => 'select',
+                                '#title' => t('Exam No. !eno', array('!eno' => $i)),
+                                '#options' => $examinations,
+                                '#default_value' => isset($default_values_keys[$i-1])?$default_values_keys[$i-1]:NULL,
+                                '#prefix' => '<div class="inline-element-div">',
+                        );
+                        $form['exam_frame']['exam_eweight_'.$i] = array(
+                                '#type' => 'textfield',
+                                '#size' => 5,
+                                '#title' => t('Weight'),
+                                '#default_value' => isset($default_values_weights[$i-1])?$default_values_weights[$i-1]:NULL,
+                                '#suffix' => '</div>',
+                        );
+                }
+	
+    $form['extracondition'] = array(
+    	'#type' => 'textfield',
+    	'#title' => t('Extra Conditions for applying'),
+    	'#description' => t('SQL conditions to be used when generating avaliable professions, s and sg prefix should be attached.'),
+    	'#size' => 50,
+    	'#maxlength' => 500,
+    	'#default_value' => (isset($default_values->extracondition) ? $default_values->extracondition : NULL),
+    	);
+	$form['submit'] = array('#type' => 'submit', '#value' =>t('Submit'));
+	
+	return $form;
+	
+}
+
+function exams_profession_edit_validate($form, &$form_state) {
+	// if adding profession, we should ensure the it does not conflict with exisitng exams.
+	if(is_null(arg(3))) {
+		$result=$form_state['input']['pid']?db_query('SELECT count(*) from {vl_professions} p WHERE p.pid=:pid', array(':pid'=>$form_state['input']['pid']))->fetchField():1;
+		if($result>0) {
+			form_set_error('pid', t('The profession ID is already taken by another profession.'));
+		}
+	}
+	//return;
+        // Check whether the overall weights gets 1.
+        for($i=1, $s=0;$i<=9;$i++) {
+                if($form_state['values']['exam_eid_'.$i] == '0')
+                    $form_state['values']['exam_eweight_'.$i] = 0;
+                if(!is_numeric($form_state['values']['exam_eweight_'.$i])) {
+                        form_set_error('exam_eweight_'.$i, t('The weight you entered is not a number.'));
+                        return;
+                }
+                $s = $s+(float)$form_state['values']['exam_eweight_'.$i];
+        }
+        if(($s-1)>1e-5 && $form_state['values']['irregularcounting']==0) {
+        	$errmsg=t('The overall weight does not meet 1.');
+        	for($i=1;$i<=7;$i++)
+        		if($form_state['values']['exam_eweight_'.$i]>0) {
+					form_set_error('exam_eweight_'.$i, $errmsg);
+					$errmsg=' ';
+				}
+        }
+
+}
+
+function exams_profession_edit_submit($form, &$form_state) {
+	$exams = array();
+	for($i=1;$i<=9;$i++) {
+    	if($form_state['values']['exam_eid_'.$i] != 0) {
+			$exams += array($form_state['values']['exam_eid_'.$i] => $form_state['values']['exam_eweight_'.$i]);
+		}
+	}
+
+	// Adding profesison
+	if(is_null(arg(3))) {
+		db_insert('vl_professions')
+			->fields(array(
+				'pid' => $form_state['values']['pid'],
+				'did' => $form_state['values']['did'],
+				'uid' => $form_state['values']['uid'],
+				'pname' => $form_state['values']['pname'],
+				'years' => $form_state['values']['years'],
+				'enabled' => $form_state['values']['penabled'],
+				'exams' => serialize($exams),
+				'extracondition' => $form_state['values']['extracondition'],
+			))->execute();
+		watchdog('exam',
+			'Created new profession !ename.', array(
+				'!ename'=>$form_state['values']['pname']),
+			WATCHDOG_INFO,
+			l(t('View'), 'definations/professions')
+		);
+	}
+	// Editing profession
+	else {
+		db_update('vl_professions')
+			->fields(array(
+				'did' => $form_state['values']['did'],
+				'uid' => $form_state['values']['uid'],
+				'pname' => $form_state['values']['pname'],
+				'years' => $form_state['values']['years'],
+				'enabled' => $form_state['values']['penabled'],
+				'exams' => serialize($exams),
+				'extracondition' => $form_state['values']['extracondition'],
+				))
+			->condition('pid', arg(3))
+			->execute();
+		watchdog('exam',
+			'Modified profession !ename.', array(
+				'!ename'=>$form_state['values']['pname']),
+			WATCHDOG_INFO,
+			l(t('View'), 'definations/professions/edit/'.arg(3))
+		);
+	}
+	$form_state['redirect'] = 'definations/professions';
+}
+
+function exams_profession_delete() {
+	$pname = db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=:pid', array(':pid'=>arg(3)))->fetchField();
+	$form = confirm_form(NULL, t('Are you sure you want to delete profession @pname??',array('@pname'=>$pname)), 'definations/professions', NULL, t('Delete'));
+	
+	return $form;
+}
+
+function exams_profession_delete_submit($form, &$form_state) {
+	$pname = db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=:pid', array(':pid'=>arg(3)))->fetchField();
+	watchdog('profession',
+		'Deleted profession !ename.', array(
+			'!ename'=>$pname),
+		WATCHDOG_INFO
+	);
+	db_delete('vl_professions')
+		->condition('pid', arg(3))
+		->execute();
+	$form_state['redirect'] = 'definations/professions';
+}

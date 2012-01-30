@@ -1,0 +1,6 @@
+name = Essential Data
+description = Provides the essential data, such as provinces and nationaliteis.
+package = Zhaoban
+core = 7.x
+
+version = 2008.0

@@ -1,0 +1,7 @@
+name = Exams and Professions
+description = Defines the examinations and professions for students to sign up.
+dependencies[] = essential
+package = Zhaoban
+core = 7.x
+
+version = 2011.10.11

@@ -1,0 +1,7 @@
+name = Score
+description = Allow departments to fill up the scores of students
+dependencies[] = going
+package = Zhaoban
+core = 7.x
+
+version = 2012.1.16

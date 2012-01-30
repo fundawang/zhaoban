@@ -1,0 +1,24 @@
+fieldset.profession_exam_edit label, fieldset.profession_exam_edit select, fieldset.profession_exam_edit input{
+	display: inline;
+}
+
+.inline-element-div label, .inline-element-div select, .inline-element-div input{
+	display: inline;
+}
+
+.inline-element-div div {
+	display: inline;
+	padding: 10px;
+}
+
+.inline-element-div {
+	padding: 10px;
+}
+
+form div.description {
+	font-size: 12px;
+}
+
+div.error {
+	font-size: 20px;
+}

@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Provides the basic information of signup program, such as provinces and nationalities.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function essential_help($path, $arg) {
+  return NULL;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function essential_menu() {
+}
+
+

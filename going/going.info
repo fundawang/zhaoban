@@ -1,0 +1,8 @@
+name = Going
+description = Allow to arrange the examinations
+dependencies[] = exams
+dependencies[] = signup
+package = Zhaoban
+core = 7.x
+
+version = 2011.10.19
