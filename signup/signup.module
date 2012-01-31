@@ -2676,6 +2676,8 @@ function signup_overview_by_profession_detail($prof=NULL) {
 			setcookie('examplace', NULL);
 	}
 	
+	drupal_add_js(drupal_get_path('module', 'signup') .'/signup.js');
+
 	$query=db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$prof);
 	$query->innerJoin('vl_department','d','p.did=d.did');
 	$query=$query->fields('d',array('dname'));
