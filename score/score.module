@@ -924,41 +924,226 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 	$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p',array('pname'))->execute()->fetchField();
 	//$prof=db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\' AND p.uid=\'%s\'', $pid, $user->name));
 	drupal_set_title(t('Mark round 2 students').' - '.$prof);
+	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
+
 	$form=array();
 	
 	$header=array(
-		'order'=>array('data'=>t('No.'),'field'=>'sg.gid ASC, sg.gorder ASC','sort'=>'asc'),
-		'uid'=>array('data'=>t('Student ID'), 'field'=>'s.uid'),
+		'order'=>array('data'=>t('No.')),
+		'uid'=>array('data'=>t('Student ID')),
 		'name'=>array('data'=>t('Real Name')),
-		'gender'=>array('data'=>t('Gender'), 'field'=>'s.gender'),
-		'prof'=>array('data'=>t('Profession'), 'field'=>'s.profession_major'),
+		'gender'=>array('data'=>t('Gender')),
+		'keyword'=>array('data'=>t('Sorting keyword')),
 	);
-	/*
-	$tablesortsql=tablesort_sql($header);
-	$tablesortsql=' ORDER by s.uid ASC';
-	$rdbo=db_query('SELECT s.uid, sg.gid, sg.gorder, g.gname, s.name, s.profession_major, s.gender FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid INNER JOIN {vl_going} g ON sg.gid=g.gid WHERE s.profession_major=\'%s\' '.$tablesortsql, $pid);
-	//$i=0;
-	while($r=db_fetch_object($rdbo)) {
-		$uid=$r->uid;
-		$checked[$uid]='';
-		//$form['no'][$uid]=array('#value'=>$r->order);
-		$form['id'][sprintf('%s%03d',$r->gid,$r->gorder)]=array('#value'=>$uid);
-		$form['uid'][$uid]=array('#value'=>$r->uid);
-		$form['name'][$uid]=array('#value'=>$r->name);
-		$form['gender'][$uid]=array('#value'=>$r->gender=='2'?t('Female'):t('Male'));
-		$form['profession'][$uid]=array('#value'=>$prof);
+	
+	$sortorders=_score_mark_2nd_round_determine_best_sortorder($pid);
+	$a=array_keys($sortorders);
+	$saint_default_sort=isset($form_state['values']['sortorder'])?$form_state['values']['sortorder']:$a[0];
+	unset($a);
+	$form['sortorder']=array(
+		'#id' => 'sortorder',
+		'#type' => 'select',
+		'#title' => t('Sort Order'),
+		'#prefix' => '<p/><div class="container-inline">',
+		'#options' => $sortorders,
+		'#default_value' => $saint_default_sort,
+	);
+	$options=array();
+	$examplaces=_score_mark_2nd_round_enabled_examplace($pid);
+	foreach($examplaces as $examplace) {
+		$options[$examplace]=db_select('vl_city_district','cd')
+			->condition('cd.cid',$examplace)->fields('cd',array('name_simp'))->execute()->fetchField();
 	}
 	
-	$rdbo=db_query('SELECT s.uid FROM {students} s WHERE s.pass_round1_major=1');
-	while($r=db_fetch_object($rdbo)) {
-		$checked_default_values[]=$r->uid;
+	// Test if we have marked enough examplace
+	//$query=db_select('students','s')->condition('s.pass_round1_major',1)->groupBy('examplace')->fields('s',array('examplace'));
+	//$query->addExpression('count(*)','num');
+	$saint_default_place=isset($form_state['values']['examplace'])?$form_state['values']['examplace']:((count($options)==1&&$examplace!=='110000')?$examplace:'110000');
+	if(count($options)==0) $saint_default_place='000000';
+	if(count($options)>1 || (count($options)==1&&$examplace!='110000')) {
+		$form['examplace'] = array(
+			'#type' => 'select',
+			'#title' => t('Exam Place'),
+			'#options' => $options,
+			'#prefix' => '&nbsp;&nbsp;&nbsp;',
+			'#default_value' => $saint_default_place,
+		);
 	}
-	$form['checked']=array('#type'=>'checkboxes', '#options'=>$checked, '#default_value'=>$checked_default_values);
-	$form['prof']=array('#type'=>'hidden', '#value'=>$prof);
-	$form['submit']=array('#type'=>'submit', '#value'=>t('Submit'));
+
+	$form['redraw']=array(
+		'#type' => 'button',
+		'#value' => t('Update'),
+		'#prefix' => '&nbsp;&nbsp;&nbsp;',
+		'#suffix'=> '</div><p/>',
+		'#validate' => array(),
+		'#submit' => array('score_mark_2nd_round_redraw'),
+	);
 	
-	*/
+	$query=db_select('students_passthrough','sp')->condition('sp.pid',$pid);
+	$query->innerJoin('students','s','sp.idcard_number=s.idcard_number');
+	$query=$query->fields('s');
+	$num=$query->countQuery()->execute()->fetchField();
+	if($num > 0)
+		$form['pass_through']=array(
+			'#markup' => '<div class="messages">'.t('There are !num extra passed through students also.',array('!num'=>$num)).'</div>',
+		);
+	
+	$query=db_select('students','s')->fields('s',array('uid','name','gender'))->condition('s.profession_major',$pid)->groupBy('s.uid');
+	$query->innerJoin('students_going','sg','s.uid=sg.uid');
+	$query=$query->isNotNull('sg.gid');
+
+	// Step 1, filter examplace
+	//if($saint_default_place!='000000')
+		$query=$query->condition('s.examplace',$saint_default_place);
+	
+	// Step 2, filter sortorder
+	$exams = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$pid)->execute()->fetchField());
+	switch($saint_default_sort) {
+		case 's': // sort by score
+			$header['keyword']['data']=t('Total score');
+			ksort($exams);
+			$total_score=array();
+			foreach($exams as $eid=>$weight){
+				if(substr($eid,0,1)!='1') break; 
+				if(floatval($weight) == 0 ) continue;
+				$query->innerJoin('students_score','e'.$eid,'e'.$eid.'.uid=s.uid');
+				$query=$query->condition('e'.$eid.'.eid', $eid);
+				$total_score[]='e'.$eid.'.score*'.$weight;
+			}
+			$query->addExpression(implode('+',$total_score), 'total_score');
+			$query=$query->orderBy('total_score', 'DESC')->orderBy('s.uid');
+			break;
+		
+		case 'o': // sort by gorder
+			$header['keyword']['data']=t('Going order');
+			krsort($exams);
+			foreach($exams as $eid=>$weight){
+				if(substr($eid,0,1)!=1) continue;
+				if(db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e',array('etype'))->execute()->fetchField()==2) break;
+			}
+			$query=$query->fields('sg',array('gid','gorder'))->condition('sg.eid',$eid)->orderBy('sg.gid')->orderBy('sg.gorder')->orderBy('s.uid');
+			break;
+		case 'u': // sort by student id
+			unset($header['keyword']);
+			$query->orderBy('s.uid');
+	}
+	$results=$query->execute();
+	$options=array();
+	$i=1;
+	foreach($results as $r) {
+		$options[$r->uid]=array(
+			'order'=>$i++,
+			'uid'=>$r->uid,
+			'name'=>$r->name,
+			'gender'=>$r->gender==1?t('Male'):t('Female'),
+		);
+		switch($saint_default_sort) {
+			case 's':
+				$options[$r->uid]['keyword']=$r->total_score;
+				break;
+			case 'o':
+				$options[$r->uid]['keyword']=$r->gorder;
+				break;
+		}
+	}
+	$form['students']=array(
+	    '#type' => 'tableselect',
+	    '#header' => $header,
+	    '#options' => $options,
+	    '#attributes' => array('class'=>array('assign_students')),
+	    '#empty' => t('No suitable students in current condition.'),
+	);
+	if(count($options)>1)
+		$form['submit']=array(
+			'#type' => 'submit',
+			'#value' => t('Save'),
+			'#prefix' => '<p>',
+			'#suffix' => '</p>',
+		);
 	return $form;
+}
+
+function score_mark_2nd_round_redraw($form, &$form_state) {
+	$form_state['rebuild']=TRUE;
+}
+
+function _score_mark_2nd_round_determine_best_sortorder($pid=NULL) {
+	$exams = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$pid)->execute()->fetchField());
+	ksort($exams);
+	$result=array();
+	
+	// Step 1, if we can sort by total scores, i.e., at least one exam takes weight in total_score
+	foreach($exams as $eid=>$weight){
+		if(floatval($weight)>0) break;
+	}
+	if(substr($eid,0,1)==1) $result['s'] = t('By total score, from top to bottom');
+	
+	// Step 2, if we can sort by going order, i.e, at least one exam typed interview
+	foreach($exams as $eid=>$weight){
+		if(db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e',array('etype'))->execute()->fetchField()==2) break;
+	}
+	if(substr($eid,0,1)==1) $result['o'] = t('By going order, from first to last');
+	
+	// Step 3, we always could sort it via student ID
+	$result['u'] = t('By Student ID, from small to big');
+	
+	return $result;
+	
+}
+/*
+ 	If examplace set, return TRUE of FALSE if the place should be avaliable.
+ 	If not set, return array of avaliable examplace.
+*/
+function _score_mark_2nd_round_enabled_examplace($pid, $examplace=NULL) {
+	$query=db_select('students','s')->fields('s',array('examplace'))->condition('s.profession_major',$pid)->groupBy('s.examplace');
+	$query->addExpression('MAX(s.pass_round1_major)','num');
+	$output=array();
+	$result=$query->execute();
+	foreach($result as $r) {
+		if($r->num==0)
+			$output[]=$r->examplace;
+	}
+	if(isset($examplace) && !is_null($examplace)) {
+		return in_array($examplace, $output);
+	} else
+		return $output;
+}
+
+function score_mark_2nd_round_validate($form, &$form_state) {
+	$form_values = array_filter($form_state['values']['students']);
+	if (count($form_values) == 0) {
+		form_set_error('students', t('No students selected.'));
+	}
+}
+
+function score_mark_2nd_round_submit($form, &$form_state) {
+	global $user;
+	$form_values = array_keys(array_filter($form_state['values']['students']));
+	$prof=db_select('vl_professions','p')->condition('p.pid',arg(2))->fields('p',array('pname'))->execute()->fetchField();
+	foreach($form_values as $student) {
+		db_update('students')->fields(array(
+				'pass_round1_major'=>1
+		))->condition('uid',$student)
+		->execute();
+	}
+	
+	drupal_set_message(
+		t('!num !prof students have been enrolled into the 2nd round examiniation.', array(
+			'!num'=>count($form_values), '!prof'=>$prof)));
+	watchdog('score',
+		'!num !prof students have been enrolled into the 2nd round examiniation.', array(
+			'!num'=>count($form_values),
+			'!prof'=>$prof),
+		WATCHDOG_INFO);
+
+	if(count(_score_mark_2nd_round_enabled_examplace(arg(2)))==0) {
+		db_update('vl_professions')->fields(array(
+				'allow_round1'=>0
+		))->condition('pid',arg(2))
+		->execute();
+		$form_state['redirect']='signup/2ndround/profession/'.arg(2);
+	} else 
+		$form_state['redirect']='signup/markround2';
 }
 /*
 function theme_score_mark_2nd_round($form) {
