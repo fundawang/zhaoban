@@ -9,7 +9,7 @@
  * Defines the the progress of signup.
  */
  
-include_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'aggregator') . '/signup.inc');
+include_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'signup') . '/signup.inc');
 
 function signup_init() {
   drupal_add_css(drupal_get_path('module', 'exams') .'/exams.css');
