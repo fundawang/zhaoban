@@ -1052,8 +1052,9 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 	    '#options' => $options,
 	    '#attributes' => array('class'=>array('assign_students')),
 	    '#empty' => t('No suitable students in current condition.'),
+	    '#after_build' => array('_score_mark_2nd_round_students_force'),
 	);
-	if(count($options)>1)
+	if(count($options)>0)
 		$form['submit']=array(
 			'#type' => 'submit',
 			'#value' => t('Save'),
@@ -1090,6 +1091,21 @@ function _score_mark_2nd_round_determine_best_sortorder($pid=NULL) {
 	return $result;
 	
 }
+
+function _score_mark_2nd_round_students_force($form_element, &$form_values) {
+	$query=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',arg(2));
+	$query->innerJoin('students_passthrough','sp','s.idcard_number=sp.idcard_number');
+	$result=$query->execute();
+	foreach($result as $r) {
+		if(!isset($form_element[$r->uid])) continue;
+			$form_element[$r->uid]['#value']=TRUE;
+			$form_element[$r->uid]['#checked']=TRUE;
+			$form_element[$r->uid]['#attributes']['disabled']=TRUE;
+			$form_values['values']['students'][$r->uid]=TRUE;
+	}
+    return $form_element;
+}
+
 /*
  	If examplace set, return TRUE of FALSE if the place should be avaliable.
  	If not set, return array of avaliable examplace.
