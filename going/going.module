@@ -380,7 +380,7 @@ function going_going_edit_submit($form, &$form_state) {
 					'waiting_room' => $form_state['values']['waiting_room'],
 					'valid_exams' => implode(', ', $exams),
 					'time' => $form_state['values']['time'],
-					'department' => $form_state['values']['ownarrange']?$dep:';'.$dep,)
+					'department' => $form_state['values']['ownarrange']?$dep:NULL,)
 				)->execute();
 			watchdog('going',
 				'!user created new schedule !gname.', array(
@@ -404,7 +404,7 @@ function going_going_edit_submit($form, &$form_state) {
 					'waiting_room' => $form_state['values']['waiting_room'],
 					'valid_exams' => implode(', ', $exams),
 					'time' => $form_state['values']['time'],
-					'department' => $form_state['values']['ownarrange']?$dep:';'.$dep))
+					'department' => $form_state['values']['ownarrange']?$dep:NULL))
 				->condition('gid', arg(3))
 				->execute();
 			watchdog('going',
