@@ -5,4 +5,4 @@ dependencies[] = signup
 package = Zhaoban
 core = 7.x
 
-version = 2011.10.19
+version = 2012.2.2
