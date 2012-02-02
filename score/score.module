@@ -1098,10 +1098,10 @@ function _score_mark_2nd_round_students_force($form_element, &$form_values) {
 	$result=$query->execute();
 	foreach($result as $r) {
 		if(!isset($form_element[$r->uid])) continue;
-			$form_element[$r->uid]['#value']=TRUE;
-			$form_element[$r->uid]['#checked']=TRUE;
-			$form_element[$r->uid]['#attributes']['disabled']=TRUE;
-			$form_values['values']['students'][$r->uid]=TRUE;
+		$form_element[$r->uid]['#value']=TRUE;
+		$form_element[$r->uid]['#checked']=TRUE;
+		$form_element[$r->uid]['#attributes']['disabled']=TRUE;
+		$form_values['values']['students'][$r->uid]=TRUE;
 	}
     return $form_element;
 }
