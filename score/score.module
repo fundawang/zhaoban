@@ -1358,6 +1358,21 @@ function score_transfer_validate($form, &$form_state) {
 	if(count($form_values)<=0) {
 		form_set_error('students', t('No students selected.'));
 	}
+	foreach($form_values as $uid=>$u) {
+		$r=db_select('vl_professions','p')->fields('p',array('pname','extracondition'))->condition('p.pid',$form_state['values']['targetprof'])->execute()->fetchObject();
+		//var_dump($r);exit;
+		if($r->extracondition) {
+			$count=db_select('students','s')->fields('s')->where($r->extracondition)->condition('uid',$uid)->countQuery()->execute()->fetchField();
+			//var_dump($count);exit;
+			if($count==0) {
+				form_set_error('students', t('!uid student does not comply the citera of !prof profession.', array(
+					'!uid'=>$uid,
+					'!prof'=>$r->pname,
+				)));
+				return;
+			}
+		}
+	}
 }
 
 function score_transfer_submit($form, &$form_state) {
