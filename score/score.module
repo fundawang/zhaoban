@@ -12,6 +12,14 @@ function score_help($path, $arg) {
   	case 'score/emptyscores':
   	  $output = t('Only authorized users have permisison on emptying scores.');
   	  break;
+  	case 'signup/transfer':
+  	  $output = t('Please select the going you would like to operate.');
+  	  break;
+  	case 'signup/transfer/%':
+  	  $output = '<p>'.t('You should first select those students, then select the destination profession below the students list. Click Apply when done. You can do it multiple times for single profession, but only once for single student.').'</p>';
+  	  $output .= '<p>'.t('Tip: You may want to input score at fisrt, the sort by the scores to decide.').'</p>';
+  	  break;
+  	
   }
   if (isset($output))
   	return '<p>'.$output.'</p>';
@@ -1161,6 +1169,217 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 	} else 
 		$form_state['redirect']='signup/markround2';
 }
+
+function score_transfer_list_check() {
+	global $user;
+	$query=db_select('vl_professions','p')->condition('p.uid',$user->name)->groupBy('p.exams');
+	$query->addExpression('count(pid)','pid_count');
+	$query=db_select($query,'pcount');
+	$query->addExpression('MAX(pid_count)','num');
+	$r=$query->execute()->fetchField();
+	return ($r>1) && user_access('mark 2nd round students') || ($user->uid==1);
+}
+
+function score_transfer_list() {
+	global $user;
+	$output='<dl>';
+	$query=db_select('vl_going','g')->fields('g')->orderBy('g.time')->groupBy('g.gid');
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$query->fields('r',array('rname'));
+	$query->innerJoin('students_going','sg','sg.gid=g.gid');
+	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
+	$query->condition('e.uid',$user->name);
+	
+	$result=$query->execute();
+	foreach($result as $r) {
+		$output.='<dt>';
+		$output.=l($r->gname, "signup/transfer/$r->gid");
+		$output.='</dt>';
+		$output.=sprintf('<dd>%s / %s </dd>', $r->rname, _going_datetime_to_string($r->time));
+	}
+	$output.='</dl>';
+	return $output;
+}
+
+function score_transfer_check($gid) {
+	global $user;
+	$query=db_select('vl_going','g')->condition('g.gid',$gid);
+	$query->innerJoin('students_going','sg','sg.gid=g.gid');
+	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
+	$query->groupBy('e.uid');
+	$query->fields('e',array('uid'));
+	if($query->countQuery()->execute()->fetchField()!=1 || $query->execute()->fetchField()!=$user->name)
+		return FALSE;
+	else
+		return TRUE;
+}
+
+function score_transfer($form, $form_state, $gid) {
+	global $user;
+	drupal_set_title(t('Transfer students').' - '.db_select('vl_going','g')->condition('g.gid',$gid)->fields('g',array('gname'))->execute()->fetchField());
+	$form=array();
+	
+	$header=array(
+		'gorder'=>array('data'=>t('No.'),'field'=>'sg.gorder'),
+		'uid'=>array('data'=>t('Student ID'), 'field'=>'s.uid'),
+		'name'=>array('data'=>t('Real Name')),
+		'gender'=>array('data'=>t('Gender'), 'field'=>'s.gender'),
+		'pname'=>array('data'=>t('Current Profession'), 'field'=>'p.pid'),
+	);
+	
+	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$query->fields('r',array('rname'));
+	$g_info=$query->execute()->fetchObject();
+	
+	$query->innerJoin('students_going','sg','sg.gid=g.gid');
+	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
+	$query->fields('e',array('eid'))->groupBy('e.eid');
+	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)",'ename');
+	$exams=$query->execute()->fetchAll();
+	foreach($exams as $r) {
+		$header['e'.$r->eid]=array('data'=>$r->ename, 'field'=>'e'.$r->eid, 'sort'=>'desc');
+	}
+	
+	$squery=db_select('students_going','sg')->condition('sg.gid',$gid);
+	$squery->innerJoin('students','s','s.uid=sg.uid');
+	$squery->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'))->fields('p',array('pname'));
+	$t=$squery->execute()->rowCount();
+	foreach($exams as $r) {
+		$query=db_select('students_going','sg')->condition('sg.gid',$gid);
+		$query->innerJoin('students','s','s.uid=sg.uid');
+		$query->fields('s',array('uid','name','gender'));
+		$query->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
+		$query->condition('e'.$r->eid.'.eid',$r->eid);
+		$query->addExpression('e'.$r->eid.'.score','e'.$r->eid);
+		if($t!=$query->execute()->rowCount())
+			unset($header['e'.$r->eid]);
+		else {
+			$squery->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
+			$squery->condition('e'.$r->eid.'.eid',$r->eid);
+			$squery->addExpression('CAST(e'.$r->eid.'.score as DECIMAL)','e'.$r->eid);
+		}
+	}
+	
+	//$students=$query->execute()->fetchAll();
+	//var_dump($query->__toString());
+	
+	$squery->extend('TableSort')->orderByHeader($header);
+	$students=$squery->execute()->fetchAll();
+	$options=array();
+	foreach($students as $r) {
+		foreach(array_keys($header) as $item) {
+			if(isset($r->$item))
+				$options[$r->uid][$item]=$r->$item;
+			if($item=='gender')
+				$options[$r->uid][$item]=($r->gender==2?t('Female'):t('Male'));
+		}
+		
+	}
+	
+	if(count($header)==5) {
+		$header['gorder']['sort']='asc';
+	}
+	
+	$form['desc']=array(
+		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $g_info->gname, $g_info->rname, _going_datetime_to_string($g_info->time)).'</div>',
+	);
+	
+	$form['students']=array(
+	    '#type' => 'tableselect',
+	    '#header' => $header,
+	    '#options' => $options,
+	    '#attributes' => array('class'=>array('assign_students')),
+	    '#empty' => t('No students to operate.'),
+	);
+	
+	$profs=db_select('vl_professions','p')->condition('p.uid',$user->name)->condition('p.enabled',0,'<>')
+		->orderBy('p.pid')->fields('p',array('pid','pname'))->execute()->fetchAllKeyed();
+	$form['targetprof']=array(
+		'#type' => 'select',
+		'#title'=>t('The target profession of selected students is'),
+		'#options'=>$profs,
+		'#attributes' => array('class'=>'inline-element'),
+		'#prefix'=>'<p/><div class="container-inline">',
+	);
+	
+	$form['submit']=array(
+		'#type'=>'submit',
+		'#value'=>t('Save'),
+		'#prefix'=>'&nbsp;&nbsp;&nbsp;',
+		'#suffix'=>'</div>',
+	);
+	
+	//$form['profs']=array('#type'=>'select', '#title'=>t('The target profession of selected students is'),   ');
+	
+	//var_dump($options);
+	
+	
+	
+	/*
+	$tablesortsql=tablesort_sql($header);
+	$rdbo=db_query('SELECT s.uid, sg.gid, sg.gorder AS go, g.gname, s.name, s.profession_major, s.gender, s.uid, sg.gid, sg.gorder FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid INNER JOIN {vl_going} g ON sg.gid=g.gid WHERE s.profession_major=\'%s\''.$tablesortsql, $pid);
+	//$i=0;
+	while($r=db_fetch_object($rdbo)) {
+		$uid=$r->uid;
+		$checked[$uid]='';
+		//$form['no'][$uid]=array('#value'=>$r->order);
+		$form['id'][sprintf('%s%03d',$r->gid,$r->gorder)]=array('#value'=>$uid);
+		$form['uid'][$uid]=array('#value'=>$r->uid);
+		$form['name'][$uid]=array('#value'=>$r->name);
+		$form['gender'][$uid]=array('#value'=>$r->gender=='2'?t('Female'):t('Male'));
+		$form['profession'][$uid]=array('#value'=>$prof);
+	}
+	
+	$rdbo=db_query('SELECT s.uid FROM {students} s WHERE s.pass_round1_major=1');
+	while($r=db_fetch_object($rdbo)) {
+		$checked_default_values[]=$r->uid;
+	}
+	$form['checked']=array('#type'=>'checkboxes', '#options'=>$checked, '#default_value'=>$checked_default_values);
+	
+	$r=db_result(db_query('SELECT p.exams FROM {vl_professions} p WHERE p.pid=\'%s\'', $pid));
+	//var_dump($r);
+	$rdbo=db_query('SELECT p.pid, p.pname FROM {vl_professions} p WHERE p.pid<>\'%s\' AND p.exams=\'%s\'', $pid, $r);
+	while($r=db_fetch_object($rdbo)) {
+		$options[$r->pid]=$r->pname;
+	}
+	//var_dump($options);
+	$form['profs']=array('#type'=>'select', '#title'=>t('The target profession of selected students is'), '#options'=>$options, '#attributes' => array('class'=>'inline-element'), '#prefix'=>'<hr/><div class="container-inline">', '#suffix'=>'</div><hr/>');
+	
+	$form['submit']=array('#type'=>'submit', '#value'=>t('Apply'));
+	*/
+	return $form;
+}
+
+function score_transfer_validate($form, &$form_state) {
+	// Check if at least one of the exam has been selected.
+	$form_values = array_filter($form_state['values']['students']);
+	if(count($form_values)<=0) {
+		form_set_error('students', t('No students selected.'));
+	}
+}
+
+function score_transfer_submit($form, &$form_state) {
+  $form_values=$form_state['values'];
+  $students=$form_values['students'];
+  $students=array_filter($students);
+  $prof_new=db_select('vl_professions','p')->condition('p.pid',$form_values['targetprof'])->fields('p',array('pname'))->execute()->fetchField();
+  foreach($students as $uid=>$u) {
+  	  db_update('students')->fields(array(
+  	  	  'profession_major'=>$form_values['targetprof']
+  	  ))->condition('uid',$uid)
+  	  ->execute();
+  }
+  drupal_set_message(t('!num students have been transfered into !prof_new profession.', array('!num'=>count($students), '!prof_new'=>$prof_new)));
+  watchdog('score',
+  	'!num students have been transfered into !prof_new profession.', array(
+  		'!num'=>count($students),
+  		'!prof_new'=>$prof_new
+  ));
+  $form_state['redirect']='signup/transfer';
+}
+
 /*
 function theme_score_mark_2nd_round($form) {
 	//var_dump($form);
@@ -1232,13 +1451,6 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 }
 
 
-
-function score_transfer_list_check() {
-	global $user;
-	$sql='select max(pid_count) from (SELECT count(pid) as pid_count from {vl_professions} where uid=\'%s\' group by exams ) as pcount';
-	$r=db_result(db_query($sql, $user->name));
-	return (($r>1) && user_access('mark 2nd round students')) || ($user->uid==1);
-}
 
 function score_view_admin() {
 	
@@ -2207,73 +2419,7 @@ function score_mark_gaokao_round_submit($form, &$form_state) {
 }
 
 
-function score_transfer_list() {
-	global $user;
-	$output='<p>'.t('Please select the original profession of the students.').'</p><dl>';
-	$rdbo=db_query('SELECT p.pid, p.pname, p.exams FROM {vl_professions} p WHERE p.uid=\'%s\' AND p.enabled=1', $user->name);
-	while($r=db_fetch_object($rdbo)) {
-		$r2=db_result(db_query('SELECT count(*) FROM {vl_professions} p WHERE p.pid<>\'%s\' AND p.exams=\'%s\'', $r->pid, $r->exams));
-		if($r2>=1 && score_transfer_check($r->pid)) {
-			$output.=sprintf('<dt><a href=\'/signup/transfer/%s\'>%s</a></dt>', $r->pid, $r->pname);
-			$output.='<dd>'.t('There are !num students interested in your profession.', array('!num'=>db_result(db_query('SELECT count(*) FROM {students} s WHERE s.validated=1 AND s.profession_major=\'%s\'', $r->pid)))).'</dd>';
-		}
-	}
-	$output.='</dl>';
-	return $output;
-}
 
-function score_transfer_check($pid) {
-	global $user;
-	return db_result(db_query('SELECT count(*) FROM {students} s WHERE s.validated=1 AND s.profession_major=\'%s\'', $pid)) && db_result(db_query('SELECT p.enabled FROM {vl_professions} p WHERE p.pid=\'%s\'', $pid));
-}
-
-function score_transfer($form_state, $pid=NULL) {
-	drupal_set_title(t('Transfer students').' - '.db_result(db_query('SELECT pname FROM {vl_professions} WHERE pid=\'%s\'', $pid)));
-	$form=array();
-	
-	$form['desc']=array('#value'=>'<div class="messages">'.t('You should first select those students, then select the destination profession below the students list. Click Apply when done. You can do it multiple times for single profession, but only once for single student.').'</div>');
-	
-	$header=array(
-		array('data'=>''),
-		array('data'=>t('No.'),'field'=>'sg.gid ASC, sg.gorder ASC','sort'=>'asc'),
-		array('data'=>t('Student ID'), 'field'=>'s.uid'),
-		array('data'=>t('Real Name')),
-		array('data'=>t('Gender'), 'field'=>'s.gender'),
-	);
-	
-	$tablesortsql=tablesort_sql($header);
-	$rdbo=db_query('SELECT s.uid, sg.gid, sg.gorder AS go, g.gname, s.name, s.profession_major, s.gender, s.uid, sg.gid, sg.gorder FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid INNER JOIN {vl_going} g ON sg.gid=g.gid WHERE s.profession_major=\'%s\''.$tablesortsql, $pid);
-	//$i=0;
-	while($r=db_fetch_object($rdbo)) {
-		$uid=$r->uid;
-		$checked[$uid]='';
-		//$form['no'][$uid]=array('#value'=>$r->order);
-		$form['id'][sprintf('%s%03d',$r->gid,$r->gorder)]=array('#value'=>$uid);
-		$form['uid'][$uid]=array('#value'=>$r->uid);
-		$form['name'][$uid]=array('#value'=>$r->name);
-		$form['gender'][$uid]=array('#value'=>$r->gender=='2'?t('Female'):t('Male'));
-		$form['profession'][$uid]=array('#value'=>$prof);
-	}
-	
-	$rdbo=db_query('SELECT s.uid FROM {students} s WHERE s.pass_round1_major=1');
-	while($r=db_fetch_object($rdbo)) {
-		$checked_default_values[]=$r->uid;
-	}
-	$form['checked']=array('#type'=>'checkboxes', '#options'=>$checked, '#default_value'=>$checked_default_values);
-	
-	$r=db_result(db_query('SELECT p.exams FROM {vl_professions} p WHERE p.pid=\'%s\'', $pid));
-	//var_dump($r);
-	$rdbo=db_query('SELECT p.pid, p.pname FROM {vl_professions} p WHERE p.pid<>\'%s\' AND p.exams=\'%s\'', $pid, $r);
-	while($r=db_fetch_object($rdbo)) {
-		$options[$r->pid]=$r->pname;
-	}
-	//var_dump($options);
-	$form['profs']=array('#type'=>'select', '#title'=>t('The target profession of selected students is'), '#options'=>$options, '#attributes' => array('class'=>'inline-element'), '#prefix'=>'<hr/><div class="container-inline">', '#suffix'=>'</div><hr/>');
-	
-	$form['submit']=array('#type'=>'submit', '#value'=>t('Apply'));
-	
-	return $form;
-}
 
 function theme_score_transfer($form) {
 	
