@@ -906,14 +906,13 @@ function score_mark_2nd_round_list() {
 
 function score_mark_2nd_round_list_check() {
 	global $user;
-	$query=db_select('students','s')->fields('s')->condition('s.validated','0');
+	$query=db_select('students','s')->fields('s')->condition('s.validated','1');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->condition('p.uid',$user->name)->groupBy('p.uid');
+	$query->addExpression('MAX(allow_round1)','num');
 	$can_students=$query->countQuery()->execute()->fetchField();
 
-	$query=db_select('vl_professions','p')->condition('p.uid',$user->name);
-	$query->addExpression('MAX(allow_round1)','num');
-	$can_prof=$query->execute()->fetchField();
-
-	return (user_access('mark 2nd round students') && $can_students && $can_prof );
+	return (user_access('mark 2nd round students') && $can_students);
 }
 
 function score_mark_2nd_round_check($pid) {
@@ -1120,6 +1119,8 @@ function _score_mark_2nd_round_students_force($form_element, &$form_values) {
 */
 function _score_mark_2nd_round_enabled_examplace($pid, $examplace=NULL) {
 	$query=db_select('students','s')->fields('s',array('examplace'))->condition('s.profession_major',$pid)->groupBy('s.examplace');
+	$subquery=db_select('students_passthrough','sp')->where('s.idcard_number=sp.idcard_number')->fields('sp');
+	$query->notExists($subquery);
 	$query->addExpression('MAX(s.pass_round1_major)','num');
 	$output=array();
 	$result=$query->execute();
