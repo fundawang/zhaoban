@@ -245,6 +245,14 @@ function signup_menu() {
     'access callback' => 'sign_up_report_perm',
     'access arguments'=> array(1),
   );
+  $items['user/%user/picture'] = array(
+    'title' => 'Fetch picture of student',
+    'page callback' => 'sign_up_picture',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'sign_up_picture_perm',
+    'access arguments'=> array(1),
+  );
   return $items;
 }
 
@@ -271,6 +279,19 @@ function sign_up_report_perm($uid) {
 	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField();
 }
 
+function sign_up_picture_perm($uid) {
+	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $uid->name);
+	$img_tmp=$query->execute()->fetchField();
+	if($img_tmp) {
+		$tmpfname = tempnam(sys_get_temp_dir(), '');
+		$handle = fopen($tmpfname, "w");
+		fwrite($handle,base64_decode($img_tmp));
+		fclose($handle);
+		$img_tmp=image_load($tmpfname);
+		unlink($tmpfname);
+	}
+	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField() && $img_tmp;
+}
 
 /**
  * Provide a single block from the administration menu as a page.
@@ -1234,7 +1255,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 	);
 	$user->content['pi']['name'] = array(
 		'#type' => 'user_profile_item',
-		'#title' => t('Real Name'),
+		'#title' => (sign_up_picture_perm($user)?'<img src="/user/'.$user->uid.'/picture" style="padding-right: 10px" align="left" height="100"/>':'').t('Real Name'),
 		'#markup' => isset($result->name)?$result->name:'',
 		'#weight' => 1,
 	);
@@ -5023,6 +5044,33 @@ function sign_up_report($account) {
 	// This method has several options, check the source code documentation for more information.
 	$pdf->Output('signup_report.pdf', 'I');
 
+}
+
+function sign_up_picture($account) {
+	$query=db_select('students','s')->fields('s',array('picture'))->condition('s.uid',$account->name);
+	$img_tmp=$query->execute()->fetchField();
+	if(!$img_tmp) return NULL;
+	$sourcefile = tempnam(sys_get_temp_dir(), '');
+	$destfile = tempnam(sys_get_temp_dir(), '');
+	$soucehandle=fopen($sourcefile, 'w');
+	fwrite($soucehandle, base64_decode($img_tmp));
+	fclose($soucehandle);
+	$image=image_load($sourcefile);
+	if(!image_scale($image, NULL, 100)) return NULL;
+	if(!image_save($image, $destfile)) return NULL;
+
+	drupal_add_http_header('Content-type', 'image/jpg; charset=binary', TRUE);
+	drupal_add_http_header('Content-Transfer-Encoding', 'binary', TRUE);
+
+	// Do not expire image file, because it causes overload of server :(
+	// seconds, minutes, hours, days
+	$expires = 60*60*24*300;
+	drupal_add_http_header("Pragma", "public", TRUE);
+	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
+	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
+	echo file_get_contents($destfile);
+	unlink($sourcefile);
+	unlink($destfile);
 }
 
 function signup_schools_autocomplete($string) {
