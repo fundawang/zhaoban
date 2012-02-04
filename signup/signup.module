@@ -5063,7 +5063,7 @@ function sign_up_picture($account) {
 	$newwidth=imagesx($img)*100/imagesy($img);
 	
 	$newimg=imagecreatetruecolor($newwidth, $newheight);
-	imagecopyresized($newimg, $img, 0, 0, 0, 0, $newwidth, $newheight, imagesx($img), imagesy($img));
+	imagecopyresampled($newimg, $img, 0, 0, 0, 0, $newwidth, $newheight, imagesx($img), imagesy($img));
 	
 	drupal_add_http_header('Content-type', 'image/jpg; charset=binary', TRUE);
 	drupal_add_http_header('Content-Transfer-Encoding', 'binary', TRUE);
@@ -5074,7 +5074,7 @@ function sign_up_picture($account) {
 	drupal_add_http_header("Pragma", "public", TRUE);
 	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
 	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
-	imagejpeg($newimg);
+	imagejpeg($newimg, NULL, 100);
 	imagedestroy($img);
 	imagedestroy($newimg);
 }
