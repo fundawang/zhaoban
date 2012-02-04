@@ -282,15 +282,12 @@ function sign_up_report_perm($uid) {
 function sign_up_picture_perm($uid) {
 	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $uid->name);
 	$img_tmp=$query->execute()->fetchField();
-	if($img_tmp) {
-		$tmpfname = tempnam(sys_get_temp_dir(), '');
-		$handle = fopen($tmpfname, "w");
-		fwrite($handle,base64_decode($img_tmp));
-		fclose($handle);
-		$img_tmp=image_load($tmpfname);
-		unlink($tmpfname);
-	}
-	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField() && $img_tmp;
+	if($img_tmp)
+		$test=imagecreatefromstring(base64_decode($img_tmp));
+	else $test=false;
+	if($test)
+		imagedestroy($test);
+	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField() && $test;
 }
 
 /**
