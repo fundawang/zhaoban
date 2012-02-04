@@ -5047,15 +5047,13 @@ function sign_up_picture($account) {
 	$query=db_select('students','s')->fields('s',array('picture'))->condition('s.uid',$account->name);
 	$img_tmp=$query->execute()->fetchField();
 	if(!$img_tmp) return NULL;
-	$sourcefile = tempnam(sys_get_temp_dir(), '');
-	$destfile = tempnam(sys_get_temp_dir(), '');
-	$soucehandle=fopen($sourcefile, 'w');
-	fwrite($soucehandle, base64_decode($img_tmp));
-	fclose($soucehandle);
-	$image=image_load($sourcefile);
-	if(!image_scale($image, NULL, 100)) return NULL;
-	if(!image_save($image, $destfile)) return NULL;
-
+	$img=imagecreatefromstring(base64_decode($img_tmp));
+	$newheight=100;
+	$newwidth=imagesx($img)*100/imagesy($img);
+	
+	$newimg=imagecreatetruecolor($newwidth, $newheight);
+	imagecopyresized($newimg, $img, 0, 0, 0, 0, $newwidth, $newheight, imagesx($img), imagesy($img));
+	
 	drupal_add_http_header('Content-type', 'image/jpg; charset=binary', TRUE);
 	drupal_add_http_header('Content-Transfer-Encoding', 'binary', TRUE);
 
@@ -5065,9 +5063,9 @@ function sign_up_picture($account) {
 	drupal_add_http_header("Pragma", "public", TRUE);
 	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
 	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
-	echo file_get_contents($destfile);
-	unlink($sourcefile);
-	unlink($destfile);
+	imagejpeg($newimg);
+	imagedestroy($img);
+	imagedestroy($newimg);
 }
 
 function signup_schools_autocomplete($string) {
