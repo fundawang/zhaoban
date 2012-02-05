@@ -245,7 +245,7 @@ function signup_menu() {
     'access callback' => 'sign_up_report_perm',
     'access arguments'=> array(1),
   );
-  $items['user/%user/picture'] = array(
+  $items['user/%user/picture.jpg'] = array(
     'title' => 'Fetch picture of student',
     'page callback' => 'sign_up_picture',
     'page arguments' => array(1),
