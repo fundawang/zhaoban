@@ -117,8 +117,7 @@ function going_goinglist() {
   	array('data'=>t('Time'), 'field'=>'g.time'),
   	array('data'=>t('Operations'), 'colspan'=>'2'),
   );
-  
-  $query = db_select('vl_going', 'g');
+  $query = db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter','1'));
   $query->innerjoin('vl_room', 'r', 'g.place = r.rid');
   $query = $query
   	->fields('g')
@@ -129,7 +128,8 @@ function going_goinglist() {
   if($is_dep_only) $query=$query->condition('department', $GLOBALS['user']->name);
   $result = $query->execute();
 
-
+  $output = drupal_render(drupal_get_form('going_goinglist_filter'));
+  
   $rows = array();
   foreach($result as $r) {
   	  $exam_ids=explode(', ', $r->valid_exams);
@@ -144,7 +144,6 @@ function going_goinglist() {
   	  	  if($rd)
   	  	  	$exam_names[]=$rd->ename.$rd->elevel;
   	  }
-  	  //var_dump($exam_names);
   	  $if_has_perm=user_access('administer going')||$r->department==$GLOBALS['user']->name;
   	  $candelete=db_table_exists('students_going');
   	  if($candelete)  {
@@ -169,10 +168,53 @@ function going_goinglist() {
     $rows[] = array(array('data' => t('No schedule defined.'), 'colspan' => '7'));
   }
     
-  $output = theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
   $output .= theme('pager');
 
   return $output;
+}
+
+function going_goinglist_filter($form, $form_state) {
+	$form=array();
+	$options=array(
+		'all' => '- '.t('All').' -',
+		'today' => t('Today').'('.date('Ymd').')',
+	);
+	$query=db_select('vl_going','g');
+	$query->addExpression('SUBSTR(TIME, 1, 8)', 'd');
+	$query->groupBy('d')->orderBy('d');
+	$dates=$query->execute();
+	foreach($dates as $date) {
+		$options[$date->d]=$date->d;
+	}
+	//var_dump(variable_get('zhaoban_going_list_date_filter_plain','all'));
+	$form['date']=array(
+		'#type' => 'select',
+		'#title' => t('Date'),
+		'#options' => $options,
+		'#prefix' => '<div class="inline-element-div">',
+		'#default_value' => variable_get('zhaoban_going_list_date_filter_plain','all'),
+	);
+	$form['submit']=array(
+		'#type' => 'submit',
+		'#value' => t('Update'),
+	);
+	return $form;
+}
+
+function going_goinglist_filter_submit($form, $form_state) {
+	$filter=$form_state['values']['date'];
+	switch($filter) {
+		case 'all':
+			$result='1'; break;
+		case 'today':
+			$result="g.time LIKE DATE_FORMAT(now(), '%Y%m%d%%')"; break;
+		default:
+			$result="g.time LIKE '".$filter."%'"; break;
+	}
+	variable_set('zhaoban_going_list_date_filter_plain', $filter);
+	variable_set('zhaoban_going_list_date_filter', $result);
+	
 }
 
 /**
@@ -466,7 +508,7 @@ function going_assign_list() {
   	array('data'=>t('Operations'), 'colspan'=>'2'),
   );
   
-  $result=db_select('vl_going', 'g')
+  $result=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter','1'))
 	->fields('g',array('gid','gname','place','time'))
 	->extend('PagerDefault')->limit(25)
 	->extend('TableSort')
@@ -504,7 +546,8 @@ function going_assign_list() {
     $rows[] = array(array('data' => t('No going have been filled.'), 'colspan' => '7'));
   }
   
-  $output = theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output = drupal_render(drupal_get_form('going_goinglist_filter'));
+  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
   $output .= theme('pager');
   
   return $output;
