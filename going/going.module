@@ -30,7 +30,8 @@ function going_menu() {
     'description' => "Define going transaction.",
     'weight' => 3,
     'page callback' => 'going_goinglist',
-    'access callback' => 'going_menu_perm',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer going'),
   );
 
   $items['definations/going/list'] = array(
@@ -117,8 +118,8 @@ function going_goinglist() {
   	array('data'=>t('Time'), 'field'=>'g.time'),
   	array('data'=>t('Operations'), 'colspan'=>'2'),
   );
-  $query = db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter','1'));
-  $query->innerjoin('vl_room', 'r', 'g.place = r.rid');
+  $query = db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'));
+  $query->innerJoin('vl_room', 'r', 'g.place = r.rid');
   $query = $query
   	->fields('g')
 	->fields('r', array('rname', 'capacity'))
@@ -193,7 +194,7 @@ function going_goinglist_filter($form, $form_state) {
 		'#title' => t('Date'),
 		'#options' => $options,
 		'#prefix' => '<div class="inline-element-div">',
-		'#default_value' => variable_get('zhaoban_going_list_date_filter_plain','all'),
+		'#default_value' => variable_get('zhaoban_going_list_date_filter_plain_'.$GLOBALS['user']->name,'all'),
 	);
 	$form['submit']=array(
 		'#type' => 'submit',
@@ -212,8 +213,8 @@ function going_goinglist_filter_submit($form, $form_state) {
 		default:
 			$result="g.time LIKE '".$filter."%'"; break;
 	}
-	variable_set('zhaoban_going_list_date_filter_plain', $filter);
-	variable_set('zhaoban_going_list_date_filter', $result);
+	variable_set('zhaoban_going_list_date_filter_plain_'.$GLOBALS['user']->name, $filter);
+	variable_set('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name, $result);
 	
 }
 
@@ -508,13 +509,15 @@ function going_assign_list() {
   	array('data'=>t('Operations'), 'colspan'=>'2'),
   );
   
-  $result=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter','1'))
+  $query=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'))
 	->fields('g',array('gid','gname','place','time'))
 	->extend('PagerDefault')->limit(25)
 	->extend('TableSort')
-	->orderByHeader($header)
-  	->execute();
-  
+	->orderByHeader($header);
+
+  if($is_dep_only) $query=$query->condition('department', $GLOBALS['user']->name);
+  $result = $query->execute();
+
   $rows=array();
   
   foreach($result as $r) {
