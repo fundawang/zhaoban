@@ -714,7 +714,10 @@ function going_assign_students_submit($form, &$form_state) {
 	$query->addExpression('MAX(sg.gorder)');
 	$i=1+$query->execute()->fetchField();
 	$exams=explode(', ',db_select('vl_going','g')->fields('g',array('valid_exams'))->condition('gid',arg(3))->execute()->fetchField());
-
+	// If it is a writing exam, we should go with asc-sorted order
+	//var_dump(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exams[0])->execute()->fetchField());exit;
+	if(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exams[0])->execute()->fetchField()=='1')
+		sort($students);
 	for($j=0;$j<count($students);$j++) {
 			$student=$students[$j];
 			db_update('students_going')->fields(array(
@@ -843,7 +846,7 @@ function going_print_orderlist()
 		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$gid);
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder');
+		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder')->groupBy('s.uid');
 		$students=$query->execute();
 		//$students=db_query('SELECT sg.gorder as gorder, s.uid AS uid, s.name as cname, p.pname as profession FROM {students_going} sg INNER JOIN {students} s ON s.uid=sg.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid WHERE sg.gid=\'%s\' ORDER BY gorder', $gid);
 		//while($student=db_fetch_object($students)) {
@@ -923,7 +926,7 @@ function going_print_orderlist()
 		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$gid);
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder');
+		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder')->groupBy('s.uid');
 		$students=$query->execute();
 		$i=0;
 		$pdf->SetFontSize(20);
