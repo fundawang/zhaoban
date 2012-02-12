@@ -2636,4 +2636,20 @@ function score_cron() {
 				'rank' => 1,
 			))->execute();
 	}
+	
+	// Force recalculate the Solfeggio score
+	$solfeggios=array('321','322','323','324');
+	foreach($solfeggios as $solfeggio) {
+		db_delete('students_score')
+			->condition('eid',$solfeggio)
+			->execute();
+		$query=db_select('students_score','t')->condition('t.eid',$solfeggio-20);
+		$query->innerJoin('students_score','s','t.uid=s.uid');
+		$query->condition('s.eid',$solfeggio-10)->fields('t',array('uid'));
+		$query->addExpression($solfeggio,'eid');
+		$query->addExpression('t.score*0.5+s.score*0.5','score');
+		db_insert('students_score')
+			->from($query)
+			->execute();
+	}
 }
