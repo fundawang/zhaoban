@@ -159,7 +159,7 @@ function going_goinglist() {
   	  	  (user_access('administer going')&&!empty($r->department)?'<span class=\'error\'>':'').$r->gname.(user_access('administer going')&&!empty($r->department)?'</span>*':''),
   	  	  '<nobr>'.$r->rname.'</nobr>',
   	  	  (count($exam_names)==1)?$exam_names[0]:'<ul><li>'.implode('</li><li>',$exam_names).'</li></ul>',
-  	  	  _going_datetime_to_string($r->time),
+  	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
   		  $if_has_perm?('<nobr>'.l(t('edit'), "definations/going/edit/$r->gid").'</nobr>'):'',
   		  ($if_has_perm&&($candelete==0))?'<nobr>'.l(t('delete'), "definations/going/delete/$r->gid").'</nobr>':'<nobr><span title="'.t('Cannot delete. Please empty it at first.').'">'.t('delete').'</span></nobr>',
   	  );
