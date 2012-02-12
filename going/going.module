@@ -179,14 +179,14 @@ function going_goinglist_filter($form, $form_state) {
 	$form=array();
 	$options=array(
 		'all' => '- '.t('All').' -',
-		'today' => t('Today').'('.date('Ymd').')',
+		'today' => t('Today').'('.date('n月j日').')',
 	);
 	$query=db_select('vl_going','g');
 	$query->addExpression('SUBSTR(TIME, 1, 8)', 'd');
 	$query->groupBy('d')->orderBy('d');
 	$dates=$query->execute();
 	foreach($dates as $date) {
-		$options[$date->d]=$date->d;
+		$options[$date->d]=intval(substr($date->d,4,2)).t('Month').intval(substr($date->d,6,2)).t('Day');
 	}
 	//var_dump(variable_get('zhaoban_going_list_date_filter_plain','all'));
 	$form['date']=array(
