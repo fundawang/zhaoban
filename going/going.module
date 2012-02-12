@@ -126,7 +126,6 @@ function going_goinglist() {
 	->extend('PagerDefault')->limit(50)
 	->extend('TableSort')
 	->orderByHeader($header);
-  if($is_dep_only) $query=$query->condition('department', $GLOBALS['user']->name);
   $result = $query->execute();
 
   $output = drupal_render(drupal_get_form('going_goinglist_filter'));
@@ -510,12 +509,14 @@ function going_assign_list() {
   );
   
   $query=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'))
-	->fields('g',array('gid','gname','place','time'))
-	->extend('PagerDefault')->limit(25)
+	->fields('g')
 	->extend('TableSort')
 	->orderByHeader($header);
 
-  if($is_dep_only) $query=$query->condition('department', $GLOBALS['user']->name);
+ 
+
+  if(!$is_dep_only) $query->extend('PagerDefault')->limit(25);
+
   $result = $query->execute();
 
   $rows=array();
@@ -534,6 +535,12 @@ function going_assign_list() {
   	  	  	  $tmp_satus='<img src="/misc/watchdog-ok.png"/>';
   	  else
   	  	  $tmp_satus='<img src="/misc/watchdog-error.png"/>';
+  	  
+  	  if($is_dep_only) {
+	  	  $exam_ids=explode(', ', $r->valid_exams);
+	  	  if(db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
+	  	  	  continue;
+  	  }
 
   	  $rows[] = array(
   	  	  $tmp_satus,
