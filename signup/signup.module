@@ -2690,7 +2690,6 @@ function signup_overview_by_profession_detail($prof=NULL) {
 		$query=db_select('vl_profession_place','pp')
 			->condition('pp.examplace',$_COOKIE["examplace"])
 			->condition('pp.pid',$prof)
-			->condition('status','1')
 			->countQuery();
 		if(($query->execute()->fetchField()>0) || ($_COOKIE['examplace']=='110000'))
 			$cookie_examplace="s.examplace='".$_COOKIE['examplace']."'";
