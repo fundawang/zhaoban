@@ -218,11 +218,7 @@ function is_tw_idcardn_validate($idcardn) {
 }
 
 function _is_valid_remote_address() {
-	//if($_SERVER['REMOTE_ADDR']!=='211.71.163.141') return false;
-	{
-	if((strpos($_SERVER['REMOTE_ADDR'], '211.71.171'))===FALSE) return true;
-	else return false;
-	}
-	return true;
+	if((strpos($_SERVER['REMOTE_ADDR'], '10.1.2'))===FALSE) return false;
+	else return true;
 }
 ?>
