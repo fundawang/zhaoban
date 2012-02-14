@@ -2558,8 +2558,6 @@ function signup_search_student($form, $form_state) {
 
 function signup_search_student_submit($form, &$form_state) {
 	$valins="1";
-	if(db_select('students','s')->condition('s.validated','1')->fields('s')->countQuery()->execute()->fetchField()>0)
-		$valins='s.validated=1';
 	
 	unset($form_state['rebuild_info']['haserror']);
 	
