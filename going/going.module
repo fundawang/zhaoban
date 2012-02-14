@@ -777,7 +777,7 @@ function going_assign_students_submit($form, &$form_state) {
 			db_update('students_going')->fields(array(
 				'gid' => arg(3),
 				'gorder' => $i,
-			))->condition('uid',$student)->condition('eid',$exams,'IN')->execute();
+			))->condition('uid',$student)->condition('eid',$exams,'IN')->isNull('gid')->execute();
 			//db_query('UPDATE {students} s SET randnum=rand() WHERE s.uid=\'%s\'',$student);
 			$i++;
 	}
@@ -820,6 +820,8 @@ function going_print_orderlist()
 	$query=db_select('vl_going','g')->fields('g')->condition('g.gid',$gid);
 	$query->innerJoin('vl_room','r','g.place=r.rid');
 	$going=$query->fields('r')->execute()->fetchObject();
+	$exam_ids=explode(', ', $going->valid_exams);
+	$exam_type=db_select('vl_exam','e')->fields('e',array('etype'))->condition('e.eid',$exam_ids[0])->execute()->fetchField();
 	
 	set_time_limit(300);
 
@@ -879,7 +881,8 @@ function going_print_orderlist()
 		$pdf->Cell(41,16,$placename,0,0,'R');
 		
 		$pdf->SetFontSize(20);
-		$pdf->Text(50,8,'中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生考试考试次序表');
+		
+		$pdf->Text(50,8,'中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生考试考试'.($exam_type=='1'?'座次':'次序').'表');
 		$pdf->LN();
 		$pdf->SetFontSize(24);
 		$pdf->SetX(50);
