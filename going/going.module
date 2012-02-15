@@ -92,7 +92,14 @@ function going_menu() {
     'access callback' => 'going_print_orderlist_perm',
     'type' => MENU_CALLBACK,
   );
-  
+  $items['definations/arrange/printscorereport/%'] = array(
+  	'title' => 'Print Scroe Report',
+    'page callback' => 'going_print_score_report',
+    'page arguments' => array(3),
+    'access callback' => 'going_print_orderlist_perm',
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -528,9 +535,13 @@ function going_assign_list() {
   	  	  ->condition('sg.gid',$r->gid)
   	  	  ->countQuery()
   	  	  ->execute()->fetchField();
+  	  $exam_ids=explode(', ', $r->valid_exams);
   	  if($num)
-  	  	  if(going_print_orderlist_perm())
+  	  	  if(going_print_orderlist_perm()) {
   	  	  	  $tmp_satus=l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Order List').'"/>',"definations/arrange/printorderlist/$r->gid", array('html'=>true));
+  	  	  	  if(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exam_ids[0])->execute()->fetchField()=='2')
+  	  	  	  	$tmp_satus.=l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score Report').'"/>',"definations/arrange/printscorereport/$r->gid", array('html'=>true));
+  	  	  }
   	  	  else
   	  	  	  $tmp_satus='<img src="/misc/watchdog-ok.png"/>';
   	  else
@@ -811,9 +822,8 @@ function going_assign_empty_submit($form, &$form_state) {
 		))->condition('gid',arg(3))->execute();
 }
 
-function going_print_orderlist()
+function going_print_orderlist($gid=NULL)
 {
-	$gid=arg(3);
 	require_once(drupal_get_path('module','going').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','going').'/../tcpdf/tcpdf.php');
 	
@@ -1002,6 +1012,133 @@ function going_print_orderlist()
 	
 	//db_query('UPDATE {vl_going} SET regenerated=1 WHERE gid=\'%s\'', $gid);
 
+}
+
+function going_print_score_report($gid=NULL)
+{
+	require_once(drupal_get_path('module','going').'/../tcpdf/config/lang/eng.php');
+	require_once(drupal_get_path('module','going').'/../tcpdf/tcpdf.php');
+	
+	$query=db_select('vl_going','g')->fields('g')->condition('g.gid',$gid);
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$going=$query->fields('r')->execute()->fetchObject();
+	$exam_ids=explode(', ', $going->valid_exams);
+	foreach($exam_ids as $exam_id) {
+		
+	}
+	
+	set_time_limit(300);
+
+	// Extend the TCPDF class to create custom Header and Footer
+	class MYPDF extends TCPDF {
+
+	    //Page header
+	    public function Header() {
+	    	$this->setHeaderMargin(30);
+	    	$this->SetX(10);
+	    	$this->SetY(8);
+	        // Set font
+	        $this->SetFont('droidsansfallback', 'B', 24, '', true);
+	        // Title
+	        $header_titles=explode(',', $this->header_title);
+	        $this->Cell(0, 10, $header_titles[0], 0, false, 'C', 0, '', 0, false, 'M', 'M');
+	        $this->Ln();
+	        $this->SetFont('droidsansfallback', 'B', 15, '', true);
+	        $this->Cell(60, 5, $header_titles[1], 0, false, 'C', 0, '', 0, false, 'M', 'M');
+	        $this->Cell(0, 5, $header_titles[2], 0, false, 'C', 0, '', 0, false, 'M', 'M');
+	        $this->SetFont('droidsansfallback', 'B', 12, '', true);
+	        $this->Ln();
+	    	//$this->SetX(1);
+	    	//$this->SetY(18);
+	        $this->Cell(10, 2, '序号',0, false, 'C');
+	        $this->Cell(30, 2, '准考证号',0, false, 'C');
+	        $this->Cell(25, 2, '姓名',0, false, 'C');
+	        $this->Cell(30, 2, '专业',0, false, 'C');
+	        $this->Cell(35, 2, '成绩 / 排名',0, false, 'C');
+	        $this->Cell(52, 2, '备注',0, false, 'C');
+	        $this->Line(6,32,200,32);
+	    }
+
+	    // Page footer
+	    public function Footer() {
+	        // Position at 15 mm from bottom
+	        $this->SetY(-13);
+	        $this->SetX(5);
+	        //$this->Line(5,198,292,198,array('width'=>0.5));
+	        // Set font
+	        // Page number
+	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
+	        $this->Cell(220,12, '评委签字', 0, false, 'C');
+	    }
+	}
+	// create new PDF document
+	$pdf = new MYPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+	$datetime=intval(substr($going->time,4,2)).'月'.intval(substr($going->time,6,2)).'日 '.intval(substr($going->time,8,2)).':'.intval(substr($going->time,10,2)).' ';
+	$datetime.=db_select('vl_room','r')->condition('r.rid',$going->place)->fields('r',array('rname'))->execute()->fetchField();
+	$pdf->setHeaderData('',0,variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试打分表,'.$datetime.','.$going->gname,'');
+	$pdf->SetProtection(array('modify','copy','extract'));
+
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+
+	// Set font
+	// dejavusans is a UTF-8 Unicode font, if you only need to
+	// print standard ASCII chars, you can use core fonts like
+	// helvetica or times to reduce file size.
+	//$pdf->SetFont('droidsansfallback', 'B', 10, '', true);
+	// set default font subsetting mode
+	$pdf->setFontSubsetting(true);
+
+	$pdf->setPrintHeader(true);
+	$pdf->setPrintFooter(true);
+
+	$pdf->SetMargins(6, 33, 6);
+	$pdf->SetAutoPageBreak(true, 15);
+
+	//set some language-dependent strings
+	$pdf->setLanguageArray($l);
+	
+	$query=db_select('students_going','sg')->condition('sg.gid',$gid);
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->groupBy('s.uid')->fields('s',array('uid','name'))->fields('sg',array('gorder','opus'))->fields('p',array('pname'))->orderBy('sg.gorder');
+
+	$pdf->AddPage();
+	$pdf->SetFillColor(216,216,216);
+	$pdf->SetDrawColor(0,0,0);
+	$pdf->SetLineWidth(0.5);
+	$pdf->SetLineStyle(array('dash'=>2));
+	
+	$results=$query->execute();
+	$pdf->SetFont('droidsansfallback', 'B', 12, '', true);
+	foreach($results as $r) {
+		$pdf->SetFillColor(216,216,216);
+		$pdf->Cell(10,2,$r->gorder, 0, false, 'C',true);
+		$pdf->SetFillColor(255,255,255);
+		$pdf->Cell(30,2,$r->uid, 0, false, 'C',true);
+		$pdf->Cell(25,2,$r->name, 0, false, 'C',true);
+		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
+		$pdf->Cell(40,2,'', 0, false, 'C',true);
+
+		$exams =unserialize($r->opus);
+		foreach($exams as $enum => $evalue) {
+			if($enum=='eadditional') {
+				if($evalue!=='')
+					$t='主试乐器: '.t($evalue);
+				else
+					$t='主试乐器: 钢琴';
+			}
+			else
+				$t='('.(substr($enum,4)).')'.$evalue;
+			$pdf->SetX(140);
+			$pdf->MultiCell(60, 2, $t, 0, 'L',true);
+		}
+		$pdf->Ln();
+		$pdf->Line(6,$pdf->GetY()-2,200,$pdf->GetY()-2);
+	}
+	
+	$pdf->Output('score_report.pdf', 'I');
+	
 }
 
 /*
