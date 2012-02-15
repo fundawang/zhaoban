@@ -1073,7 +1073,7 @@ function going_print_score_report($gid=NULL)
 	}
 	// create new PDF document
 	$pdf = new MYPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-	$datetime=intval(substr($going->time,4,2)).'月'.intval(substr($going->time,6,2)).'日 '.intval(substr($going->time,8,2)).':'.intval(substr($going->time,10,2)).' ';
+	$datetime=intval(substr($going->time,4,2)).'月'.intval(substr($going->time,6,2)).'日 '.intval(substr($going->time,8,2)).':'.substr($going->time,10,2).' ';
 	$datetime.=db_select('vl_room','r')->condition('r.rid',$going->place)->fields('r',array('rname'))->execute()->fetchField();
 	$pdf->setHeaderData('',0,variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试打分表,'.$datetime.','.$going->gname,'');
 	$pdf->SetProtection(array('modify','copy','extract'));
