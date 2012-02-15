@@ -1121,7 +1121,8 @@ function going_print_score_report($gid=NULL)
 		$pdf->Cell(40,2,'', 0, false, 'C',true);
 
 		$exams =unserialize($r->opus);
-		if(count($exams)==1) $pdf->Ln();
+		
+		if(!$exams) $pdf->Ln();
 		else
 		foreach($exams as $enum => $evalue) {
 			if($enum=='eadditional') {
