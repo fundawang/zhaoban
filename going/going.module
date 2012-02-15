@@ -1054,7 +1054,7 @@ function going_print_score_report($gid=NULL)
 	        $this->Cell(30, 2, '准考证号',0, false, 'C');
 	        $this->Cell(25, 2, '姓名',0, false, 'C');
 	        $this->Cell(30, 2, '专业',0, false, 'C');
-	        $this->Cell(35, 2, '排名',0, false, 'C');
+	        $this->Cell(35, 2, '成绩 / 排名',0, false, 'C');
 	        $this->Cell(52, 2, '备注',0, false, 'C');
 	        $this->Line(6,32,200,32);
 	    }
@@ -1118,7 +1118,7 @@ function going_print_score_report($gid=NULL)
 		$pdf->Cell(30,2,$r->uid, 0, false, 'C',true);
 		$pdf->Cell(25,2,$r->name, 0, false, 'C',true);
 		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
-		$pdf->Cell(40,2,'', 0, false, 'C',true);
+		$pdf->Cell(40,2,'/', 0, false, 'C',true);
 
 		$exams =unserialize($r->opus);
 		
