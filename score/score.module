@@ -705,6 +705,11 @@ function score_batch($form, $form_state) {
 		$exams[$r->eid]=$r->ename.$r->elevel;
 	}
 	
+	$scoretypes=array(
+		'score' => t('Score'),
+		'rank' => t('Rank'),
+	);
+	
 	$form['frame']=array(
 		'#type'=>'fieldset',
 		'#title'=>t('Batch import scores'),
@@ -716,6 +721,13 @@ function score_batch($form, $form_state) {
 		'#title'=>t('Select the exam you want to import'),
 		'#options'=>$exams,
 		'#default_value'=>$form_state['values']['eid'],
+		'#required'=>TRUE,
+	);
+	$form['frame']['scoretype']=array(
+		'#type'=>'select',
+		'#title'=>t('Select the score type'),
+		'#options'=>$scoretypes,
+		'#default_value'=>$form_state['values']['scoretype'],
 		'#required'=>TRUE,
 	);
 	$form['frame']['score']=array(
@@ -813,12 +825,21 @@ function score_batch_submit($form, &$form_state) {
 	}
 	
 	foreach($score as $row) {
-		db_insert('students_score')
-			->fields(array(
-				'uid'=>$row[0],
-				'eid'=>$eid,
-				'score'=>trim($row[count($row)-1])
-			))->execute();
+		if($form_values['scoretype']=='rank') {
+			db_update('students_score')
+				->fields(array(
+					'uid'=>$row[0],
+					'eid'=>$eid,
+					'rank'=>trim($row[count($row)-1])
+				))->execute();
+		} else {
+			db_insert('students_score')
+				->fields(array(
+					'uid'=>$row[0],
+					'eid'=>$eid,
+					'score'=>trim($row[count($row)-1])
+				))->execute();
+		}
 	}
 	
 	drupal_set_message(t('!user imported !num students\' score.', array('!user'=>$user->name, '!num'=>count($score))));
@@ -869,8 +890,9 @@ function score_batch_validate($form, $form_state) {
 		if($r==0) { // No such student
 			form_set_error('score', t('There is no such student !uid.', array('!uid'=>$row[0])));
 		} else {
+			$scoretype=$form_values['scoretype'];
 			$caninsert=db_select('students_score','sc')->fields('sc')
-				->condition('sc.uid',$row[0])->condition('sc.eid',$eid)->countQuery()->execute()->fetchField();
+				->condition('sc.uid',$row[0])->condition('sc.eid',$eid)->isNotNull('sc.'.$scoretype)->countQuery()->execute()->fetchField();
 			//$caninsert=db_result(db_query('SELECT score FROM {students_score} sc WHERE sc.uid=\'%s\' AND sc.eid=\'%s\' LIMIT 1', $row[0], $eid));
 			if($caninsert==0) { // Ready to insert
 				if(!is_numeric(trim($row[count($row)-1]))) { // The last entry is not numeric
