@@ -3744,10 +3744,15 @@ function signup_preset_passthrough() {
 	foreach($result as $r) {
 		$n='';
 		$n=db_select('students','s')->fields('s',array('name'))->condition('s.idcard_number',$r->idcard_number)->execute()->fetchField();
+		$query=db_select('students','s')->condition('s.idcard_number',$r->idcard_number);
+		$query->innerJoin('users','u','s.uid=u.name');
+		$query->fields('u',array('uid'));
+		$u=$query->execute()->fetchField();
+		$v=db_select('students','s')->fields('s',array('validated'))->condition('s.idcard_number',$r->idcard_number)->execute()->fetchField();
 		$options[$r->idcard_number]=array(
-			'idnumber' => $r->idcard_number.($n?' ('.$n.')':''),
+			'idnumber' => ($n)?l($r->idcard_number.' ('.$n.')', 'user/'.$u):$r->idcard_number,
 			'profession' => $r->pname,
-			'status' => ($n)?t('Signed Up'):t('Not yet signed up'),
+			'status' => ($n)?(($v)?t('Confirmed'):t('Signed Up, but not confirmed')):t('Not yet signed up'),
 		);
 	}
 	$form['deletenotify']=array(
