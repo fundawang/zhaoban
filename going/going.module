@@ -660,7 +660,7 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 		$query=db_select('students','s')->fields('s',array('randnum','uid'));
 		$query->innerJoin('students_going','sg','s.uid=sg.uid');
 		$query->leftJoin('students_gk','sk','s.uid=sk.uid');
-		$subquery=db_select('students_passthrough','sp')->where('s.idcard_number=sp.idcard_number')->fields('sp');
+		$subquery=db_select('students_passthrough','sp')->fields('sp')->where('s.idcard_number=sp.idcard_number');
 		$query->notExists($subquery);
 		$query=$query->where($citera)->condition('sg.eid',$exam)->isNull('sg.gid')->fields('sk',array('province'));
 		//var_dump($query->__toString());
