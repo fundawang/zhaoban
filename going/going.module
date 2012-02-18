@@ -666,7 +666,7 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 		$query=$query->where($citera)->condition('sg.eid',$exam)->isNull('sg.gid')->fields('sk',array('province'));
 		//var_dump($query->__toString());
 		
-		$subquery=db_select('students_going','sg1')->condition('sg1.uid','sg.uid')->fields('sg1');
+		$subquery=db_select('students_going','sg1')->where('sg1.uid=sg.uid')->fields('sg1');
 		$subquery->innerJoin('vl_going','g1','sg1.gid = g1.gid');
 		$subquery=$subquery->condition('g1.time',$going->time)->condition('g1.gid',$gid,'<>');
 		//var_dump($subquery->__toString());
@@ -885,11 +885,7 @@ function going_print_orderlist($gid=NULL)
 		
 		$pdf->setX(6);
 		$pdf->setY(15);
-		if($going->waiting_room)
-			$placename='候:'.db_select('vl_room','r')->fields('r',array('rname'))->condition('rid',$going->waiting_room)->execute()->fetchField();
-		//db_result(db_query('SELECT rname FROM {vl_room} WHERE rid=\'%s\'', $going->waiting_room));
-		else
-			$placename=$going->rname;
+		$placename=$going->rname;
 		//db_result(db_query('SELECT rname FROM {vl_room} WHERE rid=\'%s\'', $going->place));
 		$pdf->Cell(41,16,$placename,0,0,'R');
 		
