@@ -1418,6 +1418,113 @@ function score_transfer_submit($form, &$form_state) {
   $form_state['redirect']='signup/transfer';
 }
 
+function score_view_admin() {
+	$form=array();
+	
+	// Fetch all exams at first
+	$query=db_select('vl_exam','e')->fields('e',array('eid'));
+	$query->addExpression("CONCAT_WS('', e.ename, e.elevel)", 'exam');
+	$query->innerJoin('vl_research_sec','r','e.uid=r.uid');
+	$query->fields('r',array('uid','rname'));
+	$rdbo=$query->execute();
+	$exams=array();
+	foreach($rdbo as $r) {
+		$exams[]=$r;
+	}
+	
+	$rdbo=db_select('vl_professions','p')->fields('p',array('exams'))->execute();
+	foreach($rdbo as $r) {
+		$t=unserialize($r->exams);
+		foreach($t as $eid=>$w)
+			$weight[$eid]+=$w;
+	}
+	
+	$header=array(
+		array('data'=>t('Examination')),
+		array('data'=>t('Status')),
+	);
+	
+	foreach($exams as $exam) {
+		if($weight[$exam->eid]==0) continue;
+		if(!isset($form[$exam->uid])) {
+			$form[$exam->uid]=array(
+				'#type'=>'fieldset',
+				'#title'=>$exam->rname,
+				'#collapsible'=>TRUE,
+			);
+		}
+		
+		if(db_select('students_going','g')->condition('eid',$exam->eid)->isNotNull('gid')->fields('g')->countQuery()->execute()->fetchField()==0) continue;
+		
+		$query=db_select('students_score','c')->condition('c.eid', $exam->eid)->where('CAST(c.score AS DECIMAL)>0');
+		$query->addExpression('AVG(c.score)');
+		$st[$exam->eid]=$query->execute()->fetchField();
+		if(!isset($st[$exam->uid])) $st[$exam->uid]=1;
+		$st[$exam->uid]*=$st[$exam->eid];
+		$rows[$exam->uid][]=array(
+			$st[$exam->eid]?l($exam->exam, 'score/view/'.$exam->eid):$exam->exam,
+			$st[$exam->eid]?t('The average score of this exam is !num',array('!num'=>sprintf('%.2f',$st[$exam->eid]))):t('Not Uploaded yet'),
+		);
+		unset($form[$exam->uid][$exam->eid]);
+		$output[$exam->uid]=theme('table', array('header'=>$header, 'rows'=>$rows[$exam->uid]));
+		$form[$exam->uid][$exam->uid]=array('#markup'=>$output[$exam->uid]);
+		if(count($rows[$exam->uid])==0) unset($form[$exam->uid]);
+	}
+	
+	foreach(array_keys($rows) as $key) {
+		$output[$key]=theme('table', array('header'=>$header, 'rows'=>$rows[$key]));
+		$form[$key][$key]=array('#markup'=>$output[$key]);
+		if(count($rows[$key])==0) unset($form[$key]);
+	}
+	
+
+	$rdbo=db_select('vl_research_sec','r')->fields('r')->execute();
+	foreach($rdbo as $r) {
+		if(is_null($st[$r->uid]) || $st[$r->uid]==0)
+			$form[$r->uid]['#collapsed'] = TRUE;
+		else $form[$r->uid]['#collapsed'] = FALSE;
+	}
+	
+	return $form;
+}
+
+function score_view_detail($eid) {
+  $query=db_select('vl_exam','e')->condition('eid',$eid);
+  $query->addExpression("CONCAT_WS('',e.ename,e.elevel)");
+  drupal_set_title(t('View Scores').' - '.$query->execute()->fetchField());
+  $header = array(
+  	array('data'=>t('No.')),
+  	array('data' =>t('Student ID'), 'field'=>'s.uid'),
+  	array('data' =>t('Real Name')),
+  	array('data' =>t('Gender'), 'field'=>'s.gender'),
+  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+  	array('data' =>t('Score'), 'field'=>'score_real', 'sort'=>'desc'),
+  );
+  $query=db_select('students','s');
+  $query->innerJoin('users','u','s.uid=u.name');
+  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+  $query->innerJoin('students_score','c','s.uid=c.uid');
+  $query->condition('c.eid',$eid)->fields('s',array('uid','name','gender'))->fields('p',array('pname'));
+  $query->addExpression('c.score*1.0','score_real');
+  $query->addExpression('u.uid','uuid');
+  $query->extend('TableSort')->orderByHeader($header);
+  
+  $rdbo=$query->execute();
+  $i=1;
+  foreach($rdbo as $r) {
+  	  $rows[] = array(
+  	  	$i++,
+  	  	'<nobr>'.l($r->uid, 'user/'.$r->uuid).'</nobr>',
+  	  	'<nobr>'.$r->name.'</nobr>',
+  	  	$r->gender == 1 ? t('Male'): t('Female'),
+  	  	$r->pname,
+  	  	sprintf("%.2f", $r->score_real),
+  	  );
+  }
+
+  return theme('table', array('header'=>$header, 'rows'=>$rows));
+}
+
 /*
 function theme_score_mark_2nd_round($form) {
 	//var_dump($form);
