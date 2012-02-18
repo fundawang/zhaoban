@@ -657,7 +657,7 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 				break;
 		}
 		
-		if($going->cid) $citera .= " AND s.examplace='".$going->cid."'";
+		if($going->cid && substr($exam,0,1)=='1') $citera .= " AND s.examplace='".$going->cid."'";
 		$query=db_select('students','s')->fields('s',array('randnum','uid'));
 		$query->innerJoin('students_going','sg','s.uid=sg.uid');
 		$query->leftJoin('students_gk','sk','s.uid=sk.uid');

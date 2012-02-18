@@ -828,10 +828,8 @@ function score_batch_submit($form, &$form_state) {
 		if($form_values['scoretype']=='rank') {
 			db_update('students_score')
 				->fields(array(
-					'uid'=>$row[0],
-					'eid'=>$eid,
 					'rank'=>trim($row[count($row)-1])
-				))->execute();
+				))->condition('uid',$row[0])->condition('eid',$eid)->execute();
 		} else {
 			db_insert('students_score')
 				->fields(array(
