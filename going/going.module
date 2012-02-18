@@ -555,11 +555,11 @@ function going_assign_list() {
   	  }
 
   	  $rows[] = array(
-  	  	  $tmp_satus,
+  	  	  '<nobr>'.$tmp_satus.'</nobr>',
   	  	  $r->gname,
   	  	  db_select('vl_room', 'r')->fields('r',array('rname'))->condition('r.rid', $r->place)->execute()->fetchField(),
   	  	  $num,
-  	  	  '<nobr>'._going_datetime_to_string($r->time).'</nobr>',
+  	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
   		  '<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>',
   		  '<nobr>'.($num?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>',
   	  );
