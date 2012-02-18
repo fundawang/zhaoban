@@ -182,6 +182,7 @@ function going_goinglist() {
 }
 
 function going_goinglist_filter($form, $form_state) {
+	drupal_add_css(drupal_get_path('module', 'exams') .'/exams.css');
 	$form=array();
 	$options=array(
 		'all' => '- '.t('All').' -',
