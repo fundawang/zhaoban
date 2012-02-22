@@ -1497,7 +1497,18 @@ function score_view_detail($eid) {
   	array('data' =>t('Gender'), 'field'=>'s.gender'),
   	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
   	array('data' =>t('Score'), 'field'=>'score_real', 'sort'=>'desc'),
+	array('data' =>t('Rank'), 'field'=>'rank', 'sort'=>'asc'),
   );
+
+  $query=db_select('students_score','c')->fields('c',array('rank'))->condition('eid',$eid)->orderBy('c.rank','desc')->condition('c.rank','1','<>');
+  $should_show_rank=$query->execute()->fetchField()?1:0;
+
+  if(!$should_show_rank) {
+     unset($header[count($header)-1]);
+  } else {
+     unset($header[count($header)-2]['sort']);
+  }
+
   $query=db_select('students','s');
   $query->innerJoin('users','u','s.uid=u.name');
   $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -1505,6 +1516,7 @@ function score_view_detail($eid) {
   $query->condition('c.eid',$eid)->fields('s',array('uid','name','gender'))->fields('p',array('pname'));
   $query->addExpression('c.score*1.0','score_real');
   $query->addExpression('u.uid','uuid');
+  $query->addExpression('ifnull(c.rank,9999)*1','rank');
   $query->extend('TableSort')->orderByHeader($header);
   
   $rdbo=$query->execute();
@@ -1518,6 +1530,7 @@ function score_view_detail($eid) {
   	  	$r->pname,
   	  	sprintf("%.2f", $r->score_real),
   	  );
+	  if($should_show_rank) $r->rank==9999?'':$rows[count($rows)-1][]=$r->rank;
   }
 
   return theme('table', array('header'=>$header, 'rows'=>$rows));
@@ -2753,6 +2766,7 @@ function score_cron() {
 			->execute();
 		$query=db_select('students_going','sg')->fields('sg',array('uid','eid'))->condition('sg.uid',$r->uid)->orderBy('uid')->orderBy('eid');
 		$query->addExpression('100','score');
+		$query->addExpression('1','rank');
 		db_insert('students_score')
 			->from($query)
 			->execute();

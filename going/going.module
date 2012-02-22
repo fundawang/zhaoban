@@ -673,7 +673,7 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 		
 		$query->notExists($subquery);
 		//var_dump($query->__toString());
-		$query=$query->extend('TableSort')->orderByHeader($header)->orderRandom();
+		$query=$query->extend('TableSort')->orderByHeader($header)->orderRandom()->range(1,70);
 		
 		$rdbo=$query->execute();
 		foreach($rdbo as $r) {
@@ -916,6 +916,7 @@ function going_print_orderlist($gid=NULL)
 		$students=$query->execute();
 		//$students=db_query('SELECT sg.gorder as gorder, s.uid AS uid, s.name as cname, p.pname as profession FROM {students_going} sg INNER JOIN {students} s ON s.uid=sg.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid WHERE sg.gid=\'%s\' ORDER BY gorder', $gid);
 		//while($student=db_fetch_object($students)) {
+		$i=1;
 		foreach($students as $student) {
 			if($student->gorder>31)
 				$pdf->setX(110);
@@ -931,7 +932,7 @@ function going_print_orderlist($gid=NULL)
 			}
 			
 			$pdf->SetTextColor(255,255,255);
-			$pdf->Cell(10,8,$student->gorder,1,0,'C',true);
+			$pdf->Cell(10,8,$i++,1,0,'C',true);
 			$pdf->SetTextColor(0,0,0);
 			$pdf->Cell(23,8,$student->uid,0,0,'C');
 			$pdf->Cell(18,8,$student->name,0,0,'C');
