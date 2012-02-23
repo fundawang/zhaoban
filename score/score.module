@@ -826,7 +826,7 @@ function score_batch_submit($form, &$form_state) {
 	
 	foreach($score as $row) {
 		if($form_values['scoretype']=='rank') {
-			if(db_select('students_score','c')->condition('c.uid',$row[0])->condition('c.eid',$eid)->fields('c')->countQuery()->execute()->fetchField()>1)
+			if(db_select('students_score','c')->condition('c.uid',$row[0])->condition('c.eid',$eid)->fields('c')->countQuery()->execute()->fetchField()>=1)
 			  db_update('students_score')
 				->fields(array(
 					'rank'=>trim($row[count($row)-1])
