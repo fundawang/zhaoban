@@ -14,7 +14,7 @@ function score_schema() {
 			'eid' => array('type' => 'varchar', 'length' => '3', 'not null' => TRUE),
 			'score' => array('type' => 'varchar', 'length' => '10', 'not null' => FALSE),
 			'teacher' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
-			'rank' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
+			'rank' => array('type' => 'varchar', 'length' => '10', 'not null' => FALSE),
 		),
 		'indexes' => array(
 			'eid' => array('eid'),
