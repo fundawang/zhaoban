@@ -1517,7 +1517,7 @@ function score_view_detail($eid) {
   $query->addExpression('c.score*1.0','score_real');
   $query->addExpression('u.uid','uuid');
   $query->addExpression('ifnull(c.rank,9999)*1','rank');
-  $query->extend('TableSort')->orderByHeader($header)->orderBy('score_real');
+  $query->extend('TableSort')->orderByHeader($header)->orderBy('score_real','desc');
   
   $rdbo=$query->execute();
   $i=1;
