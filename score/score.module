@@ -2774,7 +2774,7 @@ function score_cron() {
 			->execute();
 		$query=db_select('students_going','sg')->fields('sg',array('uid','eid'))->condition('sg.uid',$r->uid)->orderBy('uid')->orderBy('eid');
 		$query->addExpression('100','score');
-		$query->addExpression('0.01','rank');
+		$query->addExpression('1','rank');
 		db_insert('students_score')
 			->from($query)
 			->execute();
