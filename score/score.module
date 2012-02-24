@@ -2782,7 +2782,7 @@ function score_cron() {
 			->fields(array(
 				'uid' => $r->uid,
 				'total_score' => 100,
-				'rank' => 1,
+				'rank' => 0.01,
 			))->execute();
 	}
 	
