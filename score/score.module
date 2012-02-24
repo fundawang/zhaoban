@@ -1536,7 +1536,7 @@ function score_view_detail($eid) {
   	  	'<nobr>'.$r->name.'</nobr>',
   	  	$r->gender == 1 ? t('Male'): t('Female'),
   	  	$r->pname,
-  	  	($r->score_real===NULL)?sprintf("%.2f", $r->score_real):'',
+  	  	($r->score_real===NULL)?'':sprintf("%.2f", $r->score_real),
   	  );
 	  if($should_show_rank) $r->rank==9999?'':$rows[count($rows)-1][]=$r->rank;
   }
