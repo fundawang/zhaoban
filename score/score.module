@@ -1619,7 +1619,12 @@ function score_prepare_3rd_detail($prof=NULL) {
 			}
 		}
     }
-	$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+    
+    if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')) {
+		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+	} else {
+		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'asc');
+	}
 	$header[]=array('data' =>t('Personnel record'), 'field'=>'sc.personnel_record_at');
 
 	$rows=array();
