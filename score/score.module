@@ -1636,7 +1636,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 		if($weight!=0||substr($eid,0,1)=='3') {
 			$squery=db_select('students_score','e')->condition('e.eid',$eid);
 			$squery->addExpression('MIN(IFNULL(e.rank,0))');
-			$should_use_rank=$squery->execute()->fetchField()==0;
+			$should_use_rank=!$squery->execute()->fetchField();
 			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid');
 			$query->condition('e'.$eid.'.eid',$eid);
 			$query->addExpression('e'.$eid.'.'.($should_use_rank?'rank':'score'),'e'.$eid);
