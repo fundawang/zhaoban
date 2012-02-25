@@ -1549,7 +1549,7 @@ function score_prepare_3rd_overview() {
 		array('data'=>t('Profession'), 'field'=>'p.pid', 'sort'=>'asc'),
 		array('data'=>t('People (%)'), 'field'=>'num'),
 	);
-	$tablesort = tablesort_sql($header);
+	//$tablesort = tablesort_sql($header);
 	
 	$total_students=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1)->countQuery()->execute()->fetchField();
 	//$total_students=db_result(db_query('SELECT count(*) FROM {students} s WHERE =1'));
