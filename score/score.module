@@ -1574,6 +1574,7 @@ function score_prepare_3rd_overview() {
 function score_prepare_3rd_detail($prof=NULL) {
 	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
     $profession_exams = unserialize($profession->exams);
+    drupal_set_title(t('Prepare for the 3rd round students').' - '.$profession->pname;
     $output .= '<div class=\'messages\'>';
     $output .= '<p>'.t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
 	$tmp = $profession->memo;
@@ -1675,7 +1676,6 @@ function score_prepare_3rd_detail($prof=NULL) {
 	if(count($rows)==0) return '';
 	*/
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-	//drupal_set_title(t('Prepare for the 3rd round students').' - '.db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\'', $profession)));
 	return $output;
 }
 
