@@ -1555,9 +1555,9 @@ function score_prepare_3rd_overview() {
 	//$total_students=db_result(db_query('SELECT count(*) FROM {students} s WHERE =1'));
 	$query=db_select('students','s')->condition('s.pass_round1_major',1);
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->fields('p',array('pid','pname'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);;
+	$query->fields('p',array('pid','pname'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);
 	$query->addExpression('count(s.*)','num');
-	$rdb=$query->execute();
+	$rdbo=$query->execute();
 	//$rdbo=db_query('SELECT p.pid, p.pname, count(*) AS num FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid WHERE s.pass_round1_major=1 '.$sql_department_insert.' GROUP BY p.pid '.$tablesort);
 	$rows=array();
 	foreach($rdbo as $r) //while($r=db_fetch_object($rdbo))
