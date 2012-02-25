@@ -1642,7 +1642,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 				$squery->addExpression('MIN(IFNULL(e.rank,0))');
 				$should_use_rank=$squery->execute()->fetchField();
 			}
-			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid AND e.eid='.$eid);
+			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid AND e'.$eid.'.eid='.$eid);
 			$query->addExpression('e'.$eid.'.'.($should_use_rank?'rank':'score'),'e'.$eid);
 			if($weight) $totals[]="e$eid.".($should_use_rank?'rank':'score')."*$weight";
 		}
