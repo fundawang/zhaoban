@@ -1601,7 +1601,6 @@ function score_prepare_3rd_detail($prof=NULL) {
 		array('data'=>t('Gender'), 'field'=>'s.gender'),
 	);
 	
-	$rows=array();
     foreach($profession_exams as $eid => $eweight) {
 		if($eweight!=0||substr($eid,0,1)=='3') {
 			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
@@ -1620,50 +1619,27 @@ function score_prepare_3rd_detail($prof=NULL) {
 			}
 		}
     }
-	unset($header[1]['sort']);
 	$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
-	
 	$header[]=array('data' =>t('Personnel record'), 'field'=>'sc.personnel_record_at');
 
-	/*
-	$exams=unserialize(db_result(db_query('SELECT exams FROM {vl_professions} WHERE pid=\'%s\'', $profession)));
-	foreach($exams as $exam=>$weight) {
-		if($weight!=0||substr($exam,0,1)=='3') {
-			$header[]=array('data'=>db_result(db_query('SELECT CONCAT(ename, IFNULL(elevel, \'\')) FROM {vl_exam} WHERE eid=\'%s\'', $exam)), 'field'=>'e'.$exam.'.score');
-			if(in_array($exam, array(321,322,323,324))) {
-				$header[count($header)-1]['data'].='<br/>(';
-				$header[count($header)-1]['data'].=db_result(db_query('SELECT CONCAT(ename, IFNULL(elevel, \'\')) FROM {vl_exam} WHERE eid=\'%s\'', str_replace('32','30',$exam)));
-				$header[count($header)-1]['data'].='/';
-				$header[count($header)-1]['data'].=db_result(db_query('SELECT CONCAT(ename, IFNULL(elevel, \'\')) FROM {vl_exam} WHERE eid=\'%s\'', str_replace('32','31',$exam)));
-				$header[count($header)-1]['data'].=')';
-			}
-		}
-	}
-	unset($header[1]['sort']);
-	$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
-	
-	$header[]=array('data' =>t('Personnel record'), 'field'=>'sc.personnel_record_at');
-
-	
 	$rows=array();
-	$tablesortsql=tablesort_sql($header);
-	//var_dump($tablesortsql);
 	
-	$sql="SELECT s.uid, s.ucategory, s.name, s.gender, sc.personnel_record_at";
-	$sql_=" FROM {students} s LEFT JOIN {students_contact} sc ON s.uid=sc.uid";
-	$sql__=" WHERE s.profession_major='$profession' AND s.pass_round1_major=1";
+	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender'))->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
+	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
+	$query->fields('sc',array('personnel_record_at'));
+	
 	$totals=array();
-	ksort($exams);
-	foreach($exams as $exam=>$weight) {
-		if($weight!=0||substr($exam,0,1)=='3') {
-			$totals[]="e$exam.score*$weight";
-			$sql.=", e$exam.score AS e$exam";
-			$sql_.=" LEFT JOIN {students_score} e$exam ON s.uid=e$exam.uid AND e$exam.eid='$exam'";
-			//$sql__.=" AND e$exam.eid='$exam'";
+	foreach($profession_exams as $eid=>$weight) {
+		if($weight!=0||substr($eid,0,1)=='3') {
+			$totals[]="e$eid.score*$weight";
+			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid');
+			$query->condition('e'.$eid.'.eid',$eid);
+			$query->addExpression('IFNULL(e'.$eid.'.rank, e'.$eid.'.score)','e'.$eid);
 		}
 	}
-	$sql.=','.implode('+', $totals).' AS total_score '.$sql_.$sql__.$tablesortsql.', s.uid ASC';
-	//var_dump($sql);
+	$query->addExpression(implode('+', $totals), 'total_score');;
+	$query->extend('TableSort')->orderByHeader($header);
+	var_dump($query->__toString()); /*
 	$rdbo=db_query($sql);
 	$i=1;
 	while($r=db_fetch_array($rdbo)) {
