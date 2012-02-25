@@ -1544,6 +1544,36 @@ function score_view_detail($eid) {
   return theme('table', array('header'=>$header, 'rows'=>$rows));
 }
 
+function score_prepare_3rd_overview() {
+	$header=array(
+		array('data'=>t('Profession'), 'field'=>'p.pid', 'sort'=>'asc'),
+		array('data'=>t('People (%)'), 'field'=>'num'),
+	);
+	$tablesort = tablesort_sql($header);
+	
+	$total_students=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1)->countQuery()->execute()->fetchField();
+	//$total_students=db_result(db_query('SELECT count(*) FROM {students} s WHERE =1'));
+	$query=db_select('students','s')->condition('s.pass_round1_major',1);
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->fields('p',array('pid','pname'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);;
+	$query->addExpression('count(s.*)','num');
+	$rdb=$query->execute();
+	//$rdbo=db_query('SELECT p.pid, p.pname, count(*) AS num FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid WHERE s.pass_round1_major=1 '.$sql_department_insert.' GROUP BY p.pid '.$tablesort);
+	$rows=array();
+	foreach($rdbo as $r) //while($r=db_fetch_object($rdbo))
+	{
+		$rows[]=array(
+			l($r->pname, 'score/prepare3rd/'.$r->pid),
+			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+		);
+	}
+	
+	$output = t('There are currently !num students marked as being enrolled into the 2nd round examination.', array('!num'=>$total_students));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	
+	return $output;
+}
+
 /*
 function theme_score_mark_2nd_round($form) {
 	//var_dump($form);
