@@ -1633,10 +1633,10 @@ function score_prepare_3rd_detail($prof=NULL) {
 	$totals=array();
 	foreach($profession_exams as $eid=>$weight) {
 		if($weight!=0||substr($eid,0,1)=='3') {
-			$totals[]="e$eid*$weight";
 			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid');
 			$query->condition('e'.$eid.'.eid',$eid);
-			$query->addExpression('IFNULL(e'.$eid.'.rank, e'.$eid.'.score)','e'.$eid);
+			$eee=$query->addExpression('IFNULL(e'.$eid.'.rank, e'.$eid.'.score)','e'.$eid);
+			$totals[]="$eee*$weight";
 		}
 	}
 	$query->addExpression(implode('+', $totals), 'total_score');;
