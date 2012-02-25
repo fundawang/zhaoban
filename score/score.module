@@ -1672,7 +1672,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 			}
 		}
 		$rows[count($rows)-1][]=number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,'');
-		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.uid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
+		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
 	/*
 	$rdbo=db_query($sql);
