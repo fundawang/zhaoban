@@ -1595,13 +1595,36 @@ function score_prepare_3rd_detail($prof=NULL) {
 	
 	$header=array(
 		array('data'=>t('No.')),
-		array('data'=>t('Student ID'), 'field'=>'s.uid', 'sort'=>'asc'),
+		array('data'=>t('Student ID'), 'field'=>'s.uid'),
 		array('data'=>t('Real Name')),
 		array('data'=>' '),
 		array('data'=>t('Gender'), 'field'=>'s.gender'),
 	);
 	
 	$rows=array();
+    foreach($profession_exams as $eid => $eweight) {
+		if($weight!=0||substr($exam,0,1)=='3') {
+			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
+			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
+			$header[]=array('data'=>$query->execute()->fetchField(), 'field'=>'e'.$exam.'.score');
+			if(in_array($exam, array(321,322,323,324))) {
+				$header[count($header)-1]['data'].='<br/>(';
+				$query=db_select('vl_exam','e')->condition('e.eid',str_replace('32','30',$exam));
+				$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
+				$header[count($header)-1]['data'].=$query->execute()->fetchField();
+				$header[count($header)-1]['data'].='/';
+				$query=db_select('vl_exam','e')->condition('e.eid',str_replace('32','31',$exam));
+				$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
+				$header[count($header)-1]['data'].=$query->execute()->fetchField();
+				$header[count($header)-1]['data'].=')';
+			}
+		}
+    }
+	unset($header[1]['sort']);
+	$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+	
+	$header[]=array('data' =>t('Personnel record'), 'field'=>'sc.personnel_record_at');
+
 	/*
 	$exams=unserialize(db_result(db_query('SELECT exams FROM {vl_professions} WHERE pid=\'%s\'', $profession)));
 	foreach($exams as $exam=>$weight) {
