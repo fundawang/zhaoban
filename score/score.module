@@ -1626,7 +1626,9 @@ function score_prepare_3rd_detail($prof=NULL) {
 	
 	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender'))->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
+	$query->innerJoin('users','u','s.uid=u.name');
 	$query->fields('sc',array('personnel_record_at'));
+	$query->addExpression('u.uid','uuid');
 	
 	$totals=array();
 	foreach($profession_exams as $eid=>$weight) {
@@ -1639,7 +1641,20 @@ function score_prepare_3rd_detail($prof=NULL) {
 	}
 	$query->addExpression(implode('+', $totals), 'total_score');;
 	$query->extend('TableSort')->orderByHeader($header);
-	var_dump($query->__toString()); /*
+	var_dump($query->__toString());
+	$rdbo=$query->execute();
+	$i=1;
+	foreach($rdbo as $r) {
+		$rows[]=array(
+			$i++,
+			l($r->uid, 'user/'.$r->uuid),
+			$r->name,
+			'',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			//$r['province']===NULL?t('Our own student'):db_result(db_query('SELECT p.simplified_name FROM {vl_province} p WHERE p.pid=\'%s\'',$r['province'])),
+		);
+	}
+	/*
 	$rdbo=db_query($sql);
 	$i=1;
 	while($r=db_fetch_array($rdbo)) {
