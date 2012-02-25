@@ -1644,6 +1644,8 @@ function score_prepare_3rd_detail($prof=NULL) {
 				$should_use_rank=false;
 			} else {
 				$squery=db_select('students_score','e')->condition('e.eid',$eid);
+				$squery->innerJoin('students','s','e.uid=s.uid');
+				$squery->condition('s.pass_round1_major',1);
 				$squery->addExpression('MIN(IFNULL(e.rank,0))');
 				$should_use_rank=$squery->execute()->fetchField();
 			}
