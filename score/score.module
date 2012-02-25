@@ -1603,7 +1603,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 	
 	$rows=array();
     foreach($profession_exams as $eid => $eweight) {
-		if($weight!=0||substr($eid,0,1)=='3') {
+		if($eweight!=0||substr($eid,0,1)=='3') {
 			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
 			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
 			$header[]=array('data'=>$query->execute()->fetchField(), 'field'=>'e'.$eid.'.score');
