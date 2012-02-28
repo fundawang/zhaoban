@@ -1462,13 +1462,15 @@ function score_view_admin() {
 		
 		if(db_select('students_going','g')->condition('eid',$exam->eid)->isNotNull('gid')->fields('g')->countQuery()->execute()->fetchField()==0) continue;
 		
+		$query=db_select('students_score','c')->condition('c.eid', $exam->eid);
+		$num=$query->fields('c')->countQuery()->execute()->fetchField();
 		$query=db_select('students_score','c')->condition('c.eid', $exam->eid)->where('CAST(c.score AS DECIMAL)>0');
 		$query->addExpression('AVG(c.score)');
 		$st[$exam->eid]=$query->execute()->fetchField();
 		if(!isset($st[$exam->uid])) $st[$exam->uid]=1;
 		$st[$exam->uid]*=$st[$exam->eid];
 		$rows[$exam->uid][]=array(
-			$st[$exam->eid]?l($exam->exam, 'score/view/'.$exam->eid):$exam->exam,
+			$num?l($exam->exam, 'score/view/'.$exam->eid):$exam->exam,
 			$st[$exam->eid]?t('The average score of this exam is !num',array('!num'=>sprintf('%.2f',$st[$exam->eid]))):t('Not Uploaded yet'),
 		);
 		unset($form[$exam->uid][$exam->eid]);
