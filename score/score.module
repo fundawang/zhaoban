@@ -1681,6 +1681,11 @@ function score_prepare_3rd_detail($prof=NULL) {
 				'rank' => $i,
 			))->execute();
 		}
+		// FIXME: HACKAGE FOR CELLA
+		if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+			if($r['total_score']==0) continue;
+		}
+		// FIXME: HACKAGE FOR CELLA
 		$rows[]=array(
 			$i++,
 			l($r['uid'], 'user/'.$r['uuid']),
