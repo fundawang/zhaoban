@@ -1631,7 +1631,19 @@ function score_prepare_3rd_detail($prof=NULL) {
 
 	$rows=array();
 	
-	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender'))->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
+	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender'));
+	// FIXME: HACK FOR CELLA
+	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+		$query->condition('s.validated',1);
+		if($prof=='D603' || $prof=='D716') {
+			$query->where("s.profession_major='D603' OR s.profession_major='D716'");
+		} else if($prof=='D604' || $prof=='D717') {
+			$query->where("s.profession_major='D604' OR s.profession_major='D717'");
+		}
+	} else {
+		$query->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
+	}
+	// FIXME: HACK FOR CELLA
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->fields('sc',array('personnel_record_at'));
