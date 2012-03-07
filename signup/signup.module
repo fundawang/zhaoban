@@ -3656,8 +3656,8 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	        // Set font
 	        // Page number
 	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
-	        $this->Cell(30, 12, date('Y年n月d日'));
-	        $this->Cell(220,12, '院校名称:10045中央音乐学院    考试地点:中央音乐学院   注:我院面向全国招生，文理兼收，不做分省计划', 0, false, 'C');
+	        $this->Cell(30, 12, date('Y年n月j日'));
+	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其全国排名，作为录取依据', 0, false, 'C');
 	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
 	    }
 	}
@@ -3715,7 +3715,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$pdf->Cell(13,2,$r->gb_pid, 0, false, 'L');
 		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
 		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
-		$pdf->Cell(12,2,number_format($r->total_score,2));
+		$pdf->Cell(12,2,$r->total_score==0?('['.$r->rank.']'):number_format($r->total_score,2));
 		//$pdf->Cell(12,2,'100.00');
 		$pdf->Cell(10,2,$r->years, 0, false, 'C');
 		$pdf->Cell(20,2,$r->name_simp);

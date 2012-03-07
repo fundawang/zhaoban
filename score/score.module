@@ -1587,7 +1587,6 @@ function score_prepare_3rd_detail($prof=NULL) {
     ksort($profession_exams);
     foreach($profession_exams as $eid => $eweight){
     	$exam = db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
-        //$exam = db_fetch_object(db_query('SELECT * from {vl_exam} e WHERE e.eid=\'%s\'',$eid));
         if ($eweight)
                 $edata .= $exam->ename.$exam->elevel.'&times;'.sprintf('%d%%',$eweight*100).'+';
     }
@@ -1708,45 +1707,189 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$rows[count($rows)-1][]=number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,'');
 		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
-	/*
-	$rdbo=db_query($sql);
-	$i=1;
-	while($r=db_fetch_array($rdbo)) {
-		if(strpos($tablesortsql,'total_score DESC') !== false) {
-			db_query('DELETE FROM {students_total_score} WHERE uid=\'%s\'', $r['uid']);
-			db_query('INSERT INTO {students_total_score}(uid, total_score, rank) VALUES (\'%s\',\'%s\',\'%s\')', $r['uid'], $r['total_score']>100?100:$r['total_score'], $i);
-		}
-		$rows[]=array(
-			$i++,
-			l($r['uid'], 'user/'.db_result(db_query('SELECT u.uid FROM {users} u WHERE u.name=\'%s\'', $r[uid]))),
-			$r['name'],
-			'',
-			$r['gender'] == 1 ? t('Male'): t('Female'),
-			//$r['province']===NULL?t('Our own student'):db_result(db_query('SELECT p.simplified_name FROM {vl_province} p WHERE p.pid=\'%s\'',$r['province'])),
-		);
-		$scores=array_values($r);
-		$k=4;
-		foreach($exams as $exam=>$weight) {
-			if($weight!=0||substr($exam,0,1)=='3') {
-				$rows[count($rows)-1][]=($exam=='350')?(number_format($r['e'.$exam], 0, '.', '')):(($r['e'.$exam]===NULL)?('0.00'):(number_format($r['e'.$exam], 2, '.', '')));
-				if(in_array($exam, array(321,322,323,324)) && $r['e'.$exam]) {
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='(';
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format(db_result(db_query('SELECT sc.score FROM {students_score} sc WHERE eid=\'%s\' AND uid=\'%s\'', str_replace('32','30',$exam), $r['uid'])), 1);
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='/';
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format(db_result(db_query('SELECT sc.score FROM {students_score} sc WHERE eid=\'%s\' AND uid=\'%s\'', str_replace('32','31',$exam), $r['uid'])), 2);
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=')';
-				}
-			}
-		}
-		$rows[count($rows)-1][]=number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,'');
-		$rows[count($rows)-1][]=$r['ucategory']<>'1'?db_result(db_query('SELECT st.name FROM {students} s INNER JOIN {vl_student_type} st WHERE s.ucategory=st.stid AND s.uid=\'%s\'', $r['uid'])):$r['personnel_record_at'];
-	}
-	if(count($rows)==0) return '';
-	*/
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 	return $output;
 }
 
+function score_mark_3rd_round_list_check() {
+	$r=db_select('students','s')->condition('pass_round1_major',0,'>')->fields('s')->countQuery()->execute()->fetchField();
+	return user_access('mark 3rd round students') && $r;
+}
+
+function score_mark_3rd_round_list() {
+	$header=array(
+		array('data'=>t('Department')),
+		array('data'=>t('Profession')),
+		array('data'=>t('Mainland students (In/Out)')),
+		array('data'=>t('Students out of mainland (In/Out)')),
+	);
+
+	$rows=array();
+	$query=db_select('vl_professions','p')->fields('p',array('pid','pname','did'))->orderBy('p.pid');
+	$query->innerJoin('vl_department','d','p.did=d.did');
+	$query->fields('d',array('dname'));
+	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1)->where('s.profession_major=p.pid');
+	$query->exists($subquery);
+	$rdbo=$query->execute();
+	
+	while($r=$rdbo->fetchObject())
+	{
+		$did=$r->did;
+		$mainland_in=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1)->condition('s.pass_round3_major',10)->fields('s')->countQuery()->execute()->fetchField();
+		$mainland_out=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1)->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();
+		$outmainland_in=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1,'<>')->condition('s.pass_round3_major',10)->fields('s')->countQuery()->execute()->fetchField();
+		$outmainland_out=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1,'<>')->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();
+		$rows[]=array(
+			$r->dname,
+			l($r->pname, 'signup/markround3/'.$r->pid),
+			$mainland_in.' / '.$mainland_out,
+			$outmainland_in.' / '.$outmainland_out,
+		);
+		$tot_mainland_in+=$mainland_in;
+		$tot_mainland_out+=$mainland_out;
+		$tot_outmainland_in+=$outmainland_in;
+		$tot_outmainland_out+=$outmainland_out;
+	}
+	$output = t('There are !num mainland students marked as being determined enrolled into round3, while !num_2 marked as to be determined.',array(
+		'!num'=>db_select('students','s')->fields('s')->condition('s.ucategory',1)->condition('s.pass_round3_major',10)->countQuery()->execute()->fetchField(),
+		'!num_2'=>db_select('students','s')->fields('s')->condition('s.ucategory',1)->condition('s.pass_round3_major',1)->countQuery()->execute()->fetchField(),
+	));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+
+	return $output;
+}
+
+function score_mark_3rd_round_check() {
+	global $user;
+	return $user->uid==3 || $user->uid==1;
+}
+
+function score_mark_3rd_round($form, $form_state, $prof) {
+	drupal_set_title(t('Mark the 3rd round student').' -  '.db_select('vl_professions','p')->condition('p.pid',$prof)->fields('p',array('pname'))->execute()->fetchField());
+	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
+	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
+    $profession_exams = unserialize($profession->exams);
+
+	$header=array(
+		array('data'=>t('No.')),
+		array('data'=>t('Student ID'), 'field'=>'s.uid'),
+		array('data'=>t('Real Name')),
+		array('data'=>t('Gender'), 'field'=>'s.gender'),
+		array('data'=>t('Current status'),'field'=>'s.pass_round3_major'),
+	);
+	
+    foreach($profession_exams as $eid => $eweight) {
+		if($eweight!=0||substr($eid,0,1)=='3') {
+			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
+			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
+		}
+    }
+    
+    if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'asc');
+	} else {
+		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+	}
+
+	$rows=array();
+	
+	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','pass_round3_major'));
+	// FIXME: HACK FOR CELLA
+	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+		$query->condition('s.validated',1);
+		if($prof=='D603' || $prof=='D716') {
+			$query->where("s.profession_major='D603' OR s.profession_major='D716'");
+		} else if($prof=='D604' || $prof=='D717') {
+			$query->where("s.profession_major='D604' OR s.profession_major='D717'");
+		}
+	} else {
+		$query->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
+	}
+	// FIXME: HACK FOR CELLA
+	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->fields('sc',array('personnel_record_at'));
+	$query->addExpression('u.uid','uuid');
+	
+	
+	$totals=array();
+	foreach($profession_exams as $eid=>$weight) {
+		
+		if($weight!=0||substr($eid,0,1)=='3') {
+			if(substr($eid,0,1)=='3') {
+				$should_use_rank=false;
+			} else {
+				$squery=db_select('students_score','e')->condition('e.eid',$eid);
+				$squery->innerJoin('students','s','e.uid=s.uid');
+				$squery->condition('s.pass_round1_major',1);
+				$squery->addExpression('MIN(IFNULL(e.rank,0))');
+				$should_use_rank=$squery->execute()->fetchField();
+			}
+			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid AND e'.$eid.'.eid='.$eid);
+			$query->addExpression('e'.$eid.'.'.($should_use_rank?'rank':'score'),'e'.$eid);
+			if($weight) $totals[]="e$eid.".($should_use_rank?'rank':'score')."*$weight";
+		}
+	}
+	$query->addExpression(implode('+', $totals), 'total_score');;
+	$query->extend('TableSort')->orderByHeader($header);
+	$rdbo=$query->execute();
+	$i=1;
+	while($r=$rdbo->fetchAssoc()) {
+		if(count($_GET)==1) {
+			db_delete('students_total_score')->condition('uid',$r['uid'])->execute();
+			db_insert('students_total_score')->fields(array(
+				'uid' => $r['uid'],
+				'total_score' => (strpos($query->__toString(), '.rank'))?NULL:($r['total_score']>100?100:$r['total_score']),
+				'rank' => $i,
+			))->execute();
+		}
+		// FIXME: HACKAGE FOR CELLA
+		if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+			if($r['total_score']==0) continue;
+		}
+		// FIXME: HACKAGE FOR CELLA
+		$rows[$r['uid']]=array(
+			$i++,
+			l($r['uid'], 'user/'.$r['uuid']),
+			$r['name'],
+			$r['gender'] == 1 ? t('Male'): t('Female'),
+			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined'):t('Determined')):t('None'),
+			number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+		);
+		
+	}
+	//$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$form['students']=array(
+	    '#type' => 'tableselect',
+	    '#header' => $header,
+	    '#options' => $rows,
+	    '#attributes' => array('class'=>array('assign_students')),
+	    '#empty' => t('No scores to empty.'),
+	);
+	$form['status']=array(
+		'#type'=>'select',
+		'#title'=>t('Set current status'),
+		'#required'=>true,
+		'#options'=>array(
+			0=>t('None'),
+			1=>t('To be determined'),
+			10=>t('Determined'),
+		),
+		'#prefix'=>'<div class="container-inline">',
+		'#suffix'=>'</div>',
+	);
+	$form['submit'] = array('#type'=>'submit', '#value'=>t('Submit'));
+	return $form;
+}
+
+function score_mark_3rd_round_submit($form, $form_state) {
+	$students= array_filter($form_state['values']['students']);
+	foreach($students as $uid=>$u) {
+		db_update('students')->condition('uid',$uid)->fields(array(
+			'pass_round3_major'=>$form_state['values']['status']
+		))->execute();
+	}
+}
 /*
 function theme_score_mark_2nd_round($form) {
 	//var_dump($form);
@@ -2046,10 +2189,6 @@ function score_prepare_3rd_detail($profession=NULL) {
 		return $output;
 }
 
-function score_mark_3rd_round_list_check() {
-	$r=db_result(db_query('SELECT count(*) FROM {students} WHERE pass_round1_major>0'));
-	return user_access('mark 3rd round students') && $r;
-}
 
 function score_mark_3rd_round_list() {
 		$header=array(
