@@ -3130,11 +3130,11 @@ function score_cron() {
 		$query->addExpression(implode('+', $totals), 'total_score');;
 		$sdbo=$query->execute();
 		foreach($sdbo as $s) {
-			//var_dump($s);
-			db_delete('students_total_score')->condition('uid',$s->uid)->execute();
+			$total_score=(strpos($query->__toString(), '.rank'))?$s->total_score*(-1):($s->total_score>100?100:$s->total_score);
+			db_delete('students_total_score')->condition('uid',$s->uid)->condition('total_score', $total_score, '<>')->execute();
 			db_insert('students_total_score')->fields(array(
 				'uid' => $s->uid,
-				'total_score' => (strpos($query->__toString(), '.rank'))?$s->total_score*(-1):($s->total_score>100?100:$s->total_score),
+				'total_score' => $total_score,
 			))->execute();
 		}
 		$students=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->execute();
