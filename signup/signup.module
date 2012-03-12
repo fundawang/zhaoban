@@ -3254,11 +3254,13 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
   $query->leftJoin('students_contact','c','s.uid=c.uid');
   $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
   $query->innerJoin('users','u','s.uid=u.name');
+  $query->innerJoin('students_total_score','ts','ts.uid=s.uid');
   $query->addExpression('u.uid', 'sys_uid');
   $query = $query->fields('c', array('personnel_record_at'))
   	  		->fields('gk')
+  	  		->fields('ts',array('outrank'))
   	  		->where($sql_department_insert)->where($valins)->condition('s.pass_round3_major','0','<>')
-			->extend('TableSort')->orderByHeader($header)
+			->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
 			->extend('PagerDefault')->limit(20);
   //var_dump($query->__toString());
   $rdbo=$query->execute();
@@ -3298,7 +3300,7 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
 		    '@prof' => $profession_major)
 		  ))
 		),
-		$r->pass_round3_major==1?t('To be determined'):t('Determined'),
+		$r->pass_round3_major==1?t('To be determined').'/'.$r->outrank:t('Determined'),
   	  	(user_access('signup_3rd_overview'))?l($province, 'signup/3rdround/province/'.$plink):($province),
   	  );
   }

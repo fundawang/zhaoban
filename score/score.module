@@ -1797,7 +1797,7 @@ function score_mark_3rd_round($form, $form_state, $prof) {
     }
     
     if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'asc');
+		$header[]=array('data'=>t('Total score'), 'field'=>'rank', 'sort'=>'asc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
@@ -1821,39 +1821,14 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->fields('sc',array('personnel_record_at'));
 	$query->addExpression('u.uid','uuid');
-	
+	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
+	$query->fields('ts',array('total_score','rank','outrank'));
 	
 	$totals=array();
-	foreach($profession_exams as $eid=>$weight) {
-		
-		if($weight!=0||substr($eid,0,1)=='3') {
-			if(substr($eid,0,1)=='3') {
-				$should_use_rank=false;
-			} else {
-				$squery=db_select('students_score','e')->condition('e.eid',$eid);
-				$squery->innerJoin('students','s','e.uid=s.uid');
-				$squery->condition('s.pass_round1_major',1);
-				$squery->addExpression('MIN(IFNULL(e.rank,0))');
-				$should_use_rank=$squery->execute()->fetchField();
-			}
-			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid AND e'.$eid.'.eid='.$eid);
-			$query->addExpression('e'.$eid.'.'.($should_use_rank?'rank':'score'),'e'.$eid);
-			if($weight) $totals[]="e$eid.".($should_use_rank?'rank':'score')."*$weight";
-		}
-	}
-	$query->addExpression(implode('+', $totals), 'total_score');;
 	$query->extend('TableSort')->orderByHeader($header);
 	$rdbo=$query->execute();
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {
-		if(count($_GET)==1) {
-			db_delete('students_total_score')->condition('uid',$r['uid'])->execute();
-			db_insert('students_total_score')->fields(array(
-				'uid' => $r['uid'],
-				'total_score' => (strpos($query->__toString(), '.rank'))?NULL:($r['total_score']>100?100:$r['total_score']),
-				'rank' => $i,
-			))->execute();
-		}
 		// FIXME: HACKAGE FOR CELLA
 		if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
 			if($r['total_score']==0) continue;
@@ -1864,8 +1839,8 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 			l($r['uid'], 'user/'.$r['uuid']),
 			$r['name'],
 			$r['gender'] == 1 ? t('Male'): t('Female'),
-			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined'):t('Determined')):t('None'),
-			number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined').'/'.$r['outrank']:t('Determined')):t('None'),
+			in_array(substr($prof,0,2),array('D5','D6','D7','D8'))?abs($r['rank']):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
 		);
 		
 	}
@@ -1899,6 +1874,19 @@ function score_mark_3rd_round_submit($form, $form_state) {
 		db_update('students')->condition('uid',$uid)->fields(array(
 			'pass_round3_major'=>$form_state['values']['status']
 		))->execute();
+	}
+	if($form_state['values']['status']==1) {
+		$query=db_select('students','s')->condition('s.pass_round3_major',1)->condition('profession_major',arg(2));
+		$query->innerJoin('students_total_score','ts','s.uid=ts.uid');
+		$query->fields('s',array('uid'))->orderBy('ts.rank');
+		$students=$query->execute();
+		$i=1;
+		foreach($students as $student) {
+			var_dump($student);
+			db_update('students_total_score')->condition('uid',$student->uid)->fields(array(
+				'outrank'=>$i++
+			))->execute();
+		}
 	}
 }
 /*
