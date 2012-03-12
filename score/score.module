@@ -3131,11 +3131,13 @@ function score_cron() {
 		$sdbo=$query->execute();
 		foreach($sdbo as $s) {
 			$total_score=(strpos($query->__toString(), '.rank'))?$s->total_score*(-1):($s->total_score>100?100:$s->total_score);
-			db_delete('students_total_score')->condition('uid',$s->uid)->condition('total_score', $total_score, '<>')->execute();
-			db_insert('students_total_score')->fields(array(
-				'uid' => $s->uid,
-				'total_score' => $total_score,
-			))->execute();
+			if(db_select('students_total_score','ts')->condition('ts.uid',$s->uid)->condition('ts.total_score', $total_score, '<>')->fields('ts')->countQuery()->execute()->fetchField()>1) {
+				db_delete('students_total_score')->condition('uid',$s->uid)->condition('total_score', $total_score, '<>')->execute();
+				db_insert('students_total_score')->fields(array(
+					'uid' => $s->uid,
+					'total_score' => $total_score,
+				))->execute();
+			}
 		}
 		$students=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->execute();
 		foreach($students as $s) {
