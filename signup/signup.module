@@ -3720,7 +3720,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$pdf->Cell(12,2,$r->total_score<=0?('['.abs($r->total_score).']'):number_format($r->total_score,2));
 		//$pdf->Cell(12,2,'100.00');
 		//$pdf->Cell(10,2,$r->years, 0, false, 'C');
-		$pdf->Cell(10,2,$r->rank, 0, false, 'C'));
+		$pdf->Cell(10,2,$r->rank, 0, false, 'C');
 		$pdf->Cell(20,2,$r->name_simp);
 		$pdf->LN();
 		$pdf->setY($pdf->getY()+3);
