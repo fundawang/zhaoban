@@ -3551,10 +3551,10 @@ function signup_3rd_round_by_province_download($prov) {
 			'',
 			0,
 			mb_convert_encoding($r->pname, 'GBK', 'UTF-8'),
-			isset($r->total_score)?$r->total_score:0,
+			isset($r->total_score)?abs(round($r->total_score,3)):0,
 			isset($r->rank)?$r->rank:0,
 			mb_convert_encoding('中央音乐学院', 'GBK', 'UTF-8'),
-			'',
+			($r->total_score<0)?'校考成绩列为该考生的平均排名，非直接成绩。有关内容由我院向考生解释。':'',
 		));
 		if(!$t) return NULL;
 	}
