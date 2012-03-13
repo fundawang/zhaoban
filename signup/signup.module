@@ -3659,7 +3659,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	        // Page number
 	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
 	        $this->Cell(30, 12, date('Y年n月j日'));
-	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其全国排名，作为录取依据', 0, false, 'C');
+	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其平均序，非直接成绩。', 0, false, 'C');
 	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
 	    }
 	}
