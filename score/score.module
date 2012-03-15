@@ -290,6 +290,9 @@ function score_permission() {
     'review all score' => array(
       'title' => t('Review all scores'),
     ),
+    'check sutdents own scores' => array(
+      'title' => t('Review students own scores'),
+    ),
   );
 }
 
@@ -1882,13 +1885,116 @@ function score_mark_3rd_round_submit($form, $form_state) {
 		$students=$query->execute();
 		$i=1;
 		foreach($students as $student) {
-			var_dump($student);
 			db_update('students_total_score')->condition('uid',$student->uid)->fields(array(
 				'outrank'=>$i++
 			))->execute();
 		}
 	}
 }
+
+function score_myscore_check() {
+	global $user;
+	$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
+	return user_access('check sutdents own scores') && $r;
+}
+
+function score_myscore_check_roundg() {
+	global $user;
+	$r=db_select('students','s')->fields('s',array('pass_roundg_major'))->condition('uid',$user->name)->execute()->fetchField();
+	return user_access('check sutdents roundg scores') && $r;
+}
+function score_myscore() {
+	global $user;
+	$uid=$user->name;
+
+	$student=db_select('students','s')->fields('s')->condition('uid',$uid)->execute()->fetchObject();
+	$output  = '<p>';
+	$output .= t('Dear student @uid @name, ',
+		array(
+			'@uid' =>$student->uid,
+			'@name'=>$student->name,
+		)
+	);
+	$output .= '</p>';
+	
+	$query=db_select('vl_professions','p');
+	$query->innerJoin('vl_department','d','p.did=d.did');
+	$query->innerJoin('students','s','s.profession_major=p.pid');
+	$query->fields('p',array('plan','pname','exams'))->fields('d',array('dname'))->condition('s.uid',$uid);
+	$profession=$query->execute()->fetchObject();
+	$output .= '<p>';
+	$output .= t('You\'ve selected @dep @prof profession this year. The plan of this profession is @plan.',
+		array(
+			'@dep' =>$profession->dname,
+			'@prof'=>$profession->pname,
+			'@plan'=>$profession->plan,
+		)
+	);
+	
+	$output .= t('And your scores goes for:').'</p>';
+	
+	$query=db_select('students','s')->condition('s.uid',$uid);
+	$query->innerJoin('students_score','sc','s.uid=sc.uid');
+	$query->innerJoin('vl_exam','e','sc.eid=e.eid');
+	$query->fields('e')->fields('sc')->orderBy('sc.eid');
+	$rdbo=$query->execute();
+	
+	$is_passedthrough=db_select('students_passthrough','sp')->fields('sp')->condition('sp.idcard_number',$student->idcard_number)->countQuery()->execute()->fetchField();
+	
+	$exams = unserialize($profession->exams);
+	foreach($rdbo as $r) {
+		if($exams[$r->eid]==0 && substr($r->eid,0,1)!='3') continue;
+		if(!$r->rank) {
+			$rows[]=array(
+				$r->ename.$r->elevel,
+				$is_passedthrough?t('Passed through'):t('Numeric Value'),
+				$is_passedthrough?t('Passed through'):t('The large the better'),
+				$is_passedthrough?t('Passed through'):round($r->score, 2)
+			);
+		} else {
+			$rows[]=array(
+				$r->ename.$r->elevel,
+				$is_passedthrough?t('Passed through'):t('Mean rank'),
+				$is_passedthrough?t('Passed through'):t('The small the better'),
+				$is_passedthrough?t('Passed through'):$r->rank
+			);
+		}
+	}
+	
+	$header=array(
+		t('Exam Name'),
+		t('Score type'),
+		t('Comparing method'),
+		t('Result')
+	);
+	
+	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
+
+	$output .= '<p><b>';
+	
+	switch($student->pass_round3_major) {
+		case 10:
+			if($student->profession_major=='D301')
+				$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.', array('@rank'=>db_select('students_total_score','ts')->fields('ts',array('rank'))->condition('ts.uid',$student->uid)->execute()->fetchField()));
+			else
+				$output .= t('You are marked as planed students.');
+			$output .= t('Please consider about your willings of gaokao.');
+			$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+			break;
+		case 1:
+			$output .= t('You are marked as unplaned students.');
+			$output .= t('Please consider about your willings of gaokao.');
+			$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+			break;
+		case 0:
+			$output .= t('You are marked as unqualified students.');
+			break;
+	}
+	
+	$output .= '</b></p>';
+	return $output;
+}
+
 /*
 function theme_score_mark_2nd_round($form) {
 	//var_dump($form);
@@ -2984,19 +3090,6 @@ function score_transfer_submit($form, &$form_state) {
   drupal_set_message(t('!num !prof students have been transfered into !prof_new profession.', array('!num'=>count($students), '!prof'=>$form_values['prof'], '!prof_new'=>db_result(db_query('SELECT pname from {vl_professions} where pid=\'%s\'', $form_values['profs'])))));
 	watchdog('score','!num !prof students have been transfered into !prof_new profession.',array('!num'=>count($students), '!prof'=>$form_values['prof'],'!prof_new'=>db_result(db_query('SELECT pname from {vl_professions} where pid=\'%s\'', $form_values['profs']))));
   $form_state['redirect']='signup/transfer';
-}
-
-function score_myscore_check() {
-	global $user;
-	$r=db_result(db_query('SELECT MAX(pass_round3_major) FROM {students}'));
-	$r1=db_result(db_query('SELECT pass_round1_major FROM {students} WHERE uid=\'%s\'', $user->name));
-	return user_access('check sutdents own scores') && $r && $r1;
-}
-
-function score_myscore_check_roundg() {
-	global $user;
-	$r1=db_result(db_query('SELECT pass_roundg_major FROM {students} WHERE uid=\'%s\'', $user->name));
-	return user_access('check sutdents roundg scores') && $r1;
 }
 
 function score_myscore() {
