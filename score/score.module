@@ -1894,12 +1894,14 @@ function score_mark_3rd_round_submit($form, $form_state) {
 
 function score_myscore_check() {
 	global $user;
+	if(!$user->uid) return false;
 	$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
 	return user_access('check sutdents own scores') && $r;
 }
 
 function score_myscore_check_roundg() {
 	global $user;
+	if(!$user->uid) return false;
 	$r=db_select('students','s')->fields('s',array('pass_roundg_major'))->condition('uid',$user->name)->execute()->fetchField();
 	return user_access('check sutdents roundg scores') && $r;
 }
