@@ -3400,11 +3400,11 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
   $rows = array();
   $header = array(
   	array('data' =>t('IDCard number'), 'field'=>'s.idcard_number', 'sort'=>'asc'),
+  	array('data' =>t('Student ID number'), 'field'=>'gk.sid'),
   	array('data' =>t('Real Name')),
   	array('data' =>t('Gender'), 'field'=>'s.gender'),
   	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
   	array('data' =>t('Status'), 'field'=>'s.pass_round3_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
   );
 
   if($prov=='000000')
@@ -3424,7 +3424,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
   	  		->fields('p',array('pname'))
   	  		->where($provcondition)->where($valins)->condition('s.pass_round3_major','0','<>')
 			->extend('TableSort')->orderByHeader($header)
-			->extend('PagerDefault')->limit(20);
+			->extend('PagerDefault')->limit(40);
   $rdbo=$query->execute();
   if(count($rdbo)==0) {
   	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
@@ -3453,8 +3453,9 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
   	  
   	  
   	  $rows[] = array(
-  	  	'<nobr>'.l($r->idcard_number, 'user/'.$r->sys_uid).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
+  	  	'<nobr>'.$r->idcard_number.'</nobr>',
+  	  	'<nobr>'.$r->sid.'</nobr>',
+  	  	'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
   	  	$r->gender == 1 ? t('Male'): t('Female'),
   	  	l($r->pname, 'signup/3rdround/profession/'.$r->profession_major, array(
 		  'title' => t(
@@ -3463,7 +3464,6 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		  ))
 		),
 		$r->pass_round3_major==1?t('To be determined'):t('Determined'),
-  	  	(user_access('signup_3rd_overview'))?l($province, 'signup/3rdround/province/'.$plink):($province),
   	  );
   }
   
