@@ -36,6 +36,9 @@ function score_theme() {
 	    'score_gaokao_province_status_form' => array(
 	    	'render element' => 'form', 
 	    ),
+	    'score_gaokao_province_detail_form' => array(
+	    	'render element' => 'form', 
+	    ),
 	    /*
 	    'score_admin_empty_form' => array(
 	      'arguments' => array('form' => NULL),
@@ -166,7 +169,8 @@ function score_menu() {
     'title' => 'Input gaokao scores for the students',
     '#type' => MENU_CALLBACK,
     'weight' => 4,
-    'page callback' => 'score_input_gaokao_detail',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('score_gaokao_province_detail_form',2),
     'access callback' => 'user_access',
     'access arguments' => array('input gaokao score'),
   );
@@ -2080,6 +2084,145 @@ function theme_score_gaokao_province_status_form($variables) {
 	return $output;
 }
 
+function score_gaokao_province_detail_form($form, $form_state, $province) {
+	drupal_set_title(t('Input gaokao scores for the students').' - '.db_select('vl_province','p')->condition('pid',$province)->fields('p',array('name'))->execute()->fetchField());
+	
+	$form=array();
+	$query=db_select('vl_province','p')->condition('p.pid',$province);
+	$query->innerJoin('students_gk','sg','p.pid=sg.province');
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->innerJoin('vl_professions','pp','s.profession_major=pp.pid');
+	$query->innerJoin('users','u','u.name=s.uid');
+	$query->condition('s.pass_round3_major',0,'>')->orderBy('sg.sid')->orderBy('s.name');
+	$query->fields('sg')->fields('s',array('name','idcard_number','gender'));
+	$query->addExpression('u.uid','uuid');
+	$query->addExpression('pp.pname','pname');
+	$query=$query->extend('PagerDefault')->limit(20);
+
+	$rdbo=$query->execute();
+	
+	foreach($rdbo as $r) {
+		$form['uid'][$r->uid]=array('#type'=>'hidden','#value'=>$r->uid);
+		$form['_sid-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->sid,'#size'=>19,'#maxlength'=>14,'#attributes'=>array('style'=>'padding-left: 2px; padding-right: 2px;'));
+		$form['prof'][$r->uid]=array('#markup'=>$r->pname);
+		$form['name'][$r->uid]=array('#markup'=>'<nobr>'.l($r->name,'user/'.$r->uuid,array('attributes'=>array('title'=>$r->idcard_number))).'</nobr>',);
+		$form['_sis-'.$r->uid]=array('#type'=>'checkbox','#default_value'=>$r->is_math_subjects);
+		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>4,'#maxlength'=>6);
+		$form['_slg-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_languages,'#size'=>4,'#maxlength'=>6);
+		$form['_smt-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_math,'#size'=>4,'#maxlength'=>6);
+		$form['_sst-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_synthesis,'#size'=>4,'#maxlength'=>6);
+		$form['validated-'.$r->uid]=array('#type'=>'checkbox', '#default_value'=>$r->validated);
+		$form['memory-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->memory,'#size'=>10,'#maxlength'=>6);
+	}
+
+	$form['submit']=array('#type'=>'submit', '#value'=>t('Save, and caculate total score with coefficient:'), '#prefix' => '<div class="inline-element-div">');
+	$form['coefficient']=array('#type'=>'textfield','#default_value'=>'1', '#size'=>3, '#suffix' => '</div>');
+	$form['pager']=array('#markup'=>theme('pager'));
+	
+	return $form;
+}
+
+function theme_score_gaokao_province_detail_form($variables) {
+	$form=$variables['form'];
+	$output = '';
+	$header=array(
+		array('data'=>t('Gaokao SID')),
+		array('data'=>t('Real Name')),
+		array('data'=>t('Profession')),
+		array('data'=>t('Is Science subject')),
+		array('data'=>t('Chinese')),
+		array('data'=>t('Math')),
+		array('data'=>t('Foreign language')),
+		array('data'=>t('Synthesis subject')),
+		array('data'=>t('Validated')),
+		array('data'=>t('Memory')),
+	);
+	
+	$query=db_select('students_gk','sg');
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->addExpression('MIN(sg.validated)');
+	$query->condition('s.pass_round3_major',0,'>')->condition('sg.province',arg(2));
+	$should_disable_all=$query->execute()->fetchField();
+
+	foreach(element_children($form['uid']) as $u) {
+		$rows[]=array(
+			$should_disable_all?$form['_sid-'.$u]['#default_value']:drupal_render($form['_sid-'.$u]),
+			//drupal_render($form['idcard_number'][$u]),
+			drupal_render($form['name'][$u]),
+			drupal_render($form['prof'][$u]),
+			$should_disable_all?$form['_sis-'.$u]['#default_value']:drupal_render($form['_sis-'.$u]),
+			$should_disable_all?$form['_sch-'.$u]['#default_value']:drupal_render($form['_sch-'.$u]),
+			$should_disable_all?$form['_smt-'.$u]['#default_value']:drupal_render($form['_smt-'.$u]),
+			$should_disable_all?$form['_slg-'.$u]['#default_value']:drupal_render($form['_slg-'.$u]),
+			$should_disable_all?$form['_sst-'.$u]['#default_value']:drupal_render($form['_sst-'.$u]),
+			drupal_render($form['validated-'.$u]),
+			$should_disable_all?$form['memory-'.$u]['#default_value']:drupal_render($form['memory-'.$u]),
+		);
+		if($should_disable_all) {
+			unset($form['_sid-'.$u]);
+			unset($form['_sis-'.$u]);
+			unset($form['_sch-'.$u]);
+			unset($form['_smt-'.$u]);
+			unset($form['_slg-'.$u]);
+			unset($form['_sst-'.$u]);
+			unset($form['memory-'.$u]);
+		}
+	}
+	drupal_add_css(drupal_get_path('module', 'score') .'/score.css');
+	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
+	if(!$should_disable_all)
+		$output.=drupal_render($form['submit']).drupal_render($form['coefficient']);
+	else
+		{unset($form['submit']);unset($form['coefficient']);}
+	
+	$output.=drupal_render($form['pager']);
+	$output.=drupal_render_children($form);
+	return $output;
+
+}
+
+function score_gaokao_province_detail_form_validate($form, &$form_state) {
+	$form_values=$form_state['values'];
+	$keys=array_keys($form_values);
+	foreach($keys as $key) {
+		switch(substr($key,0,4)) {
+			case '_sid': 
+				if($form_values[$key] && (db_select('vl_province','p')->fields('p',array('ucategory'))->condition('pid',arg(2))->execute()->fetchField() == 1) &&!preg_match('/'.substr(variable_get('zhaoban_current_year',date('Y')),-2).'\d{12}/', $form_values[$key]))
+				{
+					form_set_error($key, t('The student gaokao ID you\'ve entered is not valid.'));
+				}
+				break;
+			case '_sch':
+			case '_slg':
+			case '_smt':
+			case '_sst':
+				if(!is_numeric($form_values[$key]))
+					form_set_error($key, t('The score you\'ve entered is not valid.'));
+		}
+	}
+}
+
+function score_gaokao_province_detail_form_submit($form, &$form_state) {
+	$form_values=$form_state['values'];
+	$keys=array_keys($form_values);
+	foreach($keys as $key) {
+		if(substr($key,0,4)!=variable_get('zhaoban_current_year',date('Y'))) continue;
+		db_update('students_gk')->condition('uid',$key)->fields(array(
+			'sid' => $form_values['_sid-'.$key],
+			'is_math_subjects' => $form_values['_sis-'.$key],
+			'score_chinese' => $form_values['_sch-'.$key],
+			'score_languages' => $form_values['_slg-'.$key],
+			'score_math' => $form_values['_smt-'.$key],
+			'score_synthesis' => $form_values['_sst-'.$key],
+			'score_total' => ($form_values['_sch-'.$key]+$form_values['_slg-'.$key]+$form_values['_smt-'.$key]+$form_values['_sst-'.$key])*$form_values['coefficient'],
+			'validated' => $form_values['validated-'.$key],
+			'memory' => $form_values['memory-'.$key]
+		))->execute();
+	}
+	drupal_set_message(t('Scores have been saved.'));
+	$form_state['redirect']='score/inputgk'; 
+}
+
 /*
 function theme_score_mark_2nd_round($form) {
 	//var_dump($form);
@@ -2706,6 +2849,7 @@ function score_input_gaokao_detail() {
 }
 
 function score_gaokao_province_detail_form() {
+	drupal_set_title(t('Input gaokao scores for the students').' - '.db_result(db_query('SELECT name FROM {vl_province} WHERE pid=\'%s\'', arg(2))));
 	$province=arg(2);
 	$form=array();
 	$rdbo = pager_query(
