@@ -2102,6 +2102,10 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 	$rdbo=$query->execute();
 	
 	foreach($rdbo as $r) {
+		settype($r->score_chinese,'float');
+		settype($r->score_languages,'float');
+		settype($r->score_math,'float');
+		settype($r->score_synthesis,'float');
 		$form['uid'][$r->uid]=array('#type'=>'hidden','#value'=>$r->uid);
 		$form['_sid-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->sid,'#size'=>19,'#maxlength'=>14,'#attributes'=>array('style'=>'padding-left: 2px; padding-right: 2px;'));
 		$form['prof'][$r->uid]=array('#markup'=>$r->pname);
