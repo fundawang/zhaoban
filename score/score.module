@@ -33,6 +33,9 @@ function score_theme() {
 	    'score_input_going_form' => array(
 	    	'render element' => 'form', 
 	    ),
+	    'score_gaokao_province_status_form' => array(
+	    	'render element' => 'form', 
+	    ),
 	    /*
 	    'score_admin_empty_form' => array(
 	      'arguments' => array('form' => NULL),
@@ -154,7 +157,8 @@ function score_menu() {
   $items['score/inputgk'] = array(
     'title' => 'Input gaokao scores for the students',
     'weight' => 4,
-    'page callback' => 'score_input_gaokao_overview',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('score_gaokao_province_status_form'),
     'access callback' => 'score_check_perm_inputgk',
   );
 
@@ -1994,6 +1998,85 @@ function score_myscore() {
 	}
 	
 	$output .= '</b></p>';
+	return $output;
+}
+
+function score_input_gaokao_overview() {
+	return drupal_get_form('score_gaokao_province_status_form');
+}
+
+function score_gaokao_province_status_form() {
+	$form=array();
+	$query=db_select('vl_province','p');
+	$query->innerJoin('students_gk','sg','p.pid=sg.province');
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->condition('s.pass_round3_major',0,'>')->condition('p.ucategory',array('1','2'),'IN');
+	$query->fields('p',array('pid','name','isgkenabled'));
+	$query->addExpression('count(*)','num');
+	$query->groupBy('p.pid')->orderBy('p.pid');
+	$rdbo=$query->execute();
+
+	foreach($rdbo as $r) {
+		$form['pid'][$r->pid]=array('#type'=>'hidden','#value'=>$r->pid);
+		$form['name'][$r->pid]=array('#markup'=>$r->name);
+		$form['num'][$r->pid]=array('#markup'=>$r->num);
+		
+		$q=db_select('students_gk','sg');
+		$q->innerJoin('students','s','sg.uid=s.uid');
+		$q->condition('s.pass_round3_major',0,'>')->condition('sg.province',$r->pid);
+		$q->addExpression('MIN(sg.validated)');
+		
+		$form['status-'.$r->pid]=array('#type'=>'checkbox',
+			'#default_value'=>$r->isgkenabled,
+			'#disabled'=>$q->execute()->fetchField(),
+			'#title'=>t('Students can input scores themselves'),
+		);
+		$form['op'][$r->pid]=$r->isgkenabled?'':array('#markup'=>l(t('Input myself'),'score/inputgk/'.$r->pid));
+	}
+	
+	$form['submit']=array('#type'=>'submit','#value'=>t('Update'));
+	return $form;
+
+}
+
+function score_gaokao_province_status_form_submit($form, &$form_state) {
+	$form_values=$form_state['values'];
+	$keys=array_keys($form_values);
+	$values=array_values($form_values);
+	foreach($keys as $key) {
+		if(strpos($key, 'status')!==FALSE) {
+			$p=substr($key, 7);
+			db_update('vl_province')->fields(array(
+				'isgkenabled' => $form_values[$key]
+			))->condition('pid',$p)->execute();
+		}
+	}
+	drupal_set_message(t('Settings have been saved.'));
+}
+
+
+function theme_score_gaokao_province_status_form($variables) {
+	$form=$variables['form'];
+	$output = '';
+	$header=array(
+		array('data'=>t('Province')),
+		array('data'=>t('Number of students')),
+		array('data'=>t('Status')),
+		array('data'=>t('Operations')),
+	);
+	
+	foreach(element_children($form['pid']) as $p) {
+		$rows[]=array(
+			drupal_render($form['name'][$p]),
+			drupal_render($form['num'][$p]),
+			drupal_render($form['status-'.$p]),
+			drupal_render($form['op'][$p]),
+		);
+	}
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output.=drupal_render($form['submit']);
+	$output.=drupal_render_children($form);
+
 	return $output;
 }
 
