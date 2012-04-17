@@ -218,7 +218,7 @@ function is_tw_idcardn_validate($idcardn) {
 }
 
 function _is_valid_remote_address() {
-	if((strpos($_SERVER['REMOTE_ADDR'], '10.1.2'))===FALSE) return false;
+	if((strpos($_SERVER['REMOTE_ADDR'], '10.1.0'))===FALSE) return false;
 	else return true;
 }
 ?>

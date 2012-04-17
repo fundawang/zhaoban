@@ -484,7 +484,7 @@ function signup_form_user_profile_form_alter(&$form, $form_state) {
 	$form['account']['current_pass']['#description']=t('Enter your current password to change the password.').t('If you forgot current password, <a href="@url">please click here</a> to reset password.', array('@url'=>'/user/password'));
 	if(isset($form['account']['mail']) && $form['#user']->uid <> 1)
 		$form['account']['mail']['#type']='hidden';
-	if(in_array('5',array_keys($form['#user']->roles)))
+	if(in_array('5',array_keys($form['#user']->roles)) && !user_access('administer users'))
 		$form['account']['name']['#disabled']=TRUE;
 	if(user_access('administer users')) return;
 	if(in_array('5',array_keys($form['#user']->roles)))
@@ -502,6 +502,29 @@ function signup_form_user_profile_form_alter(&$form, $form_state) {
 	}
 //	var_dump($form);
 	return $form;
+}
+
+function signup_user_update(&$edit, $account, $category) {
+	if($category=='account' && user_access('administer users')) {
+		$user=$edit['original'];
+		if($user->name != $edit['name']) {
+			db_update('students')->condition('uid',$user->name)->fields(array(
+				'uid' => $edit['name']
+			))->execute();
+			db_update('students_gk')->condition('uid',$user->name)->fields(array(
+				'uid' => $edit['name']
+			))->execute();
+			db_update('students_contact')->condition('uid',$user->name)->fields(array(
+				'uid' => $edit['name']
+			))->execute();
+			db_update('students_going')->condition('uid',$user->name)->fields(array(
+				'uid' => $edit['name']
+			))->execute();
+			db_update('students_score')->condition('uid',$user->name)->fields(array(
+				'uid' => $edit['name']
+			))->execute();
+		}
+	}
 }
 
 function signup_user_account_form($form, $form_state) {

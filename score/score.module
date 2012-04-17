@@ -301,6 +301,9 @@ function score_permission() {
     'check sutdents own scores' => array(
       'title' => t('Review students own scores'),
     ),
+    'input gaokao score' => array(
+      'title' => t('Input students gaokao scores'),
+    ),
   );
 }
 
