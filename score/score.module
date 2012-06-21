@@ -2268,7 +2268,7 @@ function score_prepare_gk_detail($prof=NULL) {
 	
 	$header=array(
 		array('data'=>t('No.')),
-		array('data'=>t('Student ID')),
+		//array('data'=>t('Student ID')),
 		array('data'=>t('Real Name')),
 		array('data'=>' '),
 		array('data'=>t('Round3 situation')),
@@ -2320,7 +2320,7 @@ function score_prepare_gk_detail($prof=NULL) {
 		settype($r['score_total'],'float');
 		$rows[]=array(
 			$i++,
-			l($r['uid'], 'user/'.$r['uuid']),
+			//l($r['uid'], 'user/'.$r['uuid']),
 			$r['name'],
 			'',
 			$r['pass_round3_major'] == '10' ? t('Determined'):(t('To be determined').'/'.$r['outrank']),

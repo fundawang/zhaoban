@@ -2298,7 +2298,7 @@ function signup_user_gaokao_form_save($form, $form_state) {
 	$user=$form['#user'];
 	$edit=$form_state['values'];
 	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
-	if($isvalidated) return;
+	//if($isvalidated) return;
 	
 	db_update('students_gk')
 		->fields(array(
