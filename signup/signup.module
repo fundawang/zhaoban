@@ -237,6 +237,50 @@ function signup_menu() {
     'access callback' => 'signup_3rd_overview',
     'type' => MENU_CALLBACK,
   );
+  $items['signup/ground'] = array(
+    'title' => 'View gaokao round students',
+    'description' => "Check the students which will be enrolled into gaokao round examination",
+    'page callback' => 'signup_ground_by_profession',
+    'access callback' => 'signup_3rd_overview',
+  );
+  $items['signup/ground/profession'] = array(
+    'title' => 'By Profession',
+    'description' => "Check the students which will be enrolled into gaokao round examination",
+    'page callback' => 'signup_ground_by_profession',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'signup_3rd_overview',
+  );
+  $items['signup/ground/profession/%'] = array(
+    'title' => 'By Profession',
+    'description' => "Check individual profession",
+    'page callback' => 'signup_ground_by_profession_detail',
+    'page arguments' => array(3),
+    'access callback' => 'signup_3rd_overview',
+    'type' => MENU_CALLBACK,
+  );
+  $items['signup/ground/province'] = array(
+    'title' => 'By Province',
+    'description' => "Check the students which will be enrolled into gaokao round examination",
+    'page callback' => 'signup_ground_by_province',
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => 'signup_3rd_overview',
+  );
+  $items['signup/ground/province/%'] = array(
+    'title' => 'By Province',
+    'description' => "Check individual profession",
+    'page callback' => 'signup_ground_by_province_detail',
+    'page arguments' => array(3),
+    'access callback' => 'signup_3rd_overview',
+    'type' => MENU_CALLBACK,
+  );
+  $items['signup/ground/province/%/report'] = array(
+    'title' => 'Print Report',
+    'description' => "Download printable report for this province",
+    'page callback' => 'signup_ground_by_province_report',
+    'page arguments' => array(3),
+    'access callback' => 'signup_3rd_overview',
+    'type' => MENU_CALLBACK,
+  );
   $items['user/%user/report'] = array(
     'title' => 'Print Signup Report',
     'page callback' => 'sign_up_report',
@@ -3752,6 +3796,471 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$pdf->Cell(0,15,'·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·',0, false, 'C');
 	$pdf->SetDisplayMode('fullwidth');
 	$pdf->Output('3rd_round_report.pdf', 'I');
+}
+
+function signup_ground_by_profession() {
+	$output = '<div id="baoming_user_stat" class="baoming_view_section node">';
+	
+	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
+		$valins="s.validated=1 ";
+	else 
+		$valins="1";
+		
+	// Compute total number of registered students.
+	$total_students=db_select('students','s')
+		->fields('s')
+		->condition('s.idcard_number','','<>')
+		->condition('s.profession_major','0','<>')
+		->condition('s.pass_roundg_major','0','<>')
+		->where($valins)
+		->countQuery()->execute()->fetchField();
+	
+	$output .= '<p>'.t('There are currently !num students marked as being enrolled into the gaokao round examination.', array('!num'=>$total_students)).'</p>';
+	$header = array(
+		array('data'=>t('Profession'), 'field'=>'pid', 'sort'=>'asc'),
+		array('data'=>t('Number of students (%)'), 'field'=>'num'),
+	);
+
+	$query = db_select('students','s')->condition('s.idcard_number','','<>')->condition('s.pass_roundg_major','0','<>');
+	$query->innerJoin('vl_professions','p','s.profession_major = p.pid');
+	$query->addExpression('COUNT(*)', 'num');
+	$query = $query->where($valins)
+		->fields('p',array('pid','uid','pname','pnamememo'))
+		->groupBy('s.profession_major')
+		->extend('TableSort')->orderByHeader($header);
+	
+	$rdbo = $query->execute();
+	$rows=array();
+	
+	foreach($rdbo as $r) {
+		if($r->pid) {
+	       // Determine whether you are plain department
+	       if(user_access('view own draft') && !user_access('view draft'))
+	       	   if($GLOBALS['user']->name !== $r->uid) continue;
+		   $rows[] = array(
+			'<nobr>'.l($r->pname, 'signup/ground/profession/'.$r->pid, array(
+			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
+			  )
+			).'</nobr>',
+			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+		   );
+		}
+	}
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	
+	$output .= '</div>';
+	
+	return $output;
+}
+
+function signup_ground_by_profession_detail($prof=NULL) {
+	
+	$query=db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$prof);
+	$query->innerJoin('vl_department','d','p.did=d.did');
+	$query=$query->fields('d',array('dname'));
+	$r=$query->execute()->fetchObject();
+	$profession_major = t('!dname!pname', array(
+  	  	  '!dname' => $r->dname,
+  	  	  '!pname' => $r->pname,
+  	));
+
+	drupal_set_title(t('By Profession').' - '.$r->pname);
+  
+	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_roundg_major','0','<>')->countQuery()->execute()->fetchField() >0)
+		$valins="s.validated=1 ";
+	else 
+		$valins="1";
+
+  if($prof)
+  	$sql_department_insert = "p.pid='".$prof."'";
+  else
+  	$sql_department_insert = '1';
+  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
+  
+  $r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
+  $options=array('000000'=>t('All students'));
+  $options+=array((string)($r->cid)=>$r->name);
+
+  $rows = array();
+  $header = array(
+  	array('data' =>t('Student ID'), 'field'=>'s.uid'),
+  	array('data' =>t('Real Name')),
+  	array('data' =>t('Gender'), 'field'=>'s.gender'),
+  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+  	array('data' =>t('Province'), 'field'=>'gk.province'),
+  );
+  
+  //$tablesort = tablesort_sql($header);
+  //var_dump($cookie_examplace);
+  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
+  $query->leftJoin('students_contact','c','s.uid=c.uid');
+  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+  $query->innerJoin('users','u','s.uid=u.name');
+  $query->innerJoin('students_total_score','ts','ts.uid=s.uid');
+  $query->addExpression('u.uid', 'sys_uid');
+  $query = $query->fields('c', array('personnel_record_at'))
+  	  		->fields('gk')
+  	  		->fields('ts',array('outrank'))
+  	  		->where($sql_department_insert)->where($valins)->condition('s.pass_roundg_major','0','<>')
+			->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
+			->extend('PagerDefault')->limit(20);
+  //var_dump($query->__toString());
+  $rdbo=$query->execute();
+  if(count($rdbo)==0) {
+  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+  }
+  else
+  foreach($rdbo as $r) {
+  	  switch($r->ucategory) {
+  	  	  case uc_OWN_STUDENT:
+  	  	  	  $province = t('Our own student');
+  	  	  	  $per = t('Our own student');
+  	  	  	  $plink = '000000';
+  	  	  	  break;
+  	  	  case uc_MAINLAND_STUDENT:
+  	  	  case uc_HKTW_STUDENT:
+  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+  	  	  	  $per = $r->personnel_record_at;
+  	  	  	  if(!$per) $per=t('N/A');
+  	  	  	  $plink = $r->province;
+  	  	  	  break;
+  	  	  case uc_OVERSEA_STUDENT:
+  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+  	  	  	  $per = t('N/A');
+  	  	  	  $plink = $r->province;
+  	  	  	  break;
+  	  }
+  	  
+  	  
+  	  $rows[] = array(
+  	  	'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
+  	  	'<nobr>'.$r->name.'</nobr>',
+  	  	$r->gender == 1 ? t('Male'): t('Female'),
+  	  	l($profession_major, 'signup/ground/profession/'.$r->profession_major, array(
+		  'title' => t(
+		    'Click to view the details of @prof', array(
+		    '@prof' => $profession_major)
+		  ))
+		),
+  	  	(user_access('signup_3rd_overview'))?l($province, 'signup/ground/province/'.$plink):($province),
+  	  );
+  }
+  
+  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('pager');
+  $output .= "</div>";
+  
+  $output .= l(t('<< Back to full student list'), 'signup/ground');
+  
+  return $output;
+}
+
+function signup_ground_by_province() {
+
+	$prof=arg(3);
+	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
+		$valins="s.validated=1 ";
+	else 
+		$valins="1";
+
+	// Compute total number of registered students.
+	$total_students=db_select('students','s')
+		->fields('s')
+		->condition('s.idcard_number','','<>')
+		->condition('s.profession_major','0','<>')
+		->condition('s.pass_roundg_major','0','<>')
+		->where($valins)
+		->countQuery()->execute()->fetchField();
+	
+	$output .= '<p>'.t('There are currently !num students marked as being enrolled into the gaokao round examination.', array('!num'=>$total_students)).'</p>';
+	$header = array(
+		array('data'=>t('Province'), 'field'=>'pid', 'sort'=>'asc'),
+		array('data'=>t('Number of students'), 'field'=>'num'),
+	);
+	$query = db_select('students','s')->condition('s.idcard_number','','<>')->condition('s.profession_major','0', '<>')->condition('s.pass_roundg_major','0','<>');
+	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
+	$query->leftJoin('vl_province','p','sg.province=p.pid');
+	$query = $query->fields('s',array('ucategory','uid'))
+		->fields('p',array('pid','name'));
+	$query->addExpression('COUNT(s.uid)', 'num');
+	$query = $query->where($valins)
+		->groupBy('p.pid')
+		->groupBy('s.ucategory')
+		->extend('TableSort')->orderByHeader($header);
+	
+	$rdbo = $query->execute();
+	$rows=array();
+	
+	foreach($rdbo as $r) {
+		if($r->pid) {
+	       // Determine whether you are plain department
+	       if(user_access('view own draft') && !user_access('view draft'))
+	       	   if($GLOBALS['user']->name !== $r->uid) continue;
+		   $rows[] = array(
+			'<nobr>'.
+			   l('<img src="/'.drupal_get_path('module','signup').'/printer.png">', 'signup/ground/province/'.$r->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province')))).' '.
+			   l($r->name, 'signup/ground/province/'.$r->pid, array(
+			  'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
+			  )
+			).'</nobr>',
+			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+		   );
+		} else if($r->ucategory==='0') {
+	       $rows[] = array(
+	       	   l(t('Our own student'), 'signup/ground/province/000000', array(
+	       	     'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
+	       	   )),
+			   sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+	       );
+		}
+
+	}
+	
+  	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+
+	return $output;
+	
+}
+
+function signup_ground_by_province_detail($prov=NULL) {
+	
+	$query=db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$prov);
+	$r=$query->execute()->fetchObject();
+
+	drupal_set_title(t('By Province').' - '.$r->name);
+  
+	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
+		$valins="s.validated=1 ";
+	else 
+		$valins="1";
+	
+	$output = '';
+	
+  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
+  
+  $rows = array();
+  $header = array(
+  	array('data' =>t('IDCard number'), 'field'=>'s.idcard_number', 'sort'=>'asc'),
+  	array('data' =>t('Student ID number'), 'field'=>'gk.sid'),
+  	array('data' =>t('Real Name')),
+  	array('data' =>t('Gender'), 'field'=>'s.gender'),
+  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+  );
+
+  if($prov=='000000')
+	$provcondition='s.ucategory = 0';
+  else
+	$provcondition="gk.province='".$prov."'";
+  
+  //$tablesort = tablesort_sql($header);
+  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
+  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
+  $query->leftJoin('students_contact','c','s.uid=c.uid');
+  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+  $query->innerJoin('users','u','s.uid=u.name');
+  $query->addExpression('u.uid', 'sys_uid');
+  $query = $query->fields('c', array('personnel_record_at'))
+  	  		->fields('gk')
+  	  		->fields('p',array('pname'))
+  	  		->where($provcondition)->where($valins)->condition('s.pass_roundg_major','0','<>')
+			->extend('TableSort')->orderByHeader($header)
+			->extend('PagerDefault')->limit(40);
+  $rdbo=$query->execute();
+  if(count($rdbo)==0) {
+  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+  }
+  else
+  foreach($rdbo as $r) {
+  	  switch($r->ucategory) {
+  	  	  case uc_OWN_STUDENT:
+  	  	  	  $province = t('Our own student');
+  	  	  	  $per = t('Our own student');
+  	  	  	  $plink = '000000';
+  	  	  	  break;
+  	  	  case uc_MAINLAND_STUDENT:
+  	  	  case uc_HKTW_STUDENT:
+  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+  	  	  	  $per = $r->personnel_record_at;
+  	  	  	  if(!$per) $per=t('N/A');
+  	  	  	  $plink = $r->province;
+  	  	  	  break;
+  	  	  case uc_OVERSEA_STUDENT:
+  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+  	  	  	  $per = t('N/A');
+  	  	  	  $plink = $r->province;
+  	  	  	  break;
+  	  }
+  	  
+  	  
+  	  $rows[] = array(
+  	  	'<nobr>'.$r->idcard_number.'</nobr>',
+  	  	'<nobr>'.$r->sid.'</nobr>',
+  	  	'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
+  	  	$r->gender == 1 ? t('Male'): t('Female'),
+  	  	l($r->pname, 'signup/ground/profession/'.$r->profession_major, array(
+		  'title' => t(
+		    'Click to view the details of @prof', array(
+		    '@prof' => $r->pname)
+		  ))
+		),
+  	  );
+  }
+  
+  $output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/ground/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
+  $output .= '<p/>';
+  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('pager');
+  $output .= "</div>";
+  
+  $output .= l(t('<< Back to full student list'), 'signup/ground/province');
+  return $output;
+}
+
+function signup_ground_by_province_report($prov=NULL) {
+	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
+	if(!isset($r) || !($r->name))
+		drupal_access_denied();
+	$provname=$r->name;
+	//var_dump($provname); exit;
+	
+	$query=db_select('students','s')->condition('s.pass_roundg_major','0','<>');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
+	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
+	$query->leftJoin('vl_city_district','c','sg.city_district=c.cid');
+	if(db_table_exists('students_total_score')) {
+		$query->innerJoin('students_total_score','ss','s.uid=ss.uid');
+		$query=$query->fields('ss',array('total_score','rank'));
+	}
+	$query=$query->condition('sg.province',$prov)
+		->fields('s',array('name','idcard_number','gender'))
+		->fields('sc',array('personnel_record_at'))
+		->fields('sg',array('sid','score_total','is_math_subjects'))
+		->fields('c',array('name_simp'))
+		->fields('p',array('pname','gb_pid','gb_pname','years'))
+		->orderBy('s.idcard_number');
+	$result=$query->execute();
+	
+	// If there is no any record, output 404 error.
+	if($query->countQuery()->execute()->fetchField()==0) {
+		//var_dump($query->countQuery()->execute()->fetchField());
+		return MENU_NOT_FOUND;
+	}
+	
+	//var_dump($account);
+	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
+	
+	ini_set('max_execution_time','300');
+
+	// Extend the TCPDF class to create custom Header and Footer
+	class MYPDF extends TCPDF {
+
+	    //Page header
+	    public function Header() {
+	    	$this->setHeaderMargin(30);
+	    	$this->SetX(10);
+	    	$this->SetY(8);
+	        // Set font
+	        $this->SetFont('droidsansfallback', 'B', 24, '', true);
+	        // Title
+	        $this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
+	        $this->SetFont('droidsansfallback', 'B', 10, '', true);
+	    	$this->SetX(1);
+	    	$this->SetY(18);
+	        $this->Cell(10, 2, '序号',0, false, 'C');
+	        $this->Cell(30, 2, '考生号',0, false, 'C');
+	        $this->Cell(40, 2, '身份证号码',0, false, 'C');
+	        $this->Cell(20, 2, '姓名',0, false, 'C');
+	        $this->Cell(5, 2, '性别',0, false, 'C');
+	        $this->Cell(60, 2, '所在学校',0, false, 'C');
+	        $this->Cell(13, 2, '专业代码',0, false, 'C');
+	        $this->Cell(33, 2, '专业名称',0, false, 'C');
+	        $this->Cell(22, 2, '专业方向',0, false, 'C');
+	        $this->Cell(25, 2, '文考总分',0, false, 'C');
+	        $this->Cell(12, 2, '术科成绩',0, false, 'C');
+	        $this->Line(5,24,292,24,array('width'=>0.5));
+	    }
+
+	    // Page footer
+	    public function Footer() {
+	        // Position at 15 mm from bottom
+	        $this->SetY(-13);
+	        $this->SetX(5);
+	        $this->Line(5,198,292,198,array('width'=>0.5));
+	        // Set font
+	        // Page number
+	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
+	        $this->Cell(30, 12, date('Y年n月j日'));
+	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:高考成绩未标明者为文科。校考成绩带括号者为其平均序，非成绩。', 0, false, 'C');
+	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
+	    }
+	}
+	// create new PDF document
+	$pdf = new MYPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+
+	// Set font
+	// dejavusans is a UTF-8 Unicode font, if you only need to
+	// print standard ASCII chars, you can use core fonts like
+	// helvetica or times to reduce file size.
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	// set default font subsetting mode
+	$pdf->setFontSubsetting(false);
+	$pdf->setHeaderMargin(30);
+	$pdf->SetMargins(5, 27, 5);
+	$pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+	$pdf->SetFooterMargin(15);
+	$pdf->setHeaderData('',0,variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试拟录取考生名册 '.$provname,'');
+	
+	//$pdf->SetMargins(6, 6, 6);
+	$pdf->SetAutoPageBreak(true, 12);
+
+	//set some language-dependent strings
+	$pdf->setLanguageArray($l);
+
+	// ---------------------------------------------------------
+
+	// Add a page
+	// This method has several options, check the source code documentation for more information.
+	$pdf->AddPage();
+	$pdf->SetFillColor(216,216,216);
+	$pdf->SetDrawColor(255,255,255);
+	$pdf->SetLineWidth(0.5);
+	
+	$pdf->SetFontSize(10);
+	
+	$pdf->SetFillColor(0,0,0);
+	$pdf->SetTextColor(255,255,255);
+	//$pdf->Cell(10,2,'1',0, false, 'C',true);
+	$i=1;
+	foreach($result as $r) {
+		settype($r->score_total,'float');
+		$pdf->SetFillColor(0,0,0);
+		$pdf->SetTextColor(255,255,255);
+		$pdf->Cell(10,2,$i++, 0, false, 'C',true);
+		
+		$pdf->SetTextColor(0,0,0);
+		$pdf->Cell(30,2,$r->sid, 0, false, 'C');
+		$pdf->Cell(40,2,$r->idcard_number, 0, false, 'C');
+		$pdf->Cell(20,2,$r->name, 0, false, 'L');
+		$pdf->Cell(5,2,$r->gender==1?'男':'女', 0, false, 'C');
+		$pdf->Cell(60,2,$r->personnel_record_at, 0, false, 'L');
+		$pdf->Cell(13,2,$r->gb_pid, 0, false, 'L');
+		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
+		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
+		$pdf->Cell(25,2,$r->score_total.($r->is_math_subjects?'/理':''), 0, false, 'C');
+		$pdf->Cell(12,2,$r->total_score<=0?('['.abs(round($r->total_score,2)).']'):number_format($r->total_score,2));
+		$pdf->LN();
+		$pdf->setY($pdf->getY()+3);
+	}
+	$pdf->SetFontSize(20);
+	$pdf->Cell(0,15,'·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·',0, false, 'C');
+	$pdf->SetDisplayMode('fullwidth');
+	$pdf->Output('ground_report.pdf', 'I');
 }
 
 function signup_preset_passthrough() {

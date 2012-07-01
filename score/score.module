@@ -2302,7 +2302,7 @@ function score_prepare_gk_detail($prof=NULL) {
 	$query->addExpression('ABS(ts.total_score)','total_score');
 	$query->fields('ts',array('outrank'));
 	
-    $query->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
+    $query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
     if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
     	$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
     	$query->orderBy('tsrank','ASC');
@@ -2310,11 +2310,13 @@ function score_prepare_gk_detail($prof=NULL) {
 		$query->addExpression('ABS(ts.total_score)','total_score');
 		$query->orderBy('total_score','DESC');
 	}
-	$query->extend('TableSort')->orderByHeader($header);
+	//$query->extend('TableSort')->orderByHeader($header);
 	
+	//var_dump($query->__toString());
 	$rdbo=$query->execute();
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {
+		
 		settype($r['score_chinese'],'float');
 		settype($r['score_languages'],'float');
 		settype($r['score_total'],'float');
@@ -2335,6 +2337,142 @@ function score_prepare_gk_detail($prof=NULL) {
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 	return $output;
+}
+
+function score_mark_gaokao_round_list() {
+	$header=array(
+		array('data'=>t('Department')),
+		array('data'=>t('Profession')),
+		array('data'=>t('Mainland students')),
+		array('data'=>t('Students out of mainland')),
+	);
+
+	$rows=array();
+	$query=db_select('vl_professions','p')->fields('p',array('pid','pname','did', 'pnamememo'))->orderBy('p.pid');
+	$query->innerJoin('vl_department','d','p.did=d.did');
+	$query->fields('d',array('dname'));
+	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round3_major',0,'<>')->where('s.profession_major=p.pid');
+	$query->exists($subquery);
+	$rdbo=$query->execute();
+	
+	while($r=$rdbo->fetchObject())
+	{
+		$did=$r->did;
+		$mainland_in=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1)->condition('s.pass_roundg_major',1)->fields('s')->countQuery()->execute()->fetchField();
+		$outmainland_in=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1,'<>')->condition('s.pass_roundg_major',1)->fields('s')->countQuery()->execute()->fetchField();
+		$rows[]=array(
+			$r->dname,
+			l($r->pname.($r->pnamememo?'('.$r->pnamememo.')':''), 'signup/markroundg/'.$r->pid),
+			$mainland_in,
+			$outmainland_in,
+		);
+		$tot_mainland_in+=$mainland_in;
+		$tot_outmainland_in+=$outmainland_in;
+	}
+	$output = t('There are !num mainland students marked as being determined enrolled into roundg.',array(
+		'!num'=>db_select('students','s')->fields('s')->condition('s.ucategory',1)->condition('s.pass_roundg_major',1)->countQuery()->execute()->fetchField(),
+	));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+
+	return $output;
+}
+
+function score_mark_gaokao_round($form, $form_state, $prof) {
+	drupal_set_title(t('Mark round g students').' -  '.db_select('vl_professions','p')->condition('p.pid',$prof)->fields('p',array('pname'))->execute()->fetchField());
+	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
+	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
+    $profession_exams = unserialize($profession->exams);
+
+	$header=array(
+		array('data'=>t('No.')),
+		array('data'=>t('Student ID'), 'field'=>'s.uid'),
+		array('data'=>t('Real Name')),
+		array('data'=>t('Gender'), 'field'=>'s.gender'),
+		array('data'=>t('Current status'),'field'=>'s.pass_round3_major'),
+	);
+	
+    foreach($profession_exams as $eid => $eweight) {
+		if($eweight!=0||substr($eid,0,1)=='3') {
+			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
+			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
+		}
+    }
+    
+    if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		$header[]=array('data'=>t('Total score'), 'field'=>'rank', 'sort'=>'asc');
+	} else {
+		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+	}
+	$header[]=array('data'=>t('Overall'), 'field'=>'score_total');
+
+	$rows=array();
+	
+	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','pass_round3_major','pass_roundg_major'));
+	$query->condition('s.profession_major',$prof)->condition('s.pass_round3_major',0,'<>');
+	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+	$query->fields('sc',array('personnel_record_at'))->fields('sg',array('score_total'));
+	$query->addExpression('u.uid','uuid');
+	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
+	$query->fields('ts',array('total_score','rank','outrank'));
+	
+	$totals=array();
+	$query->extend('TableSort')->orderByHeader($header);
+	$rdbo=$query->execute();
+	$i=1;
+	$default_value=array();
+	while($r=$rdbo->fetchAssoc()) {
+		settype($r['score_total'],'float');
+		if($r['pass_roundg_major']) $default_values[$r['uid']]=$r['uid'];
+		$rows[$r['uid']]=array(
+			$i++,
+			l($r['uid'], 'user/'.$r['uuid']),
+			$r['name'],
+			$r['gender'] == 1 ? t('Male'): t('Female'),
+			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined').'/'.$r['outrank']:t('Determined')):t('None'),
+			in_array(substr($prof,0,2),array('D5','D6','D7','D8'))?abs($r['rank']):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			$r['score_total'],
+		);
+		
+	}
+	//$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$form['students']=array(
+	    '#type' => 'tableselect',
+	    '#header' => $header,
+	    '#options' => $rows,
+	    '#attributes' => array('class'=>array('assign_students')),
+	    '#default_value' => $default_values,
+	    '#empty' => t('No students to list.'),
+	);
+	$form['submit'] = array('#type'=>'submit', '#value'=>t('Submit'));
+	return $form;
+}
+
+function score_mark_gaokao_round_submit($form, &$form_state) {
+	global $user;
+	$form_values = array_keys(array_filter($form_state['values']['students']));
+	$prof=db_select('vl_professions','p')->condition('p.pid',arg(2))->fields('p',array('pname'))->execute()->fetchField();
+	db_update('students')->fields(array(
+			'pass_roundg_major'=>0
+	))->condition('profession_major',arg(2))->execute();
+	foreach($form_values as $student) {
+		db_update('students')->fields(array(
+				'pass_roundg_major'=>1
+		))->condition('uid',$student)
+		->execute();
+	}
+	
+	drupal_set_message(
+		t('!num !prof students have been enrolled into the gaokao round examiniation.', array(
+			'!num'=>count($form_values), '!prof'=>$prof)));
+	watchdog('score',
+		'!num !prof students have been enrolled into the gaokao round examiniation.', array(
+			'!num'=>count($form_values),
+			'!prof'=>$prof),
+		WATCHDOG_INFO);
+
+	$form_state['redirect']='signup/markroundg';
 }
 
 /*
