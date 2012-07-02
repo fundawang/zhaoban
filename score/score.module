@@ -2097,7 +2097,7 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 	$query->innerJoin('vl_professions','pp','s.profession_major=pp.pid');
 	$query->innerJoin('users','u','u.name=s.uid');
 	$query->condition('s.pass_round3_major',0,'>')->orderBy('sg.sid')->orderBy('s.name');
-	$query->fields('sg')->fields('s',array('name','idcard_number','gender'));
+	$query->fields('sg')->fields('s',array('name','idcard_number','gender','profession_major'));
 	$query->addExpression('u.uid','uuid');
 	$query->addExpression('pp.pname','pname');
 	$query=$query->extend('PagerDefault')->limit(20);
@@ -2111,7 +2111,7 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 		settype($r->score_synthesis,'float');
 		$form['uid'][$r->uid]=array('#type'=>'hidden','#value'=>$r->uid);
 		$form['_sid-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->sid,'#size'=>19,'#maxlength'=>14,'#attributes'=>array('style'=>'padding-left: 2px; padding-right: 2px;'));
-		$form['prof'][$r->uid]=array('#markup'=>$r->pname);
+		$form['prof'][$r->uid]=array('#markup'=>l($r->pname,'signup/3rdround/profession/'.$r->profession_major,array('attributes'=>array('title'=>t('View 3rd round students')))));
 		$form['name'][$r->uid]=array('#markup'=>'<nobr>'.l($r->name,'user/'.$r->uuid,array('attributes'=>array('title'=>$r->idcard_number))).'</nobr>',);
 		$form['_sis-'.$r->uid]=array('#type'=>'checkbox','#default_value'=>$r->is_math_subjects);
 		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>4,'#maxlength'=>6);
