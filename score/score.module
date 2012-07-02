@@ -2363,8 +2363,8 @@ function score_mark_gaokao_round_list() {
 		$rows[]=array(
 			$r->dname,
 			l($r->pname.($r->pnamememo?'('.$r->pnamememo.')':''), 'signup/markroundg/'.$r->pid),
-			$mainland_in,
-			$outmainland_in,
+			$mainland_in?$mainland_in:'',
+			$outmainland_in?$outmainland_in:'',
 		);
 		$tot_mainland_in+=$mainland_in;
 		$tot_outmainland_in+=$outmainland_in;
