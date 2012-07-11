@@ -304,6 +304,9 @@ function score_permission() {
     'input gaokao score' => array(
       'title' => t('Input students gaokao scores'),
     ),
+    'check sutdents roundg scores' => array(
+      'title' => t('Review my roundg status'),
+    ),
   );
 }
 
@@ -3637,42 +3640,51 @@ function score_myscore() {
 	return $output;
 }
 
+*/
 function score_myscore_roundg() {
 	global $user;
 	$uid=$user->name;
-
-	$r_st=db_fetch_object(db_query('SELECT * FROM {students} WHERE uid=\'%s\'', $uid));
-	$output  = '<p>';
-	$output .= t('Dear student @uid @name, ',
+	
+	$query=db_select('students','s')->condition('s.uid',$uid)->fields('s', array('uid','name'));
+	$query->innerJoin('vl_professions', 'p', 'p.pid=s.profession_major');
+	$query->innerJoin('vl_department', 'd', 'p.did = d.did');
+	$query->fields('p',array('pname','plan'))->fields('d',array('dname'));
+	$query->innerJoin('students_contact','sc','sc.uid=s.uid');
+	$query->fields('sc',array('emscode_roundg'));
+	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+	$query->fields('sg',array('sid'));
+	
+	
+	$r=$query->execute()->fetchObject();
+	
+	$output = '<p>';
+	$output .= t('Dear student !uid !name, ',
 		array(
-			'@uid' =>$r_st->uid,
-			'@name'=>$r_st->name,
-		)
-	);
-	$output .= '</p>';
-
-	$r_prof=db_fetch_object(db_query('SELECT p.plan, p.pname, d.dname FROM students s INNER JOIN (vl_professions p INNER JOIN vl_department d ON p.did = d.did) ON s.profession_major =p.pid WHERE s.uid=\'%s\'', $uid));
-	$output .= '<p>';
-	$output .= t('Welcome to CCOM. You\'ve been qualified @dep @prof profession.',
-		array(
-			'@dep' =>$r_prof->dname,
-			'@prof'=>$r_prof->pname,
+			'!uid' =>$r->uid,
+			'!name'=>$r->name,
 		)
 	);
 	$output .= '</p>';
 	
-	$emscode=db_result(db_query('SELECT emscode_roundg FROM {students_contact} WHERE uid=\'%s\'', $uid));
-	$output .='<p>'.t('We\'ve sent out the papaer via EMS, whith its access code as @emscode. You could query the status via Tel 11185 or via <a href="http://www.ems.com.cn">www.ems.com.cn</a>.',
+	$output .= '<p>';
+	$output .= t('Welcome to CCOM. You\'ve been qualified !dep !prof profession.',
 		array(
-			'@emscode'=>$emscode,
+			'!dep' =>$r->dname,
+			'!prof'=>$r->pname,
 		)
-	).t('If students gk number is required, then you might want to provide your gk number @scode',
-		array('@scode'=>db_result(db_query('SELECT sid FROM {students_gk} WHERE uid=\'%s\'', $uid)),
-	)).'</p>';
+	);
+	$output .= '</p>';
+
+	$output .='<p>'.t('We\'ve sent out the papaer via EMS, whith its access code as !emscode. You could query the status via Tel 11183 or via <a href="http://www.ems.com.cn">www.ems.com.cn</a>.',
+		array(
+			'!emscode'=>$r->emscode_roundg,
+		)
+	).t('If students gk number is required, then you might want to provide your gk number !scode',
+		array('!scode'=>$r->sid)
+	).'</p>';
 	
 	return $output;
 }
-*/
 
 function score_cron() {
 	// Force recalculate the total_score of all students
