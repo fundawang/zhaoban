@@ -2917,7 +2917,7 @@ function signup_overview_by_province() {
 	
 	$output = '<p>'.t('There are @number valid students who have signed up.', array('@number'=>$total_students)).'</p>';
 	$header = array(
-		array('data'=>t('Province'), 'field'=>'pid'),
+		array('data'=>t('Province'), 'field'=>'pname'),
 		array('data'=>t('Number of students'), 'field'=>'num', 'sort'=>'desc'),
 	);
 	$query = db_select('students','s')->condition('s.idcard_number','','<>')->condition('s.profession_major','0', '<>');
@@ -2926,6 +2926,7 @@ function signup_overview_by_province() {
 	$query = $query->fields('s',array('ucategory','uid'))
 		->fields('p',array('pid','name'));
 	$query->addExpression('COUNT(s.uid)', 'num');
+	$query->addExpression('CONVERT(CONCAT(CONVERT(p.ucategory, char), p.name) USING gbk )', 'pname');
 	$query = $query->where($valins)
 		->groupBy('p.pid')
 		->groupBy('s.ucategory')
@@ -3400,7 +3401,7 @@ function signup_3rd_round_by_province() {
 	
 	$output = '<p>'.t('There are currently !num students marked as being enrolled into the 3rd round examination.', array('!num'=>$total_students)).'</p>';
 	$header = array(
-		array('data'=>t('Province'), 'field'=>'pid', 'sort'=>'asc'),
+		array('data'=>t('Province'), 'field'=>'pname', 'sort'=>'asc'),
 		array('data'=>t('Number of students'), 'field'=>'num'),
 	);
 	$query = db_select('students','s')->condition('s.idcard_number','','<>')->condition('s.profession_major','0', '<>')->condition('s.pass_round3_major','0','<>');
@@ -3409,6 +3410,7 @@ function signup_3rd_round_by_province() {
 	$query = $query->fields('s',array('ucategory','uid'))
 		->fields('p',array('pid','name'));
 	$query->addExpression('COUNT(s.uid)', 'num');
+	$query->addExpression('CONVERT(CONCAT(CONVERT(p.ucategory, char), p.name) USING gbk )', 'pname');
 	$query = $query->where($valins)
 		->groupBy('p.pid')
 		->groupBy('s.ucategory')
@@ -3975,15 +3977,16 @@ function signup_ground_by_province() {
 	
 	$output .= '<p>'.t('There are currently !num students marked as being enrolled into the gaokao round examination.', array('!num'=>$total_students)).'</p>';
 	$header = array(
-		array('data'=>t('Province'), 'field'=>'pid', 'sort'=>'asc'),
+		array('data'=>t('Province'), 'field'=>'pname', 'sort'=>'asc'),
 		array('data'=>t('Number of students'), 'field'=>'num'),
 	);
 	$query = db_select('students','s')->condition('s.idcard_number','','<>')->condition('s.profession_major','0', '<>')->condition('s.pass_roundg_major','0','<>');
 	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
 	$query->leftJoin('vl_province','p','sg.province=p.pid');
 	$query = $query->fields('s',array('ucategory','uid'))
-		->fields('p',array('pid','name'));
+		->fields('p',array('pid','name','ucategory'));
 	$query->addExpression('COUNT(s.uid)', 'num');
+	$query->addExpression('CONVERT(CONCAT(CONVERT(p.ucategory, char), p.name) USING gbk )', 'pname');
 	$query = $query->where($valins)
 		->groupBy('p.pid')
 		->groupBy('s.ucategory')
