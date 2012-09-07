@@ -1451,6 +1451,9 @@ function score_view_admin() {
 	$query->fields('r',array('uid','rname'));
 	$rdbo=$query->execute();
 	$exams=array();
+	$weight=array();
+	$st=array();
+	$rows=array();
 	foreach($rdbo as $r) {
 		$exams[]=$r;
 	}
@@ -1459,7 +1462,7 @@ function score_view_admin() {
 	foreach($rdbo as $r) {
 		$t=unserialize($r->exams);
 		foreach($t as $eid=>$w)
-			$weight[$eid]+=$w;
+			$weight[$eid]=array_key_exists($eid, $weight)?$weight[$eid]+$w:$w;
 	}
 	
 	$header=array(
@@ -1468,7 +1471,7 @@ function score_view_admin() {
 	);
 	
 	foreach($exams as $exam) {
-		if($weight[$exam->eid]==0) continue;
+		if(empty($weight[$exam->eid])) continue;
 		if(!isset($form[$exam->uid])) {
 			$form[$exam->uid]=array(
 				'#type'=>'fieldset',
@@ -1505,7 +1508,7 @@ function score_view_admin() {
 
 	$rdbo=db_select('vl_research_sec','r')->fields('r')->execute();
 	foreach($rdbo as $r) {
-		if(is_null($st[$r->uid]) || $st[$r->uid]==0)
+		if(array_key_exists($r->uid, $st)|| empty($st[$r->uid]))
 			$form[$r->uid]['#collapsed'] = TRUE;
 		else $form[$r->uid]['#collapsed'] = FALSE;
 	}
@@ -2068,6 +2071,7 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 function theme_score_gaokao_province_status_form($variables) {
 	$form=$variables['form'];
 	$output = '';
+	$rows=array();
 	$header=array(
 		array('data'=>t('Province')),
 		array('data'=>t('Number of students')),
