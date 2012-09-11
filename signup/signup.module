@@ -501,6 +501,7 @@ function signup_form_user_register_form_submit($form, &$form_state) {
 	//var_dump($query);exit();
 	$sid_prev=$query->execute()->fetchField();
 	$data['name']=sprintf(variable_get('zhaoban_current_year',date('Y')).'B%04d',substr($sid_prev,5)+1);
+	$data['contact']=false;
 	
 	// Create the user !
 	$user=user_save('',$data);
