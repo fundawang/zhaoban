@@ -1325,10 +1325,12 @@ function signup_user_view($user, $view_mode, $langcode) {
 	);
 	$user->content['pi']['name'] = array(
 		'#type' => 'user_profile_item',
-		'#title' => (sign_up_picture_perm($user)?'<img src="/user/'.$user->uid.'/picture.jpg" style="padding-right: 10px" align="left" height="100"/>':'').t('Real Name'),
+		'#title' => t('Real Name'),
 		'#markup' => isset($result->name)?$result->name:'',
 		'#weight' => 1,
 	);
+	if(!empty($result->picture))
+		$user->content['pi']['name']['#title'] = '<img src="data:image/jpeg;base64,'.$result->picture.'" style="padding-right: 10px" align="left" height="100"/>'.$user->content['pi']['name']['#title'];
 	$user->content['pi']['gender'] = array(
 		'#type' => 'user_profile_item',
 		'#title' => t('Gender'),
