@@ -75,14 +75,16 @@ function going_menu() {
   	'title' => 'Assign students',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('going_assign_students', 3),
-    'access callback' => 'going_menu_perm',
+    'access callback' => 'going_menu_assign_modify',
+    'access arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
   $items['definations/arrange/empty/%'] = array(
     'title' => 'Empty Going',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('going_assign_empty', 3),
-    'access callback' => 'going_menu_perm',
+    'access callback' => 'going_menu_assign_modify',
+    'access arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
   $items['definations/arrange/printorderlist/%'] = array(
@@ -109,6 +111,12 @@ function going_menu_perm()
 	return user_access('administer going')||user_access('administer own going');
 }
 
+function going_menu_assign_modify($gid)
+{
+	$r=db_select('vl_going', 'g')->fields('g')->condition('g.gid',$gid)->execute()->fetchObject();
+	$is_passed=date('YmdHi0000') > $r->time;
+	return (going_menu_perm() && !$is_passed);
+}
 function going_print_orderlist_perm()
 {
 	return going_menu_perm() && user_access('print order list');
