@@ -1,0 +1,8 @@
+name = Online Tests
+description = Allow to perform tests via online method
+dependencies[] = going
+dependencies[] = signup
+package = Zhaoban
+core = 7.x
+
+version = 2012.10.23
