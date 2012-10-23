@@ -553,15 +553,16 @@ function going_assign_list() {
 	  	  if(db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
 	  	  	  continue;
   	  }
-
+  	  
+  	  $is_passed=date('YmdHi0000') > $r->time;
   	  $rows[] = array(
   	  	  '<nobr>'.$tmp_satus.'</nobr>',
   	  	  $r->gname,
   	  	  db_select('vl_room', 'r')->fields('r',array('rname'))->condition('r.rid', $r->place)->execute()->fetchField(),
   	  	  $num,
   	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
-  		  '<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>',
-  		  '<nobr>'.($num?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>',
+  		  '<nobr>'.($is_passed?'':l(t('fill'), "definations/arrange/fill/$r->gid")).'</nobr>',
+  		  '<nobr>'.(($num&&!$is_passed)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>',
   	  );
   }
 
