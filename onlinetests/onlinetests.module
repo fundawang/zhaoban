@@ -14,11 +14,66 @@
  * Implementation of hook_help().
  */
 function onlinetests_help($path, $arg) {
-  return NULL;
+  $output = '';
+  switch ($path) {
+    case 'definations/itemspec':
+      $output = t('Define specification of online examinations.');
+      break;
+  }
+    return '<p>'.$output.'</p>';
+}
+
+/**
+ * Implements hook_permission
+ */
+function onlinetests_permission() {
+  return array(
+    'administer online exams' => array(
+      'title' => t('Administrater online tests'),
+    ),
+  );
 }
 
 /**
  * Implementation of hook_menu().
  */
 function onlinetests_menu() {
+  $items['definations/itemspec'] = array(
+    'title' => 'Item specification',
+    'description' => "Define specification of online examinations.",
+    'weight' => 10,
+    'page callback' => 'onlinetests_itemspec_list',
+    'access callback' => 'onlinetests_admin_perm',
+  );
+  $items['definations/itemspec/%'] = array(
+    'title' => 'Item specification',
+    'page callback' => 'onlinetests_itemspec_edit',
+    'access callback' => 'onlinetests_admin_perm',
+    'access arguments' => array('3'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function onlinetests_admin_perm($eid=NULL) {
+	$query=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->condition('etype',3);
+	if(!empty($eid)) $query=$query->condition('eid',$eid);
+	$is_dep_only=$query->countQuery()->execute()->fetchField();
+	return user_access('administer online exams') && ($GLOBALS['user']->uid==1? 1: $is_dep_only);
+}
+function onlinetests_itemspec_list() {
+	$is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
+	$query=db_select('vl_exam','e')->condition('etype',3)->fields('e');
+	if($is_dep_only)
+		$query=$query->condition('uid',$GLOBALS['user']->name);
+	$r=$query->execute();
+	
+	$rows=array();
+
+	$header = array(t('Exam ID'), t('Exam Name'), t('Teachers'), t('Operations'));
+	if($is_dep_only)
+		unset($header[2]);
+	$output = theme('table', array('header'=>$header, 'rows'=>$rows, 'empty' => t('No suitable exams.')));
+
+	return $output;
 }
