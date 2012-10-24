@@ -114,6 +114,7 @@ function signup_menu() {
     'description' => "Check the progress of students signup",
     'page callback' => 'signup_blocklist',
     'access callback' => 'signup_check_access',
+    'expanded' => TRUE,
   );
 
   $items['signup/passthrough'] = array(
