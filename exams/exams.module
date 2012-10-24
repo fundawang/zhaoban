@@ -52,6 +52,7 @@ function exams_menu() {
     'description' => "Define examinations and professions.",
     'page callback' => 'exams_definationlist',
     'access callback' => 'exams_definations_perm',
+    'expanded' => TRUE,
   );
 
   $items['definations/exams'] = array(
@@ -143,7 +144,10 @@ function exams_menu() {
 
 
 function exams_definations_perm () {
-	return user_access('administer exams')||user_access('administer going')||user_access('administer own going');
+	$r=user_access('administer exams')||user_access('administer going')||user_access('administer own going');
+	if(module_exists('onlinetests'))
+		$r=$r||user_access('administer online exams');
+	return $r;
 }
 /**
  * Provide a single block from the administration menu as a page.
@@ -180,7 +184,7 @@ function exams_examlist() {
                 $exam->eid,      // Examination ID
                 $exam->ename,    // Examination name
                 $exam->elevel,   // Examination level
-                $exam->etype == 1 ? t('Writing') : t('Interviewing'),    // Examination level
+                $exam->etype == 1 ? t('Writing') : (module_exists('onlinetests')&&$exam->etype ==3 ? t('Online Tests'):t('Interviewing')),    // Examination level
                 $exam->opus ? $exam->opus : t('N/A'),   // The number of opuses
                 $exam->rname,    // Research section name
                 l(t('edit'), "definations/exams/edit/$exam->eid"),
@@ -322,6 +326,7 @@ function exams_exam_edit() {
 		),
 		'#default_value' => (isset($default_values->etype) ? $default_values->etype : '2'),
 	);
+	if (module_exists('onlinetests')) $form['etype']['#options']['3'] = t('Online Tests');
 	$form['opus'] = array(
 		'#type' => 'select',
 		'#title' => t('The number of opus'),
