@@ -73,6 +73,7 @@ function score_menu() {
     'description' => "Upload the score of the students",
     'page callback' => 'score_input_going_list',
     'access callback' => 'score_input_going_list_check',
+    'expanded' => TRUE,
   );
 
   $items['score/input'] = array(
