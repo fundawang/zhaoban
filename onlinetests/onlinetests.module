@@ -47,33 +47,109 @@ function onlinetests_menu() {
   );
   $items['definations/itemspec/%'] = array(
     'title' => 'Item specification',
-    'page callback' => 'onlinetests_itemspec_edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('onlinetests_itemspec_edit',2),
     'access callback' => 'onlinetests_admin_perm',
-    'access arguments' => array('3'),
+    'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
   return $items;
 }
 
 function onlinetests_admin_perm($eid=NULL) {
-	$query=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->condition('etype',3);
+	$query=db_select('vl_exam','e')->condition('e.uid',$GLOBALS['user']->name)->fields('e')->condition('e.etype',3);
 	if(!empty($eid)) $query=$query->condition('eid',$eid);
 	$is_dep_only=$query->countQuery()->execute()->fetchField();
 	return user_access('administer online exams') && ($GLOBALS['user']->uid==1? 1: $is_dep_only);
 }
+
 function onlinetests_itemspec_list() {
-	$is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
+	$is_dep_only=db_select('vl_exam','e')->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
 	$query=db_select('vl_exam','e')->condition('etype',3)->fields('e');
-	if($is_dep_only)
-		$query=$query->condition('uid',$GLOBALS['user']->name);
-	$r=$query->execute();
+	$query->innerJoin('vl_research_sec','r','e.uid=r.uid');
+	$query=$query->fields('r',array('rname'))->orderBy('e.eid');
+	if($is_dep_only) {
+		$query=$query->condition('e.uid',$GLOBALS['user']->name);
+	}
+	$is_itemspec_exist=db_table_exists('vl_itemspec');
+	if($is_itemspec_exist) {
+		$query->leftJoin('vl_itemspec','i','e.eid=i.eid');
+		$query=$query->fields('i',array('itematts','answeratts'));
+	}
+	$result=$query->execute();
 	
 	$rows=array();
 
-	$header = array(t('Exam ID'), t('Exam Name'), t('Teachers'), t('Operations'));
-	if($is_dep_only)
-		unset($header[2]);
+	$header = array(t('Exam ID'), t('Exam Name'));
+	if(!$is_dep_only)
+		$header[]=t('Teachers');
+	if($is_itemspec_exist) {
+		$header[]=t('Num of item attachments');
+		$header[]=t('Num of answer attachments');
+	}
+	$header[]=t('Operations');
+	
+	foreach($result as $r) {
+		$row=array(
+			$r->eid,
+			$r->ename.$r->elevel,
+		);
+		if(!$is_dep_only)
+			$row[]=$r->rname;
+		if($is_itemspec_exist) {
+			$row[]=empty($r->itematts)?t('N/A'):$r->itematts;
+			$row[]=empty($r->answeratts)?t('N/A'):$r->answeratts;
+		}
+		$row[]=l(t('Edit'),'definations/itemspec/'.$r->eid);
+		$rows[]=$row;
+	}
 	$output = theme('table', array('header'=>$header, 'rows'=>$rows, 'empty' => t('No suitable exams.')));
 
 	return $output;
+}
+
+function onlinetests_itemspec_edit($form, $form_state, $eid) {
+	$e=db_select('vl_exam','e')->condition('e.eid',$eid)->condition('e.etype',3)->fields('e')->execute()->fetchObject();
+	drupal_set_title(t('Item specification').' - '.$e->ename.$e->elevel);
+	
+	$e=db_select('vl_itemspec','i')->condition('i.eid',$eid)->fields('i')->execute()->fetchObject();
+	
+	$form=array();
+	$form['itematts']=array(
+		'#title' => t('Num of item attachments'),
+		'#type' => 'textfield',
+		'#size' => 3,
+		'#required' => TRUE,
+		'#default_value' => isset($e->itematts)?$e->itematts:'0',
+	);
+	$form['answeratts']=array(
+		'#title' => t('Num of answer attachments'),
+		'#type' => 'textfield',
+		'#size' => 3,
+		'#required' => TRUE,
+		'#default_value' => isset($e->answeratts)?$e->answeratts:'0',
+	);
+	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
+	return $form;
+}
+
+function onlinetests_itemspec_edit_validate($form, $form_state) {
+	if(!is_numeric($form_state['values']['itematts']))
+		form_set_error('itematts', t('Only numerics are allowed.'));
+	if(!is_numeric($form_state['values']['answeratts']))
+		form_set_error('answeratts', t('Only numerics are allowed.'));
+}
+
+function onlinetests_itemspec_edit_submit($form, &$form_state) {
+	db_delete('vl_itemspec')
+		->condition('eid',arg(2))
+		->execute();
+	db_insert('vl_itemspec')
+		->fields(array(
+			'eid' => arg(2),
+			'itematts' => $form_state['values']['itematts'],
+			'answeratts' => $form_state['values']['answeratts'],
+	))->execute();
+	$form_state['redirect']='definations/itemspec';
+	drupal_set_message(t('Modification saved.'));
 }
