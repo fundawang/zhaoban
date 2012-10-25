@@ -890,7 +890,7 @@ function signup_user_account_form_validate($form, $form_state) {
 				db_set_active('xjinfo');
 				$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->condition('sfyxj','是')->countQuery()->execute()->fetchField();
 				db_set_active('default');
-			}
+			} else $r=1;
 	  	  	if (isset($edit['idnumber']) && $r != 1)
 	  	  	    form_set_error('idnumber', t('The Student ID you\'ve entered is not valid.'));
 			break;
@@ -975,6 +975,12 @@ function signup_user_account_form_save($form, &$form_state) {
 					'idcard_number' => strtoupper($edit['idnumber']),
 					'name' => trim($edit['truename']),
 					'gender' => ($r['xb']=='男')?'1':'2',
+				))->execute();
+			db_update('students_gk')
+				->condition('uid',$user->name)
+				->fields(array(
+					'province' => $edit['province'],
+					'city_district' => $edit['province'],
 				))->execute();
 			break;
 		case uc_MAINLAND_STUDENT:
@@ -5681,6 +5687,13 @@ function signup_search_students($citera) {
 	$query=db_select('users','u')->fields('u',array('uid','name'))->condition('u.name','%'.$citera.'%', 'LIKE')->orderBy('u.name');
 	$query->innerJoin('students','s','u.name=s.uid');
 	$query->addExpression('s.name','sname');
+	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->fields('p',array('pname'));
+	$query->innerJoin('vl_province','pr','sg.province=pr.pid');
+	$query->addExpression('pr.name','prname');
+	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
+	$query->fields('sc',array('contact_phone','phone_roundg'));
 	$r=$query->execute();
 
 	// If only one target is found then direct to it right now.
@@ -5697,9 +5710,12 @@ function signup_search_students($citera) {
 		foreach($r as $u) {
 			$count++;
 			$linktext=str_ireplace($citera, '<b>'.$citera.'</b>', $u->name);
-			$output .='<li style="padding-bottom: 0px"><dl style="margin: 0px">';
+			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
-			$output .='<dd>'.$u->sname.'</dd>';
+			$output .='<dd>'.sprintf("%s / %s / %s", $u->sname, $u->pname, $u->prname);
+			if(isset($u->contact_phone))
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s / %s', drupal_get_path('module', 'signup'), $u->contact_phone, $u->phone_roundg);
+			$output .='</dd>';
 			$output .='</dl></li>';
 		}
 		$output .='</ul>';
@@ -5710,7 +5726,14 @@ function signup_search_students($citera) {
 	$query=db_select('users','u')->fields('u',array('uid','name'))->orderBy('u.name');
 	$query->innerJoin('students','s','u.name=s.uid');
 	$query->addExpression('s.name','sname');
+	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('vl_province','pr','sg.province=pr.pid');
+	$query->fields('p',array('pname'));
+	$query->addExpression('pr.name','prname');
 	$query->condition('s.name','%'.$citera.'%', 'LIKE');
+	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
+	$query->fields('sc',array('contact_phone','phone_roundg'));
 	$r=$query->execute();
 
 	// If only one target is found then direct to it right now.
@@ -5727,9 +5750,12 @@ function signup_search_students($citera) {
 		foreach($r as $u) {
 			$count++;
 			$linktext=str_ireplace($citera,'<b>'.$citera.'</b>', $u->sname);
-			$output .='<li style="padding-bottom: 0px"><dl style="margin: 0px">';
+			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
-			$output .='<dd>'.$u->name.'</dd>';
+			$output .='<dd>'.sprintf("%s / %s / %s", $u->name, $u->pname, $u->prname);
+			if(isset($u->contact_phone))
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s / %s', drupal_get_path('module', 'signup'), $u->contact_phone, $u->phone_roundg);
+			$output .='</dd>';
 			$output .='</dl></li>';
 		}
 		$output .='</ul>';
@@ -5756,6 +5782,12 @@ function signup_search_students($citera) {
 	$query->innerJoin('students','s','u.name=s.uid');
 	$query->addExpression('s.name','sname');
 	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('vl_province','pr','sg.province=pr.pid');
+	$query->fields('p',array('pname'));
+	$query->addExpression('pr.name','prname');
+	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
+	$query->fields('sc',array('contact_phone','phone_roundg'));
 	$query=$query->condition('sg.sid','%'.$citera, 'LIKE')->isNotNull('sg.sid')->fields('sg',array('sid'));
 	$r=$query->execute();
 
@@ -5773,9 +5805,12 @@ function signup_search_students($citera) {
 		foreach($r as $u) {
 			$count++;
 			$linktext=str_ireplace($citera,'<b>'.$citera.'</b>', $u->sid);
-			$output .='<li style="padding-bottom: 0px"><dl style="margin: 0px">';
+			$output .='<li><dl style="margin: 0px">';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
-			$output .='<dd>'.$u->name.' '.$u->sname.'</dd>';
+			$output .='<dd>'.sprintf("%s / %s / %s / %s", $u->name, $u->sname, $u->pname, $u->prname);
+			if(isset($u->contact_phone))
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s / %s', drupal_get_path('module', 'signup'), $u->contact_phone, $u->phone_roundg);
+			$output .='</dd>';
 			$output .='</dl></li>';
 		}
 		$output .='</ul>';
