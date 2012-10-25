@@ -13,6 +13,26 @@
  * Implementation of hook_schema().
  */
 function onlinetests_schema() {
+	$schema['vl_itemspec'] = array(
+		'fields' => array(
+			'eid' => array(
+				'type' => 'varchar',
+				'length' => '3',
+				'not null' => TRUE,
+			),
+			'itematts' => array(
+				'type' => 'int',
+				'size' => 'tiny',
+				'not null' => TRUE,
+			),
+			'answeratts' => array(
+				'type' => 'int',
+				'size' => 'tiny',
+				'not null' => TRUE,
+			),
+		),
+	);
+	return $schema;
 }
 
 
