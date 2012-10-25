@@ -46,6 +46,9 @@ function signup_help($path, $arg) {
       $output.= t('Those students will be forced to select corresponding profession, and do not need to fulfill all the exams.');
       $output.= t('And, the most important part is, all the scores of those students will be overwritten as 100 automatically by system at all time.');
       break;
+    case 'signup/search/%':
+      $output = t('Search students by various citera.');
+      break;
   }
   if (isset($output))
   	return '<p>'.$output.'</p>';
@@ -103,18 +106,28 @@ function signup_permission() {
  * Implementation of hook_menu().
  */
 function signup_menu() {
-  $items['signup/schools_autocompletion'] = array(
-    'title' => 'School Autocompletion',
-    'page callback' => 'signup_schools_autocomplete',
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-  );
   $items['signup'] = array(
     'title' => 'Students',
     'description' => "Check the progress of students signup",
     'page callback' => 'signup_blocklist',
     'access callback' => 'signup_check_access',
     'expanded' => TRUE,
+  );
+
+  $items['signup/schools_autocompletion'] = array(
+    'title' => 'School Autocompletion',
+    'page callback' => 'signup_schools_autocomplete',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['signup/search/%'] = array(
+    'title' => 'Search students',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'signup_search_students',
+    'page arguments' => array(2),
+    'access callback' => 'user_access',
+    'access arguments'=> array('access user profiles'),
   );
 
   $items['signup/passthrough'] = array(
@@ -2497,7 +2510,7 @@ function signup_block_view($delta = '') {
 			break;
 		case 'searchstu':
 			if(user_access('access user profiles')) {
-				$block['subject']=t('Search students');
+				$block['subject']='';
 				$block['content']=drupal_get_form('signup_search_student');
 				return $block;
 			}
@@ -2601,15 +2614,18 @@ function signup_block_content_HOTPROF() {
 
 
 function signup_search_student($form, $form_state) {
+	$form['prefix']=array(
+		'#markup' => '<div class="container-inline">',
+	);
 	if(isset($form_state['rebuild_info']['haserror']) && $form_state['rebuild_info']['haserror']==1) {
 		$form['errmsg'] = array(
 			'#type' => 'markup',
-			'#markup' => '<div class="messages error" id="errmsg">'.t('Invalid Student ID').'</div>',
+			'#markup' => '<span class="container-inline messages error" style="display: inline" id="errmsg">'.t('Invalid Student ID').'</span>',
 			);
 		drupal_add_js(
 			'jQuery(document).ready(function(){'.
 				'jQuery("#edit-uid").focus();'.
-				'window.setTimeout("jQuery(\"#errmsg\").slideUp();",3000)});',
+				'window.setTimeout("jQuery(\"#errmsg\").hide();",3000)});',
 			'inline'
 		);
 	}
@@ -2620,7 +2636,6 @@ function signup_search_student($form, $form_state) {
 		'#attributes' => array(
 			'title' => t('Enter the Student ID, his name or his idcard number'),
 		),
-		'#prefix' => '<div class="container-inline">',
 	);
 	$form['submit'] = array(
 		'#type' => 'submit',
@@ -2651,8 +2666,16 @@ function signup_search_student_submit($form, &$form_state) {
 			$query->innerJoin('students','s','u.name=s.uid');
 			$uid=$query->execute()->fetchField();
 			if(!$uid) {
-				$form_state['rebuild_info']['haserror']=1;
-				$form_state['rebuild']=TRUE;
+				$query=db_select('users','u')->fields('u',array('uid'))->condition('sg.sid','%'.$form_state['values']['uid'], 'LIKE')->where($valins)->orderBy('u.name');
+				$query->innerJoin('students','s','u.name=s.uid');
+				$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+				$uid=$query->execute()->fetchField();
+				if(!$uid) {
+					$form_state['rebuild_info']['haserror']=1;
+					$form_state['rebuild']=TRUE;
+				}
+				else
+					$form_state['rebuild']=FALSE;
 			} else
 				$form_state['rebuild']=FALSE;
 		} else
@@ -2661,10 +2684,7 @@ function signup_search_student_submit($form, &$form_state) {
 		$form_state['rebuild']=FALSE;
 
 	if(!$form_state['rebuild'])
-		if(user_access('modify students info'))
-			$form_state['redirect']='user/'.$uid.'/edit';
-		else
-			$form_state['redirect']='user/'.$uid;
+		drupal_goto('signup/search/'.$form_state['values']['uid']);
 }
 
 function signup_form_contact_site_form_alter(&$form, &$form_state) {
@@ -5651,5 +5671,119 @@ function signup_cron() {
 			->condition('idcard_number',$r->idcard_number)
 			->execute();
 	}
+}
+
+function signup_search_students($citera) {
+	$output='';
+	$count=0;
+	
+	// 1. Search by students uid
+	$query=db_select('users','u')->fields('u',array('uid','name'))->condition('u.name','%'.$citera.'%', 'LIKE')->orderBy('u.name');
+	$query->innerJoin('students','s','u.name=s.uid');
+	$query->addExpression('s.name','sname');
+	$r=$query->execute();
+
+	// If only one target is found then direct to it right now.
+	if($r->rowCount()==1) {
+		$uid=$r->fetchObject();
+		drupal_set_message(t('Unique result found.'));
+		drupal_goto('user/'.$uid->uid);
+		return;
+	}
+	
+	// If multiple result found, then list them
+	if($r->rowCount()>1) {
+		$output.='<div><h3>'.t("Search by student id:").'</h3><ul>';
+		foreach($r as $u) {
+			$count++;
+			$linktext=str_ireplace($citera, '<b>'.$citera.'</b>', $u->name);
+			$output .='<li style="padding-bottom: 0px"><dl style="margin: 0px">';
+			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
+			$output .='<dd>'.$u->sname.'</dd>';
+			$output .='</dl></li>';
+		}
+		$output .='</ul>';
+		$output .='</div>';
+	}
+	
+	// 2. Search by students name
+	$query=db_select('users','u')->fields('u',array('uid','name'))->orderBy('u.name');
+	$query->innerJoin('students','s','u.name=s.uid');
+	$query->addExpression('s.name','sname');
+	$query->condition('s.name','%'.$citera.'%', 'LIKE');
+	$r=$query->execute();
+
+	// If only one target is found then direct to it right now.
+	if($r->rowCount()==1) {
+		$uid=$r->fetchObject();
+		drupal_set_message(t('Unique result found.'));
+		drupal_goto('user/'.$uid->uid);
+		return;
+	}
+	
+	// If multiple result found, then list them
+	if($r->rowCount()>1) {
+		$output.='<div><h3>'.t("Search by student name:").'</h3><ul>';
+		foreach($r as $u) {
+			$count++;
+			$linktext=str_ireplace($citera,'<b>'.$citera.'</b>', $u->sname);
+			$output .='<li style="padding-bottom: 0px"><dl style="margin: 0px">';
+			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
+			$output .='<dd>'.$u->name.'</dd>';
+			$output .='</dl></li>';
+		}
+		$output .='</ul>';
+		$output .='</div>';
+	}
+	
+	// 3. Search by students idcard_num
+	$query=db_select('users','u')->fields('u',array('uid','name'))->orderBy('u.name');
+	$query->innerJoin('students','s','u.name=s.uid');
+	$query->addExpression('s.name','sname');
+	$query->condition('s.idcard_number',$citera);
+	$r=$query->execute();
+
+	// If only one target is found then direct to it right now.
+	if($r->rowCount()==1) {
+		$uid=$r->fetchObject();
+		drupal_set_message(t('Unique result found.'));
+		drupal_goto('user/'.$uid->uid);
+		return;
+	}
+	
+	// 4. Search by students sid
+	$query=db_select('users','u')->fields('u',array('uid','name'))->orderBy('u.name');
+	$query->innerJoin('students','s','u.name=s.uid');
+	$query->addExpression('s.name','sname');
+	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+	$query=$query->condition('sg.sid','%'.$citera, 'LIKE')->isNotNull('sg.sid')->fields('sg',array('sid'));
+	$r=$query->execute();
+
+	// If only one target is found then direct to it right now.
+	if($r->rowCount()==1) {
+		$uid=$r->fetchObject();
+		drupal_set_message(t('Unique result found.'));
+		drupal_goto('user/'.$uid->uid);
+		return;
+	}
+	
+	// If multiple result found, then list them
+	if($r->rowCount()>1) {
+		$output.='<div><h3>'.t("Search by student sid:").'</h3><ul>';
+		foreach($r as $u) {
+			$count++;
+			$linktext=str_ireplace($citera,'<b>'.$citera.'</b>', $u->sid);
+			$output .='<li style="padding-bottom: 0px"><dl style="margin: 0px">';
+			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
+			$output .='<dd>'.$u->name.' '.$u->sname.'</dd>';
+			$output .='</dl></li>';
+		}
+		$output .='</ul>';
+		$output .='</div>';
+	}
+	
+	drupal_set_title(t('Search students').' - '.$citera);
+	
+	return $output;
 }
 ?>
