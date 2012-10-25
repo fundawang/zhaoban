@@ -873,9 +873,11 @@ function signup_user_account_form_validate($form, $form_state) {
 			  		break;
 			  	}
 			}
-			db_set_active('xjinfo');
-			$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->condition('sfyxj','是')->countQuery()->execute()->fetchField();
-			db_set_active('default');
+			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
+				db_set_active('xjinfo');
+				$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->condition('sfyxj','是')->countQuery()->execute()->fetchField();
+				db_set_active('default');
+			}
 	  	  	if (isset($edit['idnumber']) && $r != 1)
 	  	  	    form_set_error('idnumber', t('The Student ID you\'ve entered is not valid.'));
 			break;
@@ -947,15 +949,19 @@ function signup_user_account_form_save($form, &$form_state) {
 	
 	switch($user->ucategory) {
 		case uc_OWN_STUDENT:
-			db_set_active('xjinfo');
-			$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->execute()->fetchObject();
-			db_set_active('default');
+			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
+				db_set_active('xjinfo');
+				$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->execute()->fetchAssoc();
+				db_set_active('default');
+			} else {
+				$r=array('xb'=>'男');
+			}
 			db_update('students')
 				->condition('uid',$user->name)
 				->fields(array(
 					'idcard_number' => strtoupper($edit['idnumber']),
 					'name' => trim($edit['truename']),
-					'gender' => ($r->xb=='男')?'1':'2',
+					'gender' => ($r['xb']=='男')?'1':'2',
 				))->execute();
 			break;
 		case uc_MAINLAND_STUDENT:
