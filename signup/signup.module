@@ -5699,7 +5699,7 @@ function signup_search_students($citera) {
 	// If only one target is found then direct to it right now.
 	if($r->rowCount()==1) {
 		$uid=$r->fetchObject();
-		drupal_set_message(t('Unique result found.'));
+		drupal_set_message(t('Unique result found when searching @citera by student id.',array('@citera'=>$citera)));
 		drupal_goto('user/'.$uid->uid);
 		return;
 	}
@@ -5739,7 +5739,7 @@ function signup_search_students($citera) {
 	// If only one target is found then direct to it right now.
 	if($r->rowCount()==1) {
 		$uid=$r->fetchObject();
-		drupal_set_message(t('Unique result found.'));
+		drupal_set_message(t('Unique result found when searching @citera by student name.',array('@citera'=>$citera)));
 		drupal_goto('user/'.$uid->uid);
 		return;
 	}
@@ -5772,7 +5772,7 @@ function signup_search_students($citera) {
 	// If only one target is found then direct to it right now.
 	if($r->rowCount()==1) {
 		$uid=$r->fetchObject();
-		drupal_set_message(t('Unique result found.'));
+		drupal_set_message(t('Unique result found when searching @citera by student idcard_number.',array('@citera'=>$citera)));
 		drupal_goto('user/'.$uid->uid);
 		return;
 	}
@@ -5794,7 +5794,7 @@ function signup_search_students($citera) {
 	// If only one target is found then direct to it right now.
 	if($r->rowCount()==1) {
 		$uid=$r->fetchObject();
-		drupal_set_message(t('Unique result found.'));
+		drupal_set_message(t('Unique result found when searching @citera by student sid.',array('@citera'=>$citera)));
 		drupal_goto('user/'.$uid->uid);
 		return;
 	}
@@ -5805,7 +5805,7 @@ function signup_search_students($citera) {
 		foreach($r as $u) {
 			$count++;
 			$linktext=str_ireplace($citera,'<b>'.$citera.'</b>', $u->sid);
-			$output .='<li><dl style="margin: 0px">';
+			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
 			$output .='<dd>'.sprintf("%s / %s / %s / %s", $u->name, $u->sname, $u->pname, $u->prname);
 			if(isset($u->contact_phone))
