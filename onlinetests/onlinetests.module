@@ -194,7 +194,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			'#type' => 'fieldset',
 			'#title' => $exam_names[$exam_id],
 			'#collapsible' => TRUE,
-			'#collapsed' => FALSE,
+			'#collapsed' => TRUE,
 		);
 		$form[$exam_id]['stem']=array(
 			'#type' => 'textarea',
@@ -223,7 +223,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			);
 		}
 	}
-	if(count($exam_id)==1) {
+	if(count($exam_ids)==1) {
 		foreach($form[$exam_ids[0]] as $k=>$c) {
 			if(substr($k,0,1)!='#')
 				$form[$k]=$form[$exam_ids[0]][$k];
