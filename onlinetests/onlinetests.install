@@ -31,6 +31,36 @@ function onlinetests_schema() {
 				'not null' => TRUE,
 			),
 		),
+		'primary key' => array('eid'),
+	);
+	$schema['vl_quest'] = array(
+		'fields' => array(
+			'gid' => array(
+				'type' => 'varchar',
+				'length' => '4',
+				'not null' => TRUE,
+			),
+			'eid' => array(
+				'type' => 'varchar',
+				'length' => '3',
+				'not null' => TRUE,
+			),
+			'stem' => array(
+				'type' => 'text',
+				'size' => 'medium',
+				'not null' => TRUE,
+			),
+			'materials' => array(
+				'type' => 'varchar',
+				'length' => '128',
+				'not null' => TRUE,
+			),
+			'descriptivetext' => array(
+				'type' => 'varchar',
+				'length' => '1024',
+				'not null' => TRUE,
+			),
+		),
 	);
 	return $schema;
 }

@@ -53,6 +53,13 @@ function onlinetests_menu() {
     'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
+  $items['definations/arrange/quest/%'] = array(
+    'title' => 'Modify paper',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('onlinetests_modify_quest',3),
+    'access callback' => 'onlinetests_admin_perm',
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -152,4 +159,89 @@ function onlinetests_itemspec_edit_submit($form, &$form_state) {
 	))->execute();
 	$form_state['redirect']='definations/itemspec';
 	drupal_set_message(t('Modification saved.'));
+}
+
+function onlinetests_modify_quest($form, $form_state, $gid) {
+	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
+	drupal_set_title(t('Modify paper').' - '.$going->gname);
+	
+	$exam_ids=explode(', ', $going->valid_exams);
+	$exam_names=array();
+	foreach($exam_ids as $exam_id) {
+		$rd=db_select('vl_exam', 'e')
+			->fields('e')
+			->condition('eid',$exam_id)
+			->execute()->fetchObject();
+		if($rd)
+			$exam_names[$exam_id]=$rd->ename.$rd->elevel;
+	}
+	
+	$form=array();
+	foreach($exam_ids as $exam_id) {
+		$form[$exam_id]=array(
+			'#type' => 'fieldset',
+			'#title' => $exam_names[$exam_id],
+			'#collapsible' => TRUE,
+			'#collapsed' => FALSE,
+		);
+		$form[$exam_id]['stem']=array(
+			'#type' => 'textarea',
+			'#title' => t('Stem'),
+			'#rows' => 10,
+			'#required' => TRUE,
+		);
+		$r=db_select('vl_itemspec','i')->condition('eid',$exam_id)->fields('i')->execute()->fetchObject();
+		for($i=1;$i<=$r->itematts;$i++) {
+			$form[$exam_id]['quest'.$exam_id.'_'.$i]=array(
+				'#type' => 'managed_file',
+				'#title' => t('Material @i', array('@i'=>$i)),
+				'#upload_validators' => array('file_validate_extensions'=>array()),
+				'#required' => TRUE,
+			);
+		}
+		for($i=1;$i<=$r->answeratts;$i++) {
+			$form[$exam_id]['ans'.$exam_id.'_'.$i]=array(
+				'#type' => 'textfield',
+				'#title' => t('Title of answer @i', array('@i'=>$i)),
+				'#required' => TRUE,
+				'#size' => 50,
+			);
+		}
+	}
+	if(count($exam_id)==1) {
+		foreach($form[$exam_ids[0]] as $k=>$c) {
+			if(substr($k,0,1)!='#')
+				$form[$k]=$form[$exam_ids[0]][$k];
+		}
+		unset($form[$exam_ids[0]]);
+	}
+	
+	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
+	$form['cancel'] = array('#markup' => l(t('Cancel'), 'definations/arrange'));
+	
+	return $form;
+}
+
+function onlinetests_modify_quest_submit($form, $form_state) {
+	$gid=arg(3); 
+	db_delete('vl_quest')->condition('gid',$gid)->execute();
+	$exams=db_select('vl_going','g')->condition('gid',$gid)->fields('g',array('valid_exams'))->execute()->fetchField();
+	$exam_ids=explode(', ', $exams);
+	foreach($exam_ids as $eid) {
+		$materials=array();
+		$answertext=array();
+		foreach($form_state['values'] as $fid => $fvalue) {
+			if(strpos($fid, 'quest'.$eid) !== FALSE)
+				$materials[]=$fvalue;
+			else if(strpos($fid, 'ans'.$eid) !== FALSE)
+				$answertext[]=$fvalue;
+		}
+		db_insert('vl_quest')->fields(array(
+			'gid' => $gid,
+			'eid' => $eid,
+			'stem' => $form_state['values']['stem'],
+			'materials' => implode(', ', $materials),
+			'descriptivetext' => implode(', ', $answertext),
+		))->execute();
+	}
 }
