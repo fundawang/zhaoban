@@ -266,8 +266,15 @@ function _going_datetime_to_string($time) {
 }
 
 function going_going_edit() {
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Going'), 'definations/going');
+	drupal_set_breadcrumb($breadcrumb);
+
 	$is_dep_only=user_access('administer own going')&&!user_access('administer going');
 	$form=array();
+	if(arg(2)=='add') drupal_set_title(t('Add Going'));
 	switch(arg(2)) {
 		case 'edit':
 			$query=db_select('vl_going', 'g')->fields('g')->condition('gid', arg(3));
@@ -591,45 +598,6 @@ function going_assign_list() {
   $output .= theme('pager');
   
   return $output;
-  //var_dump($query->__toString());
-  	  
-  
-  	  
-  /*
-  $sql=tablesort_sql($header);
-  $rdbo = pager_query('SELECT g.gid, g.gname, g.place, g.time, count(sg.uid) AS num FROM {vl_going} g LEFT JOIN {students_going} sg ON g.gid=sg.gid '.$criteria.'GROUP BY g.gid'.$sql, 80, 0, 'SELECT count(*) FROM {vl_going} g '.$criteria);
-  
-  $rows = array();
-  while($r=db_fetch_object($rdbo)) {
-  	  if($r->num) {
-  	  	  if(going_print_orderlist_perm())
-  	  	  	  $tmp_satus=l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Order List').'"/>',"definations/arrange/printorderlist/$r->gid", array('html'=>true));
-  	  	  else
-  	  	  	  $tmp_satus='<img src="/misc/watchdog-ok.png"/>';
-  	  }
-  	  else
-  	  	  $tmp_satus='<img src="/misc/watchdog-error.png"/>';
-  	  $rows[] = array(
-  	  	  $tmp_satus,
-  	  	  $r->gname,
-  	  	  db_result(db_query('SELECT r.rname FROM {vl_room} r WHERE r.rid=\'%s\'', $r->place)),
-  	  	  $r->num,
-  	  	  '<nobr>'._going_datetime_to_string($r->time).'</nobr>',
-  		  '<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>',
-  		  '<nobr>'.($r->num?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>',
-  	  );
-  }
-  
-  if(count($rows)==0) {
-    $rows[] = array(array('data' => t('No going have been filled.'), 'colspan' => '7'));
-  }
-  
-  $output = theme('table', $header, $rows);
-  $output .= theme('pager');
-
-  return $output;
-  */
-//  return '';
 }
 
 function going_assign_students($form, $form_state, $gid=NULL) {
@@ -698,15 +666,14 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 			//var_dump($r);
 		}
 		
-		//$rdbo=db_query('SELECT s.randnum as rnd, sg.uid, sk.province FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid LEFT JOIN {students_gk} sk ON s.uid=sk.uid WHERE %s AND sg.eid="%s" AND sg.gid IS NULL AND NOT EXISTS ( SELECT * FROM {students_going} sg1 INNER JOIN {vl_going} g1 ON sg1.gid = g1.gid WHERE sg1.uid = sg.uid AND g1.time = "%s" AND g1.gid <> "%s")'.tablesort_sql($header).' LIMIT 0,80', $citera, $exam, $going->time, $gid);
-		//while($r=db_fetch_object($rdbo)) {
-		//	$students[]=array($r->uid=>$exam);
-		//}
 	}
-	//var_dump($students);
-	// Out the info of the specific going
 	
 	drupal_set_title(t('Assign students').' - '.$going->gname);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Assign students'), 'definations/arrange');
+	drupal_set_breadcrumb($breadcrumb);
 	
 	$form['info']=array(
 		'#type' => 'markup',
@@ -817,6 +784,12 @@ function going_assign_students_submit($form, &$form_state) {
 }
 
 function going_assign_empty($form, $form_state, $gid) {
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Assign students'), 'definations/arrange');
+	drupal_set_breadcrumb($breadcrumb);
+
 	$query=db_select('vl_going','g')->fields('g')->condition('g.gid',$gid);
 	$query->innerJoin('vl_room','r','g.place=r.rid');
 	$query=$query->fields('r');

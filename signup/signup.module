@@ -2811,7 +2811,13 @@ function signup_overview_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-  
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('Students overview'), 'signup/overview');
+	$breadcrumb[]=l(t('By Profession'), 'signup/overview/profession');
+  	drupal_set_breadcrumb($breadcrumb);
+
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
@@ -2931,8 +2937,6 @@ function signup_overview_by_profession_detail($prof=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/overview/profession');
-  
   return $output;
 }
 
@@ -3007,6 +3011,12 @@ function signup_overview_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('Students overview'), 'signup/overview');
+	$breadcrumb[]=l(t('By Province'), 'signup/overview/province');
+  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3091,7 +3101,6 @@ function signup_overview_by_province_detail($prov=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/overview/province');
   return $output;
 }
 
@@ -3163,6 +3172,12 @@ function signup_2nd_round_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('View 2nd round students'), 'signup/2ndround');
+	$breadcrumb[]=l(t('By Profession'), 'signup/2ndround/profession');
+  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round1_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3249,8 +3264,6 @@ function signup_2nd_round_by_profession_detail($prof=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/2ndround');
-  
   return $output;
 }
 
@@ -3326,6 +3339,12 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('View 3rd round students'), 'signup/3rdround');
+	$breadcrumb[]=l(t('By Profession'), 'signup/3rdround/profession');
+  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round3_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3414,8 +3433,6 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/3rdround');
-  
   return $output;
 }
 
@@ -3493,6 +3510,12 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('View 3rd round students'), 'signup/3rdround');
+	$breadcrumb[]=l(t('By Province'), 'signup/3rdround/province');
+  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3582,7 +3605,6 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/3rdround/province');
   return $output;
 }
 
@@ -3904,6 +3926,12 @@ function signup_ground_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('View gaokao round students'), 'signup/ground');
+	$breadcrumb[]=l(t('By Profession'), 'signup/ground/profession');
+  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_roundg_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3990,8 +4018,6 @@ function signup_ground_by_profession_detail($prof=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/ground');
-  
   return $output;
 }
 
@@ -4069,6 +4095,12 @@ function signup_ground_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Students'), 'signup');
+	$breadcrumb[]=l(t('View gaokao round students'), 'signup/ground');
+	$breadcrumb[]=l(t('By Province'), 'signup/ground/province');
+  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -4156,7 +4188,6 @@ function signup_ground_by_province_detail($prov=NULL) {
   $output .= theme('pager');
   $output .= "</div>";
   
-  $output .= l(t('<< Back to full student list'), 'signup/ground/province');
   return $output;
 }
 
@@ -4429,994 +4460,6 @@ function signup_preset_passthrough_submit($form, &$form_state) {
 		drupal_set_message(t('!idnum has been marked as passthrough student.', array('!idnum'=>$new_idnumber.($n?' ('.$n.')':''))));
 	}
 }
-	/*
-function _signup_user_tab_access($user=NULL, $sec=NULL) {
-	$is_student = array_key_exists('5',$user->roles);
-	if($GLOBALS['user']->uid == 1) return FALSE;
-	if(is_null($user)) return FALSE;
-	if(!$is_student = array_key_exists('5',$user->roles)) return FALSE;
-	var_dump($sec);
-	switch($sec) {
-		case 'profession':
-			$result = db_fetch_object(db_query('SELECT s.idcard_number, s.name from {students} s WHERE s.uid = \'%s\'', $user->name));
-       		if(!($result->idcard_number) || !($result->name)) return FALSE;
-        		else return TRUE;
-        case 'exam':
-        	$result = db_fetch_object(db_query('SELECT s.profession_major from {students} s WHERE s.uid = \'%s\'', $user->name));
-			if($result->profession_major == '0') return FALSE;
-			else return TRUE;
-		case 'contact':
-			$result = db_result(db_query('SELECT MAX(sg.opus) FROM {students_going} sg WHERE sg.uid=\'%s\'', $user->name));
-			if(!$result) return FALSE;
-			else return TRUE;
-		case 'gaokao':
-	        $ucategory=db_result(db_query('SELECT ucategory FROM {students} WHERE uid=\'%s\'', $user->name));
-			if(($ucategory == 0 ) || ($ucategory == 3)) return FALSE;
-			$result = db_result(db_query('SELECT contact_phone FROM {students_contact} WHERE uid=\'%s\'', $user->name));
-        	if(!$result) return FALSE;
-        	else if(_signup_user_tab_access($user, 'contact')) return TRUE;
-        	else return FALSE;
-		default: return FALSE;
-	}
-	return TRUE;
-}
-
-
-
-
-function signup_user($op, &$edit, &$account, $category = NULL) {
-	
-	$is_student = FALSE;
-	if(($account->roles)) $is_student = array_key_exists('5',$account->roles);
-	switch($op) {
-		case 'view': return signup_user_view($account);
-		case 'categories': return signup_categories();
-		case 'form':
-			switch($category) {
-				case signup_user_PROFESSION:
-					return signup_user_professions_form($edit, $account);
-				case signup_user_EXAM:
-					return signup_user_examinations_form($edit, $account);
-				case signup_user_CONTACT:
-					return signup_user_contact_form($edit, $account);
-				case signup_user_GAOKAO:
-					return signup_user_gaokao_form($edit, $account);
-				case 'account':
-					return signup_user_account_form($edit, $account);
-      		}
-		case 'update':
-			switch($category) {
-				case signup_user_PROFESSION:
-					signup_user_professions_form_save($edit, $account);break;
-				case signup_user_EXAM:
-					signup_user_examinations_form_save($edit, $account);break;
-				case signup_user_CONTACT:
-					signup_user_contact_form_save($edit, $account);break;
-				case signup_user_GAOKAO:
-					signup_user_gaokao_form_save($edit, $account);break;
-				case 'account':
-					signup_user_account_form_save($edit, $account);break;
-				default: return;
-			}
-			watchdog('user','!user modified !sid\'s information.',
-				array(
-					'!user'=>$GLOBALS['user']->name,
-					'!sid'=>$account->name
-				)
-			);
-			signup_user_view($account);
-			break;
-		case 'validate':
-			switch($category) {
-				case signup_user_PROFESSION:
-					signup_user_professions_form_validate($edit, $account);break;
-				case signup_user_EXAM:
-					signup_user_examinations_form_validate($edit, $account);break;
-				case signup_user_CONTACT:
-					signup_user_contact_form_validate($edit, $account);break;
-				case signup_user_GAOKAO:
-					signup_user_gaokao_form_validate($edit, $account);break;
-				case 'account':
-					signup_user_account_form_validate($edit, $account);break;
-			}
-			break;
-		case 'delete':
-			db_query('DELETE FROM {students} WHERE uid=\'%s\'', $account->name);
-			db_query('DELETE FROM {students_gk} WHERE uid=\'%s\'', $account->name);
-			db_query('DELETE FROM {students_contact} WHERE uid=\'%s\'', $account->name);
-			db_query('DELETE FROM {students_going} WHERE uid=\'%s\'', $account->name);
-			break;
-	}
-}
-
-//function signup_categories($user) {
-function signup_categories() {
-        $data = array();
-        $r =signup_progress_FINISH;
-        switch($r) {
-                case signup_progress_FINISH:
-                case signup_progress_GAOKAO:
-                        $data[3] = array('name' => signup_user_GAOKAO, 'title' => t('Gaokao'), 'weight' => 13,
-                			'access callback' => '_signup_user_tab_access', 'access arguments'=>array(1,'gaokao'));
-                case signup_progress_CONTACT:
-                        $data[2] = array('name' => signup_user_CONTACT, 'title' => t('Contact Detail'), 'weight' => 12, 
-                			'access callback' => '_signup_user_tab_access', 'access arguments'=>array(1,'contact'));
-                case signup_progress_EXAM:
-                        $data[1] = array('name' => signup_user_EXAM, 'title' => t('Examinations'), 'weight' => 11, 
-                			'access callback' => '_signup_user_tab_access', 'access arguments'=>array(1,'exam'));
-                case signup_progress_PROFESSION:
-                        $data[0] = array('name' => signup_user_PROFESSION, 'title' => t('Sign up Professions'), 'weight' => 10,
-                			'access callback' => '_signup_user_tab_access', 'access arguments'=>array(1,'profession'));
-        }
-        ksort($data);
-        return $data;
-}
-
-
-function _signup_overview_by_province_detail($prov=NULL) {
-
-  if(db_result(db_query('SELECT count(*) FROM {students} WHERE validated=1'))>0)
-	$valins=" AND s.validated=1 ";
-	
-  if ($prov=='000000')
-    $sql_department_insert .= "AND s.ucategory='0'";
-  else
-    $sql_department_insert .= "AND gk.province='".$prov."'";
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  	array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
-  );
-  
-  $tablesort = tablesort_sql($header);
-  $rdbo = pager_query(
-  	  'SELECT s.ucategory, s.uid, s.name, s.gender, s.profession_major, gk.province, gk.city_district, IFNULL(c.personnel_record_at,\'\') AS personnel_record_at '.
-  	  'FROM {students} s LEFT JOIN {students_gk} gk ON s.uid = gk.uid '.
-  	  'LEFT JOIN {students_contact} c ON s.uid=c.uid '.
-  	  'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-  	  'WHERE NOT s.idcard_number = \'\' '.$sql_department_insert.$valins.$tablesort, 20);
-  if(!$rdbo) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  while($r = db_fetch_object($rdbo)) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_result(db_query('SELECT p.simplified_name FROM {vl_province} p WHERE p.pid=\'%s\'', $r->province)) : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_result(db_query('SELECT cd.name FROM {vl_city_district} cd WHERE cd.cid = \'%s\'', $r->city_district));
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-	  $profession_major = t('!dname!pname', array(
-  	  	  '!dname' => db_result(db_query('SELECT d.dname FROM {vl_department} d WHERE d.did=\'%s\'', substr($r->profession_major, 0, 2))),
-  	  	  '!pname' => db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\'', $r->profession_major))));
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.db_result(db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid WHERE s.uid=\'%s\'', $r->uid))).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($profession_major, 'signup/overview/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $profession_major)
-		  ))
-		),
-  	  	l($province, 'signup/overview/province/'.$plink),
-  	  	$per,
-  	  );
-  }
-  
-  $output .= theme('table', $header, $rows);
-  $output .= theme('pager', NULL, 20);
-  $output .= "</div>";
-  
-  $output .= l(t('<< Back to full student list'), 'signup/overview/province');
-  
-  drupal_set_title(t('By Province').' - '.db_result(db_query('SELECT p.name FROM {vl_province} p WHERE p.pid=\'%s\'', $prov)));
-  
-  return $output;
-}
-
-function _signup_user_tab_access($user=NULL, $sec=NULL) {
-	$is_student = array_key_exists('5',$user->roles);
-	if($GLOBALS['user']->uid == 1) return FALSE;
-	if(is_null($user)) return FALSE;
-	if(!$is_student = array_key_exists('5',$user->roles)) return FALSE;
-	switch($sec) {
-		case 'profession':
-			$result = db_fetch_object(db_query('SELECT s.idcard_number, s.name from {students} s WHERE s.uid = \'%s\'', $user->name));
-       		if(!($result->idcard_number) || !($result->name)) return FALSE;
-        		else return TRUE;
-        case 'exam':
-        	$result = db_fetch_object(db_query('SELECT s.profession_major from {students} s WHERE s.uid = \'%s\'', $user->name));
-			if($result->profession_major == '0') return FALSE;
-			else return TRUE;
-		case 'contact':
-			$result = db_result(db_query('SELECT MAX(sg.opus) FROM {students_going} sg WHERE sg.uid=\'%s\'', $user->name));
-			if(!$result) return FALSE;
-			else return TRUE;
-		case 'gaokao':
-	        $ucategory=db_result(db_query('SELECT ucategory FROM {students} WHERE uid=\'%s\'', $user->name));
-			if(($ucategory == 0 ) || ($ucategory == 3)) return FALSE;
-			$result = db_result(db_query('SELECT contact_phone FROM {students_contact} WHERE uid=\'%s\'', $user->name));
-        	if(!$result) return FALSE;
-        	else if(_signup_user_tab_access($user, 'contact')) return TRUE;
-        	else return FALSE;
-		default: return FALSE;
-	}
-}
-
-function signup_user_account_form($edit, $user) {
-			$is_student = array_key_exists('5',$user->roles);
-			if(!user_access('modify students info') && $user->uid !== $GLOBALS['user']->uid) return;
-			// we don't want the administer do anything, but it's fine if one has such permission.
-			if($GLOBALS['user']->uid=='1') return;
-			if(!$is_student) return;
-		    $isvalidated=db_result(db_query('SELECT s.validated FROM {students} s WHERE s.uid=\'%s\'', $user->name));
-		    $default_values=db_fetch_object(db_query(
-		    	'SELECT s.*, sg.province,sg.city_district FROM {students} s INNER JOIN {students_gk} sg ON s.uid=sg.uid WHERE s.uid=\'%s\'',
-		    	$user->name));
-			$form['personal'] = array(
-				'#type' => 'fieldset',
-				'#title' => t('Personal information'),
-				'#description' => t('You\'ll need to provide these information when reseting password. When typing alphabet, please use upper case.')
-			);
-         switch ($user->ucategory) {
-           case uc_OWN_STUDENT: // Our own student
-           {
-             $form['personal']['idnumber'] = array('#type' => 'textfield',
-               '#title' => t('Your Student ID'),
-               '#default_value' => $default_values->idcard_number,
-               '#maxlength' => 6,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['truename'] = array('#type' => 'textfield',
-               '#title' => t('Your Name'),
-               '#default_value' => $default_values->name,
-               '#maxlength' => 50,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['province'] = array('#type' => 'hidden',
-               '#value' => '000000');
-            }
-             break;
-           case uc_MAINLAND_STUDENT: // China mainland student
-           {
-             $form['personal']['idnumber'] = array('#type' => 'textfield',
-               '#title' => t('Your ID Card Number'),
-               '#description' => t('We\'re calculating gender and date of birth based '.
-                 'on your ID card number. If you are not using citizen ID Card, please contact us.'),
-               '#default_value' => $default_values->idcard_number,
-               '#maxlength' => 18,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['truename'] = array('#type' => 'textfield',
-               '#title' => t('Your Name'),
-               '#default_value' => $default_values->name,
-               '#maxlength' => 50,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['province'] = array('#type' => 'select',
-               '#title' => t('Province you live'),
-               '#description' => t('The place you will be attending the exam.'),
-               '#default_value' => $default_values->province,
-               '#options' => array(),
-               //'#prefix' => '<a name="edit-province">',
-               //'#suffix' => '</a>',
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $dbo = db_query('SELECT * from {vl_province} p where p.ucategory=%s',$user->ucategory);
-             while ($result = db_fetch_array($dbo))
-             {
-               $r = array($result['pid'] => $result['name']);
-               $form['personal']['province']['#options'] += $r;
-             }
-             $form['personal']['nationality'] = array('#type' => 'select',
-               '#title' => t('Your nationality'),
-               '#default_value' => $default_values->nationality,
-               '#options' => array(),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $dbo = db_query('SELECT * from {vl_nationality}');
-             while ($result = db_fetch_array($dbo))
-             {
-               $r = array($result['nid'] => $result['name']);
-               if ($result['nid'] != 98)
-                 $form['personal']['nationality']['#options'] += $r;
-             }
-             $form['personal']['political'] = array('#type' => 'select',
-               '#title' => t('Your Political feature'),
-               '#default_value' => $default_values->politics_feature,
-               '#options' => array(),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $dbo = db_query('SELECT * from {vl_politics_features}');
-             while ($result = db_fetch_array($dbo))
-             {
-               $r = array($result['pid'] => $result['name']);
-                 $form['personal']['political']['#options'] += $r;
-             }
-             break;
-           }
-             break;
-           case uc_HKTW_STUDENT:
-           {
-             $form['personal']['idnumber'] = array('#type' => 'textfield',
-               '#title' => t('Your ID Card Number'),
-               '#default_value' => $default_values->idcard_number,
-               '#maxlength' => 18,
-               '#required' => TRUE);
-             $form['personal']['truename'] = array('#type' => 'textfield',
-               '#title' => t('Your Name'),
-               '#default_value' => $default_values->name,
-               '#maxlength' => 50,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['dateofbirth'] = array('#type' => 'date',
-               '#title' => t('Your date of birth'),
-               '#default_value' => array(
-                 'year' => substr($default_values->date_of_birth,0,4),
-                 'month' => 1*substr($default_values->date_of_birth,4,2),
-                 'day' => 1*substr($default_values->date_of_birth,6,2)
-                 ),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['gender'] = array('#type' => 'radios',
-               '#title' => t('Your Gender'),
-               '#default_value' => $default_values->gender,
-               '#options' => array('1'=>t('Male'), '2'=>t('Female')),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['province'] = array('#type' => 'select',
-               '#title' => t('Place you live'),
-               '#default_value' => $default_values->province,
-               '#prefix' => '<a name="edit-province">',
-               '#suffix' => '</a>',
-               '#options' => array(),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $dbo = db_query('SELECT * from {vl_province} p where p.ucategory=%s',$user->ucategory);
-             while ($result = db_fetch_array($dbo))
-             {
-               $r = array($result['pid'] => $result['name']);
-               $form['personal']['province']['#options'] += $r;
-             }
-             $form['personal']['nationality'] = array('#type' => 'select',
-               '#title' => t('Your nationality'),
-               '#default_value' => $default_values->nationality,
-               '#options' => array(),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $dbo = db_query('SELECT * from {vl_nationality}');
-             while ($result = db_fetch_array($dbo))
-             {
-               $r = array($result['nid'] => $result['name']);
-               if ($result['nid'] != 98)
-                 $form['personal']['nationality']['#options'] += $r;
-             }
-           }
-             break;
-           case uc_OVERSEA_STUDENT:
-           {
-             $form['personal']['country'] = array('#type' => 'select',
-               '#title' => t('The country you resists'),
-               '#default_value' => $default_values->city_district,
-               '#options' => array(),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $dbo = db_query('SELECT * FROM {vl_city_district} WHERE pid=\'800000\'');
-             while ($result = db_fetch_array($dbo))
-             {
-               $r = array($result['cid'] => $result['name']);
-               $form['personal']['country']['#options'] = $form['personal']['country']['#options'] + $r;
-             }
-             $form['personal']['idnumber'] = array('#type' => 'textfield',
-               '#title' => t('Your Passport Number'),
-               '#default_value' => $default_values->idcard_number,
-               '#maxlength' => 18,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['truename'] = array('#type' => 'textfield',
-               '#title' => t('Your Chinese Name'),
-               '#default_value' => $default_values->name,
-               '#maxlength' => 50,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['origname'] = array('#type' => 'textfield',
-               '#title' => t('Your Name on your passport'),
-               '#default_value' => $default_values->foreign_name,
-               '#maxlength' => 50,
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['dateofbirth'] = array('#type' => 'date',
-               '#title' => t('Your date of birth'),
-               '#default_value' => array(
-                 'year' => substr($default_values->date_of_birth,0,4),
-                 'month' => 1*substr($default_values->date_of_birth,4,2),
-                 'day' => 1*substr($default_values->date_of_birth,6,2)
-                 ),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['gender'] = array('#type' => 'radios',
-               '#title' => t('Your Gender'),
-               '#default_value' => $default_values->gender,
-               '#options' => array('1'=>t('Male'), '2'=>t('Female')),
-               '#required' => !$isvalidated,
-               '#disabled' => $isvalidated,
-             );
-             $form['personal']['nationality'] = array('#type' => 'hidden',
-               '#value' => '98');
-             $form['personal']['province'] = array('#type' => 'hidden',
-               '#value' => '800000');
-			}
-             break;
-         }
-		 return $form;
-}
-
-function signup_user_account_form_save(&$edit, &$user) {
-	//var_dump($edit);var_dump($user);exit;
-	if($edit['pass']) {
-		user_save($user, array('pass'=>$edit['pass']), 'pass');
-	}
-	$isvalidated=db_result(db_query('SELECT s.validated FROM {students} s WHERE s.uid=\'%s\'', $user->name));
-	if($isvalidated) return;
-	$edit['dobtosave']=sprintf("%04d%02d%02d",$edit['dateofbirth']['year'], $edit['dateofbirth']['month'], $edit['dateofbirth']['day']);
-	$ucategory=db_result(db_query('SELECT ucategory FROM {students} WHERE uid=\'%s\'', $user->name));
-	//var_dump($user);exit;
-	switch($ucategory) {
-		case uc_OWN_STUDENT:
-			//var_dump($user);exit;
-			db_query("UPDATE {students} SET idcard_number = '%s', name = '%s' WHERE uid = '%s'",
-				strtoupper($edit['idnumber']), trim($edit['truename']), $user->name);
-			break;
-		case uc_MAINLAND_STUDENT:
-			db_query("UPDATE {students} SET gender = '%s', date_of_birth = '%s', nationality ='%s', politics_feature='%s' WHERE uid = '%s'",
-				pim_genderfromidnumber($edit['idnumber']), pim_dobfromidnumber($edit['idnumber']),
-				$edit['nationality'], $edit['political'], $user->name);
-        	db_query("UPDATE {students} SET idcard_number = '%s', name = '%s' WHERE uid = '%s'",
-				strtoupper($edit['idnumber']), trim($edit['truename']), $user->name);
-			db_query("UPDATE {students_gk} SET province = '%s' WHERE uid = '%s'",
-				$edit['province'], $user->name);
-			$city=db_result(db_query('SELECT city_district FROM {students_gk} WHERE uid=\'%s\'', $user->name));
-			if(substr($city,0,2)!==substr($edit['province'],0,2))
-				db_query("UPDATE {students_gk} SET city_district = '%s' WHERE uid = '%s'",
-					$edit['province'], $user->name);
-			break;
-		case uc_HKTW_STUDENT:
-			db_query("UPDATE {students} SET idcard_number = '%s', name = '%s', nationality ='%s' WHERE uid = '%s'",
-				strtoupper($edit['idnumber']), trim($edit['truename']), $edit['nationality'], $user->name);
-			db_query("UPDATE {students} SET gender = '%s', date_of_birth = '%s' WHERE uid = '%s'",
-				$edit['gender'], $edit['dobtosave'], $user->name);
-			db_query("UPDATE {students_gk} SET province = '%s', city_district = '%s' WHERE uid = '%s'",
-				$edit['province'], $edit['province'], $user->name);
-			break;
-		case uc_OVERSEA_STUDENT:
-			db_query("UPDATE {students} SET idcard_number = '%s', name = '%s', nationality ='%s' WHERE uid = '%s'",
-				strtoupper($edit['idnumber']), trim($edit['truename']), $edit['nationality'], $user->name);
-			db_query("UPDATE {students} SET foreign_name = '%s' WHERE uid = '%s'",
-				trim($edit['origname']), $user->name);
-			db_query("UPDATE {students} SET gender = '%s', date_of_birth = '%s' WHERE uid = '%s'",
-				$edit['gender'], $edit['dobtosave'], $user->name);
-			db_query("UPDATE {students_gk} SET province = '800000', city_district = '%s' WHERE uid='%s'",
-				$edit['country'], $user->name);
-			break;
-	}
-}
-
-function signup_user_account_form_validate(&$edit, $user) {
-	$isvalidated=db_result(db_query('SELECT s.validated FROM {students} s WHERE s.uid=\'%s\'', $user->name));
-	if($isvalidated) return;
-	
-	$ucategory=db_result(db_query('SELECT ucategory FROM {students} WHERE uid=\'%s\'', $user->name));
-	switch($ucategory) {
-		case uc_OWN_STUDENT:
-			if ($edit['idnumber']) {
-				$r = db_result(db_query('SELECT count(*) FROM {students} WHERE idcard_number=\'%s\' AND NOT uid=\'%s\'', $edit['idnumber'], $user->name));
-			  	if ($r) {
-			    	form_set_error('idnumber', t('The student ID has already been registerd.').' '.
-			  			t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/logout?destination=user/password')));
-			  		break;
-			  	}
-			}
-	  	  	if (isset($edit['idnumber']) && !preg_match('/\d{2}B\d{3}/', $edit['idnumber']))
-	  	  	    form_set_error('idnumber', t('The Student ID you\'ve entered is not valid.'));
-			break;
-		case uc_MAINLAND_STUDENT:
-			if ($edit['idnumber']) {
-				$r = db_result(db_query('SELECT count(*) FROM {students} WHERE idcard_number=\'%s\' AND NOT uid=\'%s\'', $edit['idnumber'], $user->name));
-				if ($r) {
-					form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
-						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/logout?destination=user/password')));
-					break;
-				}
-  	    	}
-			if (!is_idcardn_validate($edit['idnumber']))
-				form_set_error('idnumber', t('The ID Card number you\'ve entered is not valid.'));
-			break;
-		case uc_HKTW_STUDENT:
-			if ($edit['idnumber']) {
-				$r = db_result(db_query('SELECT count(*) FROM {students} WHERE idcard_number=\'%s\' AND NOT uid=\'%s\'', $edit['idnumber'], $user->name));
-				if ($r) {
-					form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
-						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/logout?destination=user/password')));
-					break;
-				}
-			}
-			switch($edit['province']) {
-				case '720000':
-					if (!is_hk_idcardn_validate($edit['idnumber']))
-						form_set_error('idnumber', t('The ID Card number you\'ve entered is not valid.'));
-					break;
-				case '710000':
-					if (!is_tw_idcardn_validate($edit['idnumber'])) {
-						form_set_error('idnumber', t('The ID Card number you\'ve entered is not valid.'));
-					break;
-					}
-					$gender_calculated = substr($edit['idnumber'],1,1);
-					if ($gender_calculated != '1' && $gender_calculated != '2') {
-						form_set_error('idnumber', t('The ID Card number you\'ve entered is not valid.'));
-						break;
-					}
-					if ($gender_calculated != $edit['gender']) {
-						form_set_error('idnumber', t('The ID Card number you\'ve entered does not meet your gender.'));
-						form_set_error('gender', t('The ID Card number you\'ve entered does not meet your gender.'));
-					}
-					break;
-			}
-			break;
-		case uc_OVERSEA_STUDENT:
-			if ($edit['idnumber']) {
-				$r = db_result(db_query('SELECT count(*) FROM {students} WHERE idcard_number=\'%s\' AND NOT uid=\'%s\'', $edit['idnumber'], $user->name));
-				if ($r) {
-  	  				form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
-						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/logout?destination=user/password')));
-					break;
-				}
-			}
-			break;
-	}
-}
-
-function signup_user_examinations_form_validate(&$edit, $user) {
-	return;
-}
-
-function signup_user_contact_form_validate(&$edit, $user) {
-	return;
-}
-
-function signup_block($op = 'list', $delta = 0) {
-	if ($op == 'list') {
-		return signup_block_list();
-	}
-	else if ($op == 'view') {
-		switch($delta) {
-			case signup_block_PROGRESS:
-				return signup_block_content_PROGRESS($delta);
-			case signup_block_HOTPROFESSIONS:
-				return signup_block_content_HOTPROFESSIONS($delta);
-			case signup_block_SEARCHSTUDENTS:
-				return signup_block_content_SEARCHSTUDENTS($delta);
-  		}
-    }
-}
-
-function signup_block_list() {
-	$result[signup_block_PROGRESS] = array(
-		'info' => t('Signup Progress'),
-	);
-	$result[signup_block_HOTPROFESSIONS] = array(
-		'info' => t('Hot professions'),
-		'cache' => BLOCK_NO_CACHE,
-	);
-	if(user_access('modify students info'))
-		$result[signup_block_SEARCHSTUDENTS] = array(
-			'info' => t('Search students'),
-		);
-	return $result;
-}
-
-function signup_block_content_HOTPROFESSIONS($delta) {
-  	  if (!$GLOBALS['user']->uid && arg(0) != 'user') {
-  	  	$numofprofess = db_result(db_query('SELECT count(*) from {vl_professions} p WHERE p.enabled=1'));
-  	    $r=t('There are <a href="!url">!num professions</a> opening for signing up this year.<br />'.
-  	  	  '!users students have been registered till now.',
-  	      array(
-  	        '!num' => $numofprofess,
-  	        '!url' => '/guide',
-  	        '!users' => db_result(db_query('SELECT count(*) FROM {students} s WHERE s.idcard_number <> "" AND s.profession_major <> "0"'))
-  	      ));
-  	    $r.='<br/>';
-  	    $num=db_result(db_query('SELECT count(*) FROM {students} s WHERE s.validated = 1'));
-  	    if($num>0)
-  	    	$r.=t('!num of which has been confirmed.', array('!num'=>$num));
-  	  }
-  	  
-  	  $result['content']=$r;
-  	  $result['subject']=t('Hot professions');
-  	  return $result;
-}
-
-function signup_block_content_SEARCHSTUDENTS($delta) {
-	$result['content']=drupal_get_form('signup_search_student');
-	$result['subject']=t('Search students');
-	return $result;
-}
-
-function signup_search_student($form_state = NULL) {
-	if($form_state['storage']['haserror']==1) {
-		$form['errmsg'] = array(
-			'#value' => '<div class="messages error" id="errmsg">'.t('Invalid Student ID').'</div>',
-			);
-		drupal_add_js(
-			'$(document).ready(function(){'.
-				'$("#edit-uid").focus();'.
-				'window.setTimeout("$(\"#errmsg\").slideUp();",3000)});',
-			'inline'
-		);
-	}
-	$form['uid'] = array(
-		'#type' => 'textfield',
-		'#maxlength' => 18,
-		'#size' => 20,
-		'#attributes' => array(
-			'title' => t('Enter the Student ID, his name or his idcard number'),
-		),
-		'#prefix' => '<div class="container-inline">',
-	);
-	$form['submit'] = array(
-		'#type' => 'submit',
-		'#value' => t('Search'),
-		'#attributes' => array(
-			'style' => 'vertical-align: baseline;',
-		),
-		'#suffix' => '</div>',
-	);
-	
-	return $form;
-}
-
-function signup_search_student_submit($form, &$form_state) {
-	$valins="";
-	if(db_result(db_query('SELECT count(*) FROM {students} WHERE validated=1'))>0)
-		$valins=" AND s.validated=1 ";
-	
-	unset($form_state['storage']['haserror']);
-	// Search by student ID at first
-	$uid=db_result(db_query('SELECT u.uid from {users} u INNER JOIN {students} s ON u.name=s.uid WHERE u.name LIKE \'%%%s%%\'  '.$valins.'ORDER BY u.name ASC LIMIT 1',$form_state['values']['uid']));
-	if(!$uid) {
-		$uid=db_result(db_query('SELECT u.uid from {users} u INNER JOIN {students} s ON u.name=s.uid WHERE s.name LIKE \'%%%s%%\' '.$valins.' ORDER BY u.name ASC LIMIT 1',$form_state['values']['uid']));
-		if(!$uid) {
-			$uid=db_result(db_query('SELECT u.uid from {users} u INNER JOIN {students} s ON u.name=s.uid WHERE s.idcard_number=\'%s\' '.$valins.' ORDER BY u.name ASC LIMIT 1',$form_state['values']['uid']));
-			if(!$uid) {
-				$form_state['storage']['haserror']=1;
-				$form_state['rebuild']=TRUE;
-			}
-			else
-				$form_state['rebuild']=FALSE;
-		}
-		else
-			$form_state['rebuild']=FALSE;
-	}
-	else
-		$form_state['rebuild']=FALSE;
-	if(user_access('modify students info'))
-		$form_state['redirect']='user/'.$uid.'/edit';
-	else
-		$form_state['redirect']='user/'.$uid;
-}
-
-function signup_profile_alter(&$account) {
-	if(array_key_exists('5', $account->roles))
-		unset($account->content['summary']);
-}
-
-function signup_2nd_round_by_profession() {
-	$output = '<div id="baoming_user_stat" class="baoming_view_section node">';
-	$prof=arg(3);
-	
-	$sql_department_insert='';
-	$valins=" AND s.pass_round1_major='1' ";
-		
-	if(!is_null($prof)) {
-		$profins=" AND p.pid='".$prof."' ";
-	}
-	
-	// Compute total number of registered students.
-	if(!is_null($prof)) {
-		$total_students=db_result(db_query('SELECT count(*) FROM {students} s WHERE s.idcard_number <> "" AND s.profession_major=\'%s\''.$valins, $prof));
-		return '<div>'.t('There are !num students which have been marked as enrolled into 2nd round examination.', array('!num'=>$total_students)).'</div>'._signup_2nd_round_by_profession_detail($prof);
-	}
-	else {
-		$total_students=db_result(db_query('SELECT count(*) FROM {students} s WHERE s.idcard_number <> "" AND s.profession_major <> "0"'.$valins));
-	}
-	
-	$output .= t('There are @number students which have been marked as enrolled into 2nd round examination.', array('@number'=>$total_students));
-	$header = array(
-		array('data'=>'<nobr>'.t('Profession').'</nobr>', 'field'=>'pid', 'sort'=>'asc'),
-		array('data'=>t('Number of students (%)'), 'field'=>'num'),
-	);
-	$tablesort = tablesort_sql($header);
-	$sql=sprintf(
-		"SELECT p.pid, p.uid, p.pname, count(*) AS num FROM {students} s INNER JOIN {vl_professions} p ".
-			"ON s.profession_major = p.pid WHERE s.idcard_number <> ''".$valins.$sql_department_insert.
-			"GROUP BY s.profession_major".
-			"%s", $tablesort);
-	$rdbo = db_query($sql);
-	
-	while(($r = db_fetch_object($rdbo))) {
-		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
-			'<nobr>'.l($r->pname, 'signup/2ndround/profession/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-			  )
-			).'</nobr>',
-			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
-		}
-	}
-	
-	$output .= theme('table', $header, $rows);
-	
-	$output .= '</div>';
-	return $output;
-}
-
-function _signup_2nd_round_by_profession_detail($prof=NULL) {
-
-  $valins="AND s.pass_round1_major=1";
-
-  $sql_department_insert = "AND p.pid='".$prof."'";
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  	array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
-  );
-  
-  $tablesort = tablesort_sql($header);
-  $rdbo = pager_query(
-  	  'SELECT s.ucategory, s.uid, s.name, s.gender, s.profession_major, gk.province, gk.city_district, IFNULL(c.personnel_record_at,\'\') AS personnel_record_at '.
-  	  'FROM {students} s LEFT JOIN {students_gk} gk ON s.uid = gk.uid '.
-  	  'LEFT JOIN {students_contact} c ON s.uid=c.uid '.
-  	  'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-  	  'WHERE NOT s.idcard_number = \'\' '.$sql_department_insert.$valins.$tablesort, 20);
-  if(!$rdbo) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  while($r = db_fetch_object($rdbo)) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_result(db_query('SELECT p.simplified_name FROM {vl_province} p WHERE p.pid=\'%s\'', $r->province)) : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_result(db_query('SELECT cd.name FROM {vl_city_district} cd WHERE cd.cid = \'%s\'', $r->city_district));
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-	  $profession_major = t('!dname!pname', array(
-  	  	  '!dname' => db_result(db_query('SELECT d.dname FROM {vl_department} d WHERE d.did=\'%s\'', substr($r->profession_major, 0, 2))),
-  	  	  '!pname' => db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\'', $r->profession_major))));
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.db_result(db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid WHERE s.uid=\'%s\'', $r->uid))).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($profession_major, 'signup/2ndround/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $profession_major)
-		  ))
-		),
-  	  	//l($province, 'signup/overview/province/'.$plink),
-  	  	$province,
-  	  	$per,
-  	  );
-  }
-  
-  $output .= theme('table', $header, $rows);
-  $output .= theme('pager', NULL, 20);
-  $output .= "</div>";
-  
-  $output .= l(t('<< Back to full student list'), 'signup/2ndround/profession');
-  
-  drupal_set_title(t('By Profession').' - '.db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\'', $prof)));
-  
-  return $output;
-}
-
-function signup_3rd_round_by_profession() {
-                $header=array(
-                        array('data'=>t('Profession'), 'field'=>'p.pid', 'sort'=>'asc'),
-                        array('data'=>t('People (%)'), 'field'=>'num'),
-                );
-                $tablesort = tablesort_sql($header);
-
-                $total_students=db_result(db_query('SELECT count(*) FROM {students} s WHERE s.pass_round3_major>0'));
-		$rdbo=db_query('SELECT p.pid, p.pname, count(*) AS num FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid WHERE s.pass_round3_major>0 '.$sql_department_insert.' GROUP BY p.pid '.$tablesort);
-                $rows=array();
-                while($r=db_fetch_object($rdbo))
-                {
-                        $rows[]=array(
-                                l($r->pname, 'signup/3rdround/profession/'.$r->pid),
-                                sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-                        );
-                }
-
-                $output = t('There are currently !num students marked as being enrolled into the 3rd round examination.', array('!num'=>$total_students));
-                $output .= theme('table', $header, $rows);
-		return $output;
-
-}
-function signup_3rd_round_by_profession_detail($prof=NULL) {
-	$prof=arg(3);
-
-  $valins="AND s.pass_round3_major > 0";
-
-  $sql_department_insert = "AND p.pid='".$prof."'";
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  $rows = array();
-  $header = array(
-	array(),
-        array('data' =>t('Student ID'), 'field'=>'s.uid'),
-        array('data' =>t('Real Name')),
-	array('data' =>t('Status'), 'field'=>'status'),
-        array('data' =>t('Province'), 'field'=>'gk.province'),
-  );
-
-  //$tablesort = tablesort_sql($header);
-  //var_dump($tablesort);
-  //$tablesort=' ORDER BY total_score DESC, pass_round3_major DESC, s.uid ASC ';
-  $exams=unserialize(db_result(db_query('SELECT exams FROM {vl_professions} WHERE pid=\'%s\'', $prof)));
-
-  // fetch exams
-  $sql="";
-  //$sql_=" FROM {students} s LEFT JOIN {students_contact} sc ON s.uid=sc.uid";
-  $sql_='';
-  $sql__=" WHERE s.profession_major='$prof' AND s.pass_round1_major=1";
-  $totals=array();
-  foreach($exams as $exam=>$weight) {
-	if($weight > 0 || substr($exam,0,1)=='3') {
-		//$totals[]="e$exam.score*$weight";
-		$sql.=", e$exam.score AS e$exam";
-		$sql_.=" LEFT JOIN {students_score} e$exam ON s.uid=e$exam.uid AND e$exam.eid='$exam'";
-	}
-	if(substr($exam,0,1)=='3') {
-		$header[]=array('data' =>db_result(db_query('SELECT e.ename FROM {vl_exam} e WHERE e.eid="%s"', $exam)));
-		$eee[]=$exam;
-	}
-  }
-  // $sql.=','.implode('+', $totals).' AS total_score '.$sql_.$sql__.$tablesortsql.', s.uid ASC';
-  //$sql.=','.implode('+', $totals).' AS total_score ';
-  $header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
-  $header[]=array('data'=>t('Personnel record'));
-  $tablesort = tablesort_sql($header);
-  //var_dump($tablesort);
-  //var_dump($header);
-  //var_dump(tablesort_sql($header));
-
-  $rdbo = pager_query(
-          'SELECT s.ucategory, s.uid, -1*s.pass_round3_major as status, s.name, s.gender, s.profession_major, gk.province, gk.city_district, IFNULL(c.personnel_record_at,\'\') AS personnel_record_at '.$sql.
-          ', cast(st.total_score as DECIMAL(5,2)) as total_score '.
-          'FROM {students} s LEFT JOIN {students_gk} gk ON s.uid = gk.uid '.
-          'LEFT JOIN {students_contact} c ON s.uid=c.uid '.
-          'LEFT JOIN {students_total_score} st ON s.uid=st.uid '.
-          'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-	  $sql_.
-          ' WHERE NOT s.idcard_number = \'\' '.$sql_department_insert.$valins.$tablesort.', s.uid ASC', 40);
-  $i=$_GET['page']*40+1;
-  if(!$rdbo) {
-          $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  while($r = db_fetch_object($rdbo)) {
-          switch($r->ucategory) {
-                  case uc_OWN_STUDENT:
-                          $province = t('Our own student');
-                          $per = t('Our own student');
-                          $plink = '000000';
-                          break;
-                  case uc_MAINLAND_STUDENT:
-                  case uc_HKTW_STUDENT:
-                          $province = $r->province ? db_result(db_query('SELECT p.simplified_name FROM {vl_province} p WHERE p.pid=\'%s\'', $r->province)) : t('N/A');
-                          $per = $r->personnel_record_at;
-                          if(!$per) $per=t('N/A');
-                          $plink = $r->province;
-                          break;
-                  case uc_OVERSEA_STUDENT:
-                          $province = db_result(db_query('SELECT cd.name FROM {vl_city_district} cd WHERE cd.cid = \'%s\'', $r->city_district));
-                          $per = t('N/A');
-                          $plink = $r->province;
-                          break;
-          }
-
-          $profession_major = t('!dname!pname', array(
-                  '!dname' => db_result(db_query('SELECT d.dname FROM {vl_department} d WHERE d.did=\'%s\'', substr($r->profession_major, 0, 2))),
-                  '!pname' => db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\'', $r->profession_major))));
-	  //var_dump($r);
-          $rows[] = array(
-		$i++,
-                '<nobr>'.l($r->uid, 'user/'.db_result(db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid WHERE s.uid=\'%s\'', $r->uid))).'</nobr>',
-                '<nobr>'.$r->name.'</nobr>',
-                //$r->gender == 1 ? t('Male'): t('Female'),
-		$r->status==-1?t('To be determined'):t('Determined'),
-                //l($province, 'signup/overview/province/'.$plink),
-                $province,
-	  );
-	  foreach($r as $key=>$val) {
-		  if(substr($key,0,2)=='e3')
-			if($key=='e350') $rows[count($rows)-1][]=$val;
-			else $rows[count($rows)-1][]=number_format($val,2);
-	  }
-	  $rows[count($rows)-1][]=number_format($r->total_score,2);
-	  $rows[count($rows)-1][]=$per;
-  }
-
-  $output .= theme('table', $header, $rows);
-  $output .= theme('pager', NULL, 40);
-  $output .= "</div>";
-
-  $output .= l(t('<< Back to full student list'), 'signup/3rdround/profession');
-
-  drupal_set_title(t('By Profession').' - '.db_result(db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=\'%s\'', $prof)));
-
-  return $output;
-}
-
-*/
 
 function sign_up_report($account) {
 

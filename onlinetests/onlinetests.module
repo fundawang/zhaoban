@@ -118,6 +118,11 @@ function onlinetests_itemspec_list() {
 function onlinetests_itemspec_edit($form, $form_state, $eid) {
 	$e=db_select('vl_exam','e')->condition('e.eid',$eid)->condition('e.etype',3)->fields('e')->execute()->fetchObject();
 	drupal_set_title(t('Item specification').' - '.$e->ename.$e->elevel);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Item specification'), 'definations/itemspec');
+	drupal_set_breadcrumb($breadcrumb);
 	
 	$e=db_select('vl_itemspec','i')->condition('i.eid',$eid)->fields('i')->execute()->fetchObject();
 	
@@ -164,6 +169,12 @@ function onlinetests_itemspec_edit_submit($form, &$form_state) {
 function onlinetests_modify_quest($form, $form_state, $gid) {
 	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
 	drupal_set_title(t('Modify paper').' - '.$going->gname);
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Assign students'), 'definations/arrange');
+	drupal_set_breadcrumb($breadcrumb);
+	
 	$is_passed=date('YmdHi0000') > $going->time;
 	
 	$exam_ids=explode(', ', $going->valid_exams);

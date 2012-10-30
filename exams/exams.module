@@ -267,6 +267,11 @@ function exams_professionlist() {
 }
 
 function exams_exam_edit() {
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Exams'), 'definations/exams');
+	drupal_set_breadcrumb($breadcrumb);
 	
 	// if editing existing exam, we'll need to fetch the original values at first.
 	if(!is_null(arg(3))) {
@@ -279,6 +284,7 @@ function exams_exam_edit() {
 		);
 	}
 	else {
+		drupal_set_title(t('Add Exams'));
 		$default_values=array();
 		$form['eid'] = array(
 			'#type' => 'textfield',
@@ -439,6 +445,12 @@ function exams_exam_delete_submit($form, &$form_state) {
 }
 
 function exams_profession_edit() {
+	$breadcrumb = array();
+	$breadcrumb[]=l(t('Home'), '<front>');
+	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
+	$breadcrumb[]=l(t('Professions'), 'definations/professions');
+	drupal_set_breadcrumb($breadcrumb);
+	
 	$form=array();
 	
 	// if editing existing profession, we'll need to fetch the original values at first.
@@ -458,6 +470,7 @@ function exams_profession_edit() {
 		);
 	}
 	else {
+		drupal_set_title(t('Add Profession'));
 		$form['pid'] = array(
 			'#type' => 'textfield',
 			'#title' => t('Profession ID'),
