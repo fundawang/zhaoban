@@ -164,6 +164,7 @@ function onlinetests_itemspec_edit_submit($form, &$form_state) {
 function onlinetests_modify_quest($form, $form_state, $gid) {
 	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
 	drupal_set_title(t('Modify paper').' - '.$going->gname);
+	$is_passed=date('YmdHi0000') > $going->time;
 	
 	$exam_ids=explode(', ', $going->valid_exams);
 	$exam_names=array();
@@ -188,6 +189,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			'#type' => 'textarea',
 			'#title' => t('Stem'),
 			'#rows' => 10,
+			'#disabled' => $is_passed,
 			'#required' => TRUE,
 		);
 		$r=db_select('vl_itemspec','i')->condition('eid',$exam_id)->fields('i')->execute()->fetchObject();
@@ -195,6 +197,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			$form[$exam_id]['quest'.$exam_id.'_'.$i]=array(
 				'#type' => 'managed_file',
 				'#title' => t('Material @i', array('@i'=>$i)),
+				'#disabled' => $is_passed,
 				'#upload_validators' => array('file_validate_extensions'=>array()),
 				'#required' => TRUE,
 			);
@@ -203,6 +206,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			$form[$exam_id]['ans'.$exam_id.'_'.$i]=array(
 				'#type' => 'textfield',
 				'#title' => t('Title of answer @i', array('@i'=>$i)),
+				'#disabled' => $is_passed,
 				'#required' => TRUE,
 				'#size' => 50,
 			);
@@ -216,7 +220,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 		unset($form[$exam_ids[0]]);
 	}
 	
-	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
+	if(!$is_passed)	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
 	$form['cancel'] = array('#markup' => l(t('Cancel'), 'definations/arrange'));
 	
 	return $form;

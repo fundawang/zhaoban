@@ -570,11 +570,16 @@ function going_assign_list() {
   	  	  db_select('vl_room', 'r')->fields('r',array('rname'))->condition('r.rid', $r->place)->execute()->fetchField(),
   	  	  $num,
   	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
-  		  '<nobr>'.($is_passed?'':l(t('fill'), "definations/arrange/fill/$r->gid")).'</nobr>',
-  		  '<nobr>'.(($num&&!$is_passed)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>',
   	  );
-  	  if($should_list_paper_admin)
-  	  	  $rows[count($rows)-1][]='<nobr>'.l(t('edit quest'), "definations/arrange/quest/$r->gid").'</nobr>';
+  	  if(!$is_passed) {
+  	  	  $rows[count($rows)-1][]='<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>';
+  	  	  $rows[count($rows)-1][]='<nobr>'.(($num)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>';
+  	  	  $rows[count($rows)-1][]='<nobr>'.($should_list_paper_admin?l(t('edit quest'), "definations/arrange/quest/$r->gid"):'').'</nobr>';
+      } else {
+      	  $rows[count($rows)-1][]=array(
+      	  	  'data'=>'<nobr/>','colspan'=>3,
+      	  );
+      }
   }
 
   if(count($rows)==0) {
