@@ -682,7 +682,7 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 		
 		$query->notExists($subquery);
 		//var_dump($query->__toString());
-		$query=$query->extend('TableSort')->orderByHeader($header)->orderRandom()->range(1,70);
+		$query=$query->extend('TableSort')->orderByHeader($header)->orderRandom()->range(0,70);
 		
 		$rdbo=$query->execute();
 		foreach($rdbo as $r) {
