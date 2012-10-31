@@ -193,6 +193,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 		'#type' => 'vertical_tabs',
 	);
 	foreach($exam_ids as $exam_id) {
+		$default_values=db_select('vl_quest','q')->fields('q')->condition('gid',$gid)->condition('eid',$exam_id)->execute()->fetchObject();
 		$form[$exam_id]=array(
 			'#type' => 'fieldset',
 			'#title' => $exam_names[$exam_id],
@@ -205,23 +206,28 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			'#title' => t('Stem'),
 			'#rows' => 10,
 			'#disabled' => $is_passed,
+			'#default_value' => isset($default_values->stem)?$default_values->stem:'',
 			'#required' => TRUE,
 		);
 		$r=db_select('vl_itemspec','i')->condition('eid',$exam_id)->fields('i')->execute()->fetchObject();
+		$quests=explode(', ', $default_values->materials);
 		for($i=1;$i<=$r->itematts;$i++) {
 			$form[$exam_id]['quest'.$exam_id.'_'.$i]=array(
 				'#type' => 'managed_file',
 				'#title' => t('Material @i', array('@i'=>$i)),
 				'#disabled' => $is_passed,
 				'#upload_validators' => array('file_validate_extensions'=>array()),
+				'#default_value' => $quests[$i-1],
 				'#required' => TRUE,
 			);
 		}
+		$answertexts=explode(', ', $default_values->descriptivetext);
 		for($i=1;$i<=$r->answeratts;$i++) {
 			$form[$exam_id]['ans'.$exam_id.'_'.$i]=array(
 				'#type' => 'textfield',
 				'#title' => t('Title of answer @i', array('@i'=>$i)),
 				'#disabled' => $is_passed,
+				'#default_value' => $answertexts[$i-1],
 				'#required' => TRUE,
 				'#size' => 50,
 			);
@@ -242,12 +248,13 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 	return $form;
 }
 
-function onlinetests_modify_quest_submit($form, $form_state) {
-	$gid=arg(3); 
-	db_delete('vl_quest')->condition('gid',$gid)->execute();
+function onlinetests_modify_quest_submit($form, &$form_state) {
+	$gid=arg(3);
 	$exams=db_select('vl_going','g')->condition('gid',$gid)->fields('g',array('valid_exams'))->execute()->fetchField();
 	$exam_ids=explode(', ', $exams);
 	foreach($exam_ids as $eid) {
+		$orig_materials=explode(', ',db_select('vl_quest','q')->fields('q',array('materials'))->condition('gid',$gid)->condition('eid',$eid)->execute()->fetchField());
+		db_delete('vl_quest')->condition('gid',$gid)->condition('eid',$eid)->execute();
 		$materials=array();
 		$answertext=array();
 		foreach($form_state['values'] as $fid => $fvalue) {
@@ -263,5 +270,24 @@ function onlinetests_modify_quest_submit($form, $form_state) {
 			'materials' => implode(', ', $materials),
 			'descriptivetext' => implode(', ', $answertext),
 		))->execute();
+		
+		$files_to_add=array_diff($materials, $orig_materials);
+		$files_to_remove=array_diff($orig_materials, $materials);
+		foreach($files_to_add as $fileid) {
+			$file = file_load($fileid);
+			$file->status = FILE_STATUS_PERMANENT;
+			file_save($file);
+			file_usage_add($file, 'onlinetests', 'quest', $GLOBALS['user']->uid);
+		}
+		foreach($files_to_remove as $fileid) {
+			$file = file_load($fileid);
+			if($file) {
+				file_usage_delete($file, 'onlinetests', 'quest', $GLOBALS['user']->uid);
+				file_delete($file);
+			}
+		}
 	}
+	drupal_set_message(t('Modification saved.'));
+	$form_state['redirect']='definations/arrange';
 }
+
