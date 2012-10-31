@@ -189,12 +189,16 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 	}
 	
 	$form=array();
+	$form['exams']=array(
+		'#type' => 'vertical_tabs',
+	);
 	foreach($exam_ids as $exam_id) {
 		$form[$exam_id]=array(
 			'#type' => 'fieldset',
 			'#title' => $exam_names[$exam_id],
 			'#collapsible' => TRUE,
 			'#collapsed' => TRUE,
+			'#group' => 'exams',
 		);
 		$form[$exam_id]['stem']=array(
 			'#type' => 'textarea',
@@ -229,6 +233,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 				$form[$k]=$form[$exam_ids[0]][$k];
 		}
 		unset($form[$exam_ids[0]]);
+		unset($form['exams']);
 	}
 	
 	if(!$is_passed)	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));

@@ -1471,15 +1471,11 @@ function score_view_admin() {
 		array('data'=>t('Status')),
 	);
 	
+	$form['score_admin']=array(
+		'#type' => 'vertical_tabs',
+	);
 	foreach($exams as $exam) {
 		if(empty($weight[$exam->eid])) continue;
-		if(!isset($form[$exam->uid])) {
-			$form[$exam->uid]=array(
-				'#type'=>'fieldset',
-				'#title'=>$exam->rname,
-				'#collapsible'=>TRUE,
-			);
-		}
 		
 		if(db_select('students_going','g')->condition('eid',$exam->eid)->isNotNull('gid')->fields('g')->countQuery()->execute()->fetchField()==0) continue;
 		
@@ -1496,8 +1492,15 @@ function score_view_admin() {
 		);
 		unset($form[$exam->uid][$exam->eid]);
 		$output[$exam->uid]=theme('table', array('header'=>$header, 'rows'=>$rows[$exam->uid]));
+		if(!isset($form[$exam->uid]) && count($rows[$exam->uid])) {
+			$form[$exam->uid]=array(
+				'#type'=>'fieldset',
+				'#title'=>$exam->rname,
+				'#collapsible'=>TRUE,
+				'#group'=>'score_admin',
+			);
+		}
 		$form[$exam->uid][$exam->uid]=array('#markup'=>$output[$exam->uid]);
-		if(count($rows[$exam->uid])==0) unset($form[$exam->uid]);
 	}
 	
 	foreach(array_keys($rows) as $key) {
