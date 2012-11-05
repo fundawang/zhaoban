@@ -8,6 +8,11 @@
  * @file
  * Provides the operations of online tests.
  */
+define("ONLINETEST_STATUS_ABOUT_TO_BEGIN",1);
+define("ONLINETEST_STATUS_ONGOING",2);
+define("ONLINETEST_STATUS_ENDED",3);
+define("ONLINETEST_STATUS_INTERVIEWING",4);
+define("ONLINETEST_STATUS_FINISHED",5);
 
 
 /**
@@ -18,6 +23,9 @@ function onlinetests_help($path, $arg) {
   switch ($path) {
     case 'definations/itemspec':
       $output = t('Define specification of online examinations.');
+      break;
+    case 'definations/onlinetests':
+      $output = t('Organize online tests.');
       break;
   }
     return '<p>'.$output.'</p>';
@@ -53,11 +61,25 @@ function onlinetests_menu() {
     'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
-  $items['definations/arrange/quest/%'] = array(
+  $items['definations/onlinetests'] = array(
+    'title' => 'Online tests',
+    'description' => "Organize online tests.",
+    'weight' => 13,
+    'page callback' => 'onlinetests_onlinetests_list',
+    'access callback' => 'onlinetests_onlinetests_list_perm',
+  );
+  $items['definations/onlinetests/modify/%'] = array(
     'title' => 'Modify paper',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('onlinetests_modify_quest',3),
-    'access callback' => 'onlinetests_admin_perm',
+    'access callback' => 'onlinetests_onlinetests_list_perm',
+    'type' => MENU_CALLBACK,
+  );
+  $items['definations/onlinetests/op/%'] = array(
+    'title' => 'Operation on tests',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('onlinetests_operations',3),
+    'access callback' => 'onlinetests_onlinetests_list_perm',
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -166,16 +188,138 @@ function onlinetests_itemspec_edit_submit($form, &$form_state) {
 	drupal_set_message(t('Modification saved.'));
 }
 
+function onlinetests_onlinetests_list() {
+  $is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
+
+  $header = array(
+  	array('data'=>t('Status'), 'field'=>'num'),
+  	array('data'=>t('Schedule Name'), 'field'=>'gid', 'sort'=>'asc'),
+  	array('data'=>t('Place'), 'field'=>'g.place'),
+  	array('data'=>t('Existing people'), 'field'=>'num'),
+  	array('data'=>t('Time'), 'field'=>'g.time'),
+  	array('data'=>t('Operations'), 'colspan'=>'2'),
+  );
+  
+  $query=db_select('vl_going', 'g')
+	->fields('g')
+	->extend('TableSort')
+	->orderByHeader($header);
+
+  $result = $query->execute();
+
+  $rows=array();
+  
+  foreach($result as $r) {
+  	  $num=db_select('students_going','sg')
+  	  	  ->fields('sg')
+  	  	  ->groupBy('sg.uid')
+  	  	  ->condition('sg.gid',$r->gid)
+  	  	  ->countQuery()
+  	  	  ->execute()->fetchField();
+  	  if($num) {
+  	  	  $status=db_select('going_status','g')->fields('g',array('status'))->condition('gid',$r->gid)->execute()->fetchField();
+  	  	  $tmp_status=t('N/A');
+  	  	  switch($status) {
+  	  	  	  case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
+  	  	  	  	  $tmp_status=t("About to begin"); break;
+  	  	  	  case ONLINETEST_STATUS_ONGOING:
+  	  	  	  	  $tmp_status=t("Now performing"); break;
+  	  	  	  case ONLINETEST_STATUS_ENDED:
+  	  	  	  	  $tmp_status=t("Ended"); break;
+  	  	  	  case ONLINETEST_STATUS_INTERVIEWING:
+  	  	  	  	  $tmp_status=t("Now interviewing"); break;
+  	  	  	  case ONLINETEST_STATUS_FINISHED:
+  	  	  	  	  $tmp_status=t("Finished"); break;
+  	  	  }
+  	  }
+  	  else
+  	  	  $tmp_satus=t('About to begin');
+  	  
+  	  $rows[] = array(
+  	  	  '<nobr>'.$tmp_status.'</nobr>',
+  	  	  $r->gname,
+  	  	  db_select('vl_room', 'r')->fields('r',array('rname'))->condition('r.rid', $r->place)->execute()->fetchField(),
+  	  	  $num,
+  	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
+  	  );
+  	  if($num) {
+  	  	if($status===FALSE) $status=ONLINETEST_STATUS_ABOUT_TO_BEGIN;
+		switch($status) {
+			case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
+				$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
+				$rows[count($rows)-1][]='<nobr>'.l(t('Start'), "definations/onlinetests/op/$r->gid").'</nobr>';
+				break;
+  	  	  	  case ONLINETEST_STATUS_ONGOING:
+				$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
+				$rows[count($rows)-1][]='<nobr>'.l(t('End'), "definations/onlinetests/op/$r->gid").'</nobr>';
+				break;
+  	  	  	  case ONLINETEST_STATUS_ENDED:
+				$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
+				$rows[count($rows)-1][]='<nobr>'.l(t('Begin review'), "definations/onlinetests/op/$r->gid").'</nobr>';
+				break;
+  	  	  	  case ONLINETEST_STATUS_INTERVIEWING:
+				$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
+				$rows[count($rows)-1][]='<nobr>'.l(t('Stop review'), "definations/onlinetests/op/$r->gid").'</nobr>';
+				break;
+  	  	  	  case ONLINETEST_STATUS_FINISHED:
+				$rows[count($rows)-1][]=array(
+					'data'=>'<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>',
+					'colspan'=>'2',
+				);
+				break;
+  	  	  }
+      } else {
+      	  $rows[count($rows)-1][]=array(
+      	  	  'data'=>'<nobr/>','colspan'=>2,
+      	  );
+      }
+  }
+
+  if(count($rows)==0) {
+    $rows[] = array(array('data' => t('No going have been filled.'), 'colspan' => $should_list_paper_admin?'8':'7'));
+  }
+  
+  $output = '';
+  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('pager');
+  
+  return $output;
+}
+
+function onlinetests_onlinetests_list_perm($gid=NULL) {
+	$is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
+	if(!$is_dep_only)
+		return user_access('administer online exams');
+	else { 
+		$goingexams=array();
+		$query=db_select('vl_going','g')->condition('department',$GLOBALS['user']->name)->fields('g');
+		if($gid) $query->condition('gid',$gid);
+		$result=$query->execute();
+		foreach($result as $r) {
+			$goingexams+=explode(', ',$r->valid_exams);
+		}
+		foreach($goingexams as $eid) {
+			$etype=db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$eid)->execute()->fetchField();
+			if($etype==3) return TRUE;
+		}
+	}
+	return FALSE; 
+}
+
 function onlinetests_modify_quest($form, $form_state, $gid) {
 	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
-	drupal_set_title(t('Modify paper').' - '.$going->gname);
 	$breadcrumb = array();
 	$breadcrumb[]=l(t('Home'), '<front>');
 	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
-	$breadcrumb[]=l(t('Assign students'), 'definations/arrange');
+	$breadcrumb[]=l(t('Online tests'), 'definations/onlinetests');
 	drupal_set_breadcrumb($breadcrumb);
 	
-	$is_passed=date('YmdHi0000') > $going->time;
+	$going_status=db_select('going_status','g')->condition('g.gid',$gid)->fields('g',array('status'))->execute()->fetchField();
+	$is_passed = ($going_status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
+	if($is_passed)
+		drupal_set_title(t('View paper').' - '.$going->gname);
+	else
+		drupal_set_title(t('Modify paper').' - '.$going->gname);;
 	
 	$exam_ids=explode(', ', $going->valid_exams);
 	$exam_names=array();
@@ -243,7 +387,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 	}
 	
 	if(!$is_passed)	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
-	$form['cancel'] = array('#markup' => l(t('Cancel'), 'definations/arrange'));
+	$form['cancel'] = array('#markup' => l(t('Cancel'), 'definations/onlinetests'));
 	
 	return $form;
 }
@@ -288,6 +432,6 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 		}
 	}
 	drupal_set_message(t('Modification saved.'));
-	$form_state['redirect']='definations/arrange';
+	$form_state['redirect']='definations/onlinetests';
 }
 
