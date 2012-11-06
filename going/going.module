@@ -531,7 +531,6 @@ function going_going_delete_submit($form, &$form_state) {
 
 function going_assign_list() {
   $is_dep_only=user_access('administer own going')&&!user_access('administer going');
-  $should_list_paper_admin=module_exists('onlinetests')&&user_access('administer online exams');
 
   $header = array(
   	array('data'=>t('Status'), 'field'=>'num'),
@@ -539,15 +538,13 @@ function going_assign_list() {
   	array('data'=>t('Place'), 'field'=>'g.place'),
   	array('data'=>t('Existing people'), 'field'=>'num'),
   	array('data'=>t('Time'), 'field'=>'g.time'),
-  	array('data'=>t('Operations'), 'colspan'=>$should_list_paper_admin?'3':'2'),
+  	array('data'=>t('Operations'), 'colspan'=>'2'),
   );
   
   $query=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'))
 	->fields('g')
 	->extend('TableSort')
 	->orderByHeader($header);
-
- 
 
   if(!$is_dep_only) $query->extend('PagerDefault')->limit(25);
 
@@ -591,7 +588,6 @@ function going_assign_list() {
   	  if(!$is_passed) {
   	  	  $rows[count($rows)-1][]='<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>';
   	  	  $rows[count($rows)-1][]='<nobr>'.(($num)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>';
-  	  	  $rows[count($rows)-1][]='<nobr>'.($should_list_paper_admin?l(t('edit quest'), "definations/arrange/quest/$r->gid"):'').'</nobr>';
       } else {
       	  $rows[count($rows)-1][]=array(
       	  	  'data'=>'<nobr/>','colspan'=>3,
@@ -600,7 +596,7 @@ function going_assign_list() {
   }
 
   if(count($rows)==0) {
-    $rows[] = array(array('data' => t('No going have been filled.'), 'colspan' => $should_list_paper_admin?'8':'7'));
+    $rows[] = array(array('data' => t('No going have been filled.'), 'colspan' => 7));
   }
   
   $output = drupal_render(drupal_get_form('going_goinglist_filter'));
