@@ -408,16 +408,22 @@ function going_going_edit_validate($form, &$form_state) {
 	
 	// Check if all the exams are being taken by the same research section
 	$sec=array();
+	$types=array();
 	for($i=1;$i<=going_going_MAX_EXAMS;$i++) {
-		if($form_state['values']['exam'.$i]!='0')
-			$sec[]=db_select('vl_exam', 'e')->fields('e',array('uid'))->condition('e.eid',$form_state['values']['exam'.$i])->execute()->fetchField();
-			//$sec[]=db_result(db_query('SELECT e.uid FROM {vl_exam} e WHERE e.eid=\'%s\'', $form_state['values']['exam'.$i]));
+		if($form_state['values']['exam'.$i]!='0') {
+			$r=db_select('vl_exam', 'e')->fields('e',array('uid','etype'))->condition('e.eid',$form_state['values']['exam'.$i])->execute()->fetchObject();
+			$sec[]=$r->uid;
+			$types[]=$r->etype;
+		}
 	}
+
 	if(count($sec)==0) { // No exam defined
 		form_set_error('valid_exams', t('There is no examinations in this schedule.'));
 	}
 	else if(count(array_unique($sec))!=1) { // Conflict research section
 		form_set_error('valid_exams', t('Conflict research section detected.'));
+	} else if(count(array_unique($types))!=1) { // Different exam type
+		form_set_error('valid_exams', t('Conflict exam type detected.'));
 	}
 	
 	// Check if the time is valid
@@ -443,10 +449,17 @@ function going_going_edit_submit($form, &$form_state) {
 					'gname' => $form_state['values']['gname'],
 					'place' => $form_state['values']['place'],
 					'waiting_room' => $form_state['values']['waiting_room'],
-					'valid_exams' => implode(', ', $exams),
+					'valid_exams' => implode(', ', array_unique($exams)),
 					'time' => $form_state['values']['time'],
 					'department' => $form_state['values']['ownarrange']?$dep:NULL,)
 				)->execute();
+			if(module_exists('onlinetests')) {
+				db_update('vl_going')
+					->condition('gid', 'gid' => $form_state['values']['gid'])
+					->fields(array(
+						'status' => 1,
+					))->execute();
+			}
 			watchdog('going',
 				'!user created new schedule !gname.', array(
 					'!user'=>$GLOBALS['user']->name,
@@ -467,7 +480,7 @@ function going_going_edit_submit($form, &$form_state) {
 					'gname' => $form_state['values']['gname'],
 					'place' => $form_state['values']['place'],
 					'waiting_room' => $form_state['values']['waiting_room'],
-					'valid_exams' => implode(', ', $exams),
+					'valid_exams' => implode(', ', array_unique($exams)),
 					'time' => $form_state['values']['time'],
 					'department' => $form_state['values']['ownarrange']?$dep:NULL))
 				->condition('gid', arg(3))
@@ -776,11 +789,9 @@ function going_assign_students_submit($form, &$form_state) {
 				'gid' => arg(3),
 				'gorder' => $i,
 			))->condition('uid',$student)->condition('eid',$exams,'IN')->isNull('gid')->execute();
-			//db_query('UPDATE {students} s SET randnum=rand() WHERE s.uid=\'%s\'',$student);
 			$i++;
 	}
 	$form_state['redirect']='definations/arrange';
-	
 }
 
 function going_assign_empty($form, $form_state, $gid) {
