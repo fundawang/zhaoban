@@ -316,7 +316,7 @@ function score_input_going_list_check() {
 }
 
 function score_input_going_list_batch_check() {
-	return user_access('input score');
+	return user_access('input score') && $GLOBALS['user']->uid != 1;
 }
 
 function score_check_perm_view() {

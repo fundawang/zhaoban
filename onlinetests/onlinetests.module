@@ -88,7 +88,7 @@ function onlinetests_menu() {
 
   $items['myonlinetests'] = array(
     'title' => 'My Online tests',
-    'description' => "Define specification of online examinations.",
+    'description' => "Participate online examinations.",
     'weight' => -2,
     'page callback' => 'onlinetests_myonlinetests_for_students',
     'access callback' => 'onlinetests_myonlinetests_perm',
