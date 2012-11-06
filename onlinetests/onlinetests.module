@@ -242,8 +242,8 @@ function onlinetests_onlinetests_list() {
   	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
   	  );
   	  if($num) {
-  	  	if($status===FALSE) $status=ONLINETEST_STATUS_ABOUT_TO_BEGIN;
-		switch($status) {
+  	  	if($r->status===FALSE) $status=ONLINETEST_STATUS_ABOUT_TO_BEGIN;
+		switch($r->status) {
 			case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
 				$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
 				$rows[count($rows)-1][]='<nobr>'.l(t('Start'), "definations/onlinetests/op/$r->gid").'</nobr>';
