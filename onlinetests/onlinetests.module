@@ -217,9 +217,8 @@ function onlinetests_onlinetests_list() {
   	  	  ->countQuery()
   	  	  ->execute()->fetchField();
   	  if($num) {
-  	  	  $status=db_select('going_status','g')->fields('g',array('status'))->condition('gid',$r->gid)->execute()->fetchField();
   	  	  $tmp_status=t('N/A');
-  	  	  switch($status) {
+  	  	  switch($r->status) {
   	  	  	  case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
   	  	  	  	  $tmp_status=t("About to begin"); break;
   	  	  	  case ONLINETEST_STATUS_ONGOING:
@@ -314,8 +313,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 	$breadcrumb[]=l(t('Online tests'), 'definations/onlinetests');
 	drupal_set_breadcrumb($breadcrumb);
 	
-	$going_status=db_select('going_status','g')->condition('g.gid',$gid)->fields('g',array('status'))->execute()->fetchField();
-	$is_passed = ($going_status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
+	$is_passed = ($going->status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
 	if($is_passed)
 		drupal_set_title(t('View paper').' - '.$going->gname);
 	else
