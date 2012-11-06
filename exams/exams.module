@@ -163,8 +163,7 @@ function exams_definationlist() {
   $item = menu_get_item();
   $content = system_admin_menu_block($item);
 
-  $output = theme('admin_block_content', $content);
-  return $output;
+  return theme('admin_block_content', array('content' => $content));
 }
 
 function exams_examlist() {
