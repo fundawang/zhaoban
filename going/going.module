@@ -457,7 +457,7 @@ function going_going_edit_submit($form, &$form_state) {
 				$etype=db_select('vl_exam','e')->fields('e',array('etype'))->condition('e.eid',$form_state['values']['exam1'])->execute()->fetchField();
 				if($etype==3)
 					db_update('vl_going')
-						->condition('gid', 'gid' => $form_state['values']['gid'])
+						->condition('gid', $form_state['values']['gid'])
 						->fields(array(
 							'status' => 1,
 						))->execute();
