@@ -105,7 +105,10 @@ $schema['students_going'] = array(
          'eid' => array('type' => 'varchar', 'length' => '3', 'not null' => TRUE),
          'opus' => array('type' => 'varchar', 'length' => '5000', 'not null' => FALSE),
          'gid' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
-         'gorder' => array('type' => 'int', 'not null' => FALSE, 'disp-width' => '3')),
+         'gorder' => array('type' => 'int', 'not null' => FALSE, 'disp-width' => '3'),
+         'accesscode' => array('type' => 'varchar', 'length' => '16','not null' => FALSE),
+         'status' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE),
+    ),
     'primary key' => array('transid'),
     'indexes' => array(
          'eid' => array('eid'),
