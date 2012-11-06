@@ -40,6 +40,7 @@ function going_schema() {
 			'invigilator' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
 			'department' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
 			'regenerated' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0),
+			'status' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE),
 		),
 		'primary key' => array('gid'),
 		'indexes' => array(
