@@ -123,7 +123,7 @@ function signup_menu() {
 
   $items['signup/search/%'] = array(
     'title' => 'Search students',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
     'page callback' => 'signup_search_students',
     'page arguments' => array(2),
     'access callback' => 'user_access',
@@ -159,7 +159,7 @@ function signup_menu() {
     'page arguments' => array(3),
     'access callback' => 'signup_access_overview',
     'access arguments'=> array(2),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/overview/province'] = array(
     'title' => 'By Province',
@@ -176,7 +176,7 @@ function signup_menu() {
     'page arguments' => array(3),
     'access callback' => 'signup_access_overview',
     'access arguments'=> array(2),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/2ndround'] = array(
     'title' => 'View 2nd round students',
@@ -197,7 +197,7 @@ function signup_menu() {
     'page callback' => 'signup_2nd_round_by_profession_detail',
     'page arguments' => array(3),
     'access callback' => 'signup_2nd_overview',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/3rdround'] = array(
     'title' => 'View 3rd round students',
@@ -218,7 +218,7 @@ function signup_menu() {
     'page callback' => 'signup_3rd_round_by_profession_detail',
     'page arguments' => array(3),
     'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/3rdround/province'] = array(
     'title' => 'By Province',
@@ -233,7 +233,7 @@ function signup_menu() {
     'page callback' => 'signup_3rd_round_by_province_detail',
     'page arguments' => array(3),
     'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/3rdround/province/%/download'] = array(
     'title' => 'Download database',
@@ -270,7 +270,7 @@ function signup_menu() {
     'page callback' => 'signup_ground_by_profession_detail',
     'page arguments' => array(3),
     'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/ground/province'] = array(
     'title' => 'By Province',
@@ -285,7 +285,7 @@ function signup_menu() {
     'page callback' => 'signup_ground_by_province_detail',
     'page arguments' => array(3),
     'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['signup/ground/province/%/report'] = array(
     'title' => 'Print Report',
@@ -2811,12 +2811,13 @@ function signup_overview_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
+	/*
 	$breadcrumb = array();
 	$breadcrumb[]=l(t('Home'), '<front>');
 	$breadcrumb[]=l(t('Students'), 'signup');
 	$breadcrumb[]=l(t('Students overview'), 'signup/overview');
 	$breadcrumb[]=l(t('By Profession'), 'signup/overview/profession');
-  	drupal_set_breadcrumb($breadcrumb);
+  	drupal_set_breadcrumb($breadcrumb); */
 
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3011,12 +3012,6 @@ function signup_overview_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('Students overview'), 'signup/overview');
-	$breadcrumb[]=l(t('By Province'), 'signup/overview/province');
-  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3172,12 +3167,6 @@ function signup_2nd_round_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('View 2nd round students'), 'signup/2ndround');
-	$breadcrumb[]=l(t('By Profession'), 'signup/2ndround/profession');
-  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round1_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3339,12 +3328,6 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('View 3rd round students'), 'signup/3rdround');
-	$breadcrumb[]=l(t('By Profession'), 'signup/3rdround/profession');
-  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round3_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3510,12 +3493,6 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('View 3rd round students'), 'signup/3rdround');
-	$breadcrumb[]=l(t('By Province'), 'signup/3rdround/province');
-  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3926,12 +3903,6 @@ function signup_ground_by_profession_detail($prof=NULL) {
   	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('View gaokao round students'), 'signup/ground');
-	$breadcrumb[]=l(t('By Profession'), 'signup/ground/profession');
-  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_roundg_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -4095,12 +4066,6 @@ function signup_ground_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('View gaokao round students'), 'signup/ground');
-	$breadcrumb[]=l(t('By Province'), 'signup/ground/province');
-  	drupal_set_breadcrumb($breadcrumb);
   
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";

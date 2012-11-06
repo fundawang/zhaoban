@@ -39,6 +39,9 @@ function onlinetests_permission() {
     'administer online exams' => array(
       'title' => t('Administrater online tests'),
     ),
+    'participate online exams' => array(
+      'title' => t('Participate online tests'),
+    ),
   );
 }
 
@@ -59,7 +62,7 @@ function onlinetests_menu() {
     'page arguments' => array('onlinetests_itemspec_edit',2),
     'access callback' => 'onlinetests_admin_perm',
     'access arguments' => array(2),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['definations/onlinetests'] = array(
     'title' => 'Online tests',
@@ -73,14 +76,22 @@ function onlinetests_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('onlinetests_modify_quest',3),
     'access callback' => 'onlinetests_onlinetests_list_perm',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['definations/onlinetests/op/%'] = array(
     'title' => 'Operation on tests',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('onlinetests_operations',3),
     'access callback' => 'onlinetests_onlinetests_list_perm',
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
+  );
+
+  $items['myonlinetests'] = array(
+    'title' => 'My Online tests',
+    'description' => "Define specification of online examinations.",
+    'weight' => -2,
+    'page callback' => 'onlinetests_myonlinetests_for_students',
+    'access callback' => 'onlinetests_myonlinetests_perm',
   );
   return $items;
 }
@@ -140,11 +151,6 @@ function onlinetests_itemspec_list() {
 function onlinetests_itemspec_edit($form, $form_state, $eid) {
 	$e=db_select('vl_exam','e')->condition('e.eid',$eid)->condition('e.etype',3)->fields('e')->execute()->fetchObject();
 	drupal_set_title(t('Item specification').' - '.$e->ename.$e->elevel);
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
-	$breadcrumb[]=l(t('Item specification'), 'definations/itemspec');
-	drupal_set_breadcrumb($breadcrumb);
 	
 	$e=db_select('vl_itemspec','i')->condition('i.eid',$eid)->fields('i')->execute()->fetchObject();
 	
@@ -307,11 +313,6 @@ function onlinetests_onlinetests_list_perm($gid=NULL) {
 
 function onlinetests_modify_quest($form, $form_state, $gid) {
 	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
-	$breadcrumb[]=l(t('Online tests'), 'definations/onlinetests');
-	drupal_set_breadcrumb($breadcrumb);
 	
 	$is_passed = ($going->status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
 	if($is_passed)
@@ -433,3 +434,13 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 	$form_state['redirect']='definations/onlinetests';
 }
 
+function onlinetests_myonlinetests_perm() {
+	$query=db_select('vl_exam','e')->condition('e.etype',3);
+	$query->innerJoin('students_going','sg','sg.eid=e.eid');
+	$query->fields('sg')->isNotNull('sg.gid')->condition('sg.uid',$GLOBALS['user']->name);
+	return user_access('participate online exams') && $query->countQuery()->execute()->fetchField();
+}
+
+function onlinetests_myonlinetests_for_students() {
+	return 'THANK YOU';
+}

@@ -86,7 +86,7 @@ function exams_menu() {
     'access arguments' => array('administer exams'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('exams_exam_edit'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['definations/exams/delete/%'] = array(
     'title' => 'Delete Exams',
@@ -94,7 +94,7 @@ function exams_menu() {
     'access arguments' => array('administer exams'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('exams_exam_delete'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
 
   $items['definations/professions'] = array(
@@ -128,7 +128,7 @@ function exams_menu() {
     'access arguments' => array('administer exams'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('exams_profession_edit'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['definations/professions/delete/%'] = array(
     'title' => 'Delete Profession',
@@ -136,7 +136,7 @@ function exams_menu() {
     'access arguments' => array('administer exams'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('exams_profession_delete'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   
   return $items;
@@ -267,11 +267,6 @@ function exams_professionlist() {
 }
 
 function exams_exam_edit() {
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
-	$breadcrumb[]=l(t('Exams'), 'definations/exams');
-	drupal_set_breadcrumb($breadcrumb);
 	
 	// if editing existing exam, we'll need to fetch the original values at first.
 	if(!is_null(arg(3))) {
@@ -445,11 +440,6 @@ function exams_exam_delete_submit($form, &$form_state) {
 }
 
 function exams_profession_edit() {
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Exams and Professions'), 'definations');
-	$breadcrumb[]=l(t('Professions'), 'definations/professions');
-	drupal_set_breadcrumb($breadcrumb);
 	
 	$form=array();
 	
