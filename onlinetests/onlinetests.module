@@ -14,6 +14,8 @@ define("ONLINETEST_STATUS_ENDED",3);
 define("ONLINETEST_STATUS_INTERVIEWING",4);
 define("ONLINETEST_STATUS_FINISHED",5);
 
+define("ONLINETEST_ACCESSCODE_LENGTH", 8);
+
 
 /**
  * Implementation of hook_help().
@@ -90,7 +92,8 @@ function onlinetests_menu() {
     'title' => 'My Online tests',
     'description' => "Participate online examinations.",
     'weight' => -2,
-    'page callback' => 'onlinetests_myonlinetests_for_students',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('onlinetests_myonlinetests_for_students'),
     'access callback' => 'onlinetests_myonlinetests_perm',
   );
   return $items;
@@ -385,8 +388,10 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 		unset($form['exams']);
 	}
 	
-	if(!$is_passed)	$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
-	$form['cancel'] = array('#markup' => l(t('Cancel'), 'definations/onlinetests'));
+	if(!$is_passed)	{
+		$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
+		$form['cancel'] = array('#markup' => l(t('Cancel'), 'definations/onlinetests'));
+	}
 	
 	return $form;
 }
@@ -434,13 +439,136 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 	$form_state['redirect']='definations/onlinetests';
 }
 
-function onlinetests_myonlinetests_perm() {
+function onlinetests_operations($form, $form_state, $gid=NULL) {
+	$query=db_select('vl_going','g')->condition('gid',$gid)->fields('g');
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$query->fields('r',array('rname'));
+	$going=$query->execute()->fetchObject();
+	if($going===false || is_null($going->status)) { drupal_access_denied(); return; }
+	$operation_impossible=array('status' => 0);
+	$form=array();
+	switch($going->status) {
+		case ONLINETEST_STATUS_ABOUT_TO_BEGIN: // Now to start
+			// First check whether the students are available
+			$result=db_select('students_going','sg')->condition('sg.gid',$gid)->fields('sg',array('uid'))->execute();
+			foreach($result as $r) {
+				$query=db_select('students_going','sg')->condition('sg.gid',$gid,'<>')->condition('sg.uid',$r->uid)->condition('sg.status',ONLINETEST_STATUS_ONGOING)->fields('sg');
+				if($query->countQuery()->execute()->fetchField()) {
+					$operation_impossible=array(
+						'status' => 1,
+						'description' => t('Operation cannot be done.').t('Some of the students are participating other exams.'),
+					);
+				}
+			}
+			if($operation_impossible['status']) break;
+			// Now provides information to start the test
+			$form['info']=array(
+				'#type' => 'markup',
+				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+			);
+			$title=t('About to start following test');
+			$description=t('The students will be able to view the quest online after the test begins.');
+			$submit=t('Start the test');
+	}
+	if($operation_impossible['status'] ) {
+		drupal_set_message($operation_impossible['description'], 'error');
+		drupal_goto('definations/onlinetests');
+	}
+	return confirm_form($form, $title,
+		'definations/onlinetests',
+		$description,
+		$submit
+	);
+}
+
+function onlinetests_operations_submit($form, &$form_state) {
+	$st=db_select('vl_going','g')->condition('gid',arg(3))->fields('g',array('status'))->execute()->fetchField();
+	db_update('vl_going')->condition('gid',arg(3))
+		->fields(array(
+			'status'=>$st+1,
+		))->execute();
+	// If about to start the exam, the initialize the students' status
+	if($st==1) {
+		$query=db_select('students_going','sg')->condition('gid',arg(3))->fields('sg',array('uid'))->distinct();
+		$result=$query->execute();
+		foreach($result as $r) {
+			// Generate an eight-digit acccess code for students to use
+			$accesscode='';
+			$allowable_characters = 'ABCDEFHKLMNPQRSTUVWXYZ';
+			$len = strlen($allowable_characters) - 1;
+			for($i=0;$i<ONLINETEST_ACCESSCODE_LENGTH;$i++)
+				$accesscode.=$allowable_characters[mt_rand(0, $len)];
+			db_update('students_going')->condition('gid',arg(3))->condition('uid',$r->uid)
+				->fields(array(
+					'accesscode'=>$accesscode,
+					'status'=>1,
+				))->execute();
+		}
+	}
+	drupal_set_message(t('Operation done.'));
+	$form_state['redirect']='definations/onlinetests';
+}
+
+function onlinetests_myonlinetests_perm($eid=NULL) {
 	$query=db_select('vl_exam','e')->condition('e.etype',3);
 	$query->innerJoin('students_going','sg','sg.eid=e.eid');
+	$query->innerJoin('vl_going','g','g.gid=sg.gid');
+	$query->condition('g.status',array(ONLINETEST_STATUS_ONGOING, ONLINETEST_STATUS_ENDED),'in');
 	$query->fields('sg')->isNotNull('sg.gid')->condition('sg.uid',$GLOBALS['user']->name);
 	return user_access('participate online exams') && $query->countQuery()->execute()->fetchField();
 }
 
-function onlinetests_myonlinetests_for_students() {
-	return 'THANK YOU';
+function onlinetests_myonlinetests_for_students($form, $form_state) {
+	$uid=$GLOBALS['user']->name;
+	$query=db_select('vl_going','g')->condition('g.status',array(ONLINETEST_STATUS_ONGOING, ONLINETEST_STATUS_ENDED),'in');
+	$query->innerJoin('students_going','sg','g.gid=sg.gid');
+	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
+	$query->condition('sg.uid',$uid);
+	$query->fields('e',array('ename','eid'))->fields('g',array('gid','gname'))->fields('sg',array('status'));
+	$r=$query->execute()->fetchObject();
+	drupal_set_title(sprintf("%s - %s", t('My Online tests'), $r->gname));
+	
+	$form=array();
+	
+	// If the student has not start his exam, show the access code to enter
+	if($r->status==ONLINETEST_STATUS_ABOUT_TO_BEGIN) {
+		$form['eid']=array(
+			'#type'=>'hidden',
+			'#value'=>$r->eid,
+		);
+		$form['accesscode']=array(
+			'#type'=>'textfield',
+			'#title'=>t('Access Code'),
+			'#prefix' => '<div class="inline-element-div">',
+			'#required'=>TRUE,
+			'#size'=>ONLINETEST_ACCESSCODE_LENGTH+5,
+			'#maxlength'=>ONLINETEST_ACCESSCODE_LENGTH,
+			'#suffix'=>'</div>',
+		);
+		return confirm_form($form, sprintf("%s - %s", t('My Online tests'), $r->gname),
+			'<front>',
+			t('Please input the access code given by the administrator.').t('Case Insensitive.'),
+			t('Start the test'), t('Back to Home')
+		);
+	}
+	
+	$form['save']=array(
+		'#type' => submit,
+		'#value' => t('Save my work for later use, but do not submit it'),
+	);
+	$form['submit']=array(
+		'#type' => submit,
+		'#value' => t('Submit my work and end the test'),
+	);
+	return $form;
+}
+
+function onlinetests_myonlinetests_for_students_validate($form, $form_state) {
+	if(isset($form['accesscode']) && $form_state['values']['accesscode']) {
+		$accesscode=db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)
+			->condition('eid',$form_state['values']['eid'])->fields('sg',array('accesscode'))
+			->execute()->fetchField();
+		if($accesscode!==$form_state['values']['accesscode'])
+			form_set_error('accesscode', t('The Access Code you have entered does not match with our record.'));
+	}
 }
