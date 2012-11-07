@@ -536,20 +536,37 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 			'#type'=>'hidden',
 			'#value'=>$r->eid,
 		);
+		$form['gid']=array(
+			'#type'=>'hidden',
+			'#value'=>$r->gid,
+		);
+		$form['gname']=array(
+			'#type'=>'hidden',
+			'#value'=>$r->gname,
+		);
 		$form['accesscode']=array(
 			'#type'=>'textfield',
 			'#title'=>t('Access Code'),
-			'#prefix' => '<div class="inline-element-div">',
 			'#required'=>TRUE,
 			'#size'=>ONLINETEST_ACCESSCODE_LENGTH+5,
 			'#maxlength'=>ONLINETEST_ACCESSCODE_LENGTH,
-			'#suffix'=>'</div>',
+			'#attributes'=>array('style'=>'font-size: 40px'),
 		);
 		return confirm_form($form, sprintf("%s - %s", t('My Online tests'), $r->gname),
 			'<front>',
 			t('Please input the access code given by the administrator.').t('Case Insensitive.'),
 			t('Start the test'), t('Back to Home')
 		);
+	}
+	
+	$query=db_select('watchdog','w')->fields('w',array('hostname'))->condition('uid',$GLOBALS['user']->uid)->condition('type','onlinetests')
+		->condition('severity',WATCHDOG_INFO)->orderBy('timestamp', 'DESC');
+	$valid_remote_address=$query->execute()->fetchField();
+	if($valid_remote_address!=$_SERVER['REMOTE_ADDR']) {
+		$form['notice']=array(
+			'#markup'=>'<div class="messages error">'.t('You are not logged in from registered machine. Please check with administrator.').'</div>'
+		);
+		return $form;
 	}
 	
 	$form['save']=array(
@@ -568,7 +585,36 @@ function onlinetests_myonlinetests_for_students_validate($form, $form_state) {
 		$accesscode=db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)
 			->condition('eid',$form_state['values']['eid'])->fields('sg',array('accesscode'))
 			->execute()->fetchField();
-		if($accesscode!==$form_state['values']['accesscode'])
+		if(strtoupper($accesscode)!==trim(strtoupper($form_state['values']['accesscode'])))
 			form_set_error('accesscode', t('The Access Code you have entered does not match with our record.'));
 	}
 }
+
+function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
+	if(isset($form['accesscode']) && $form_state['values']['accesscode']) {
+		db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->fields(array(
+			'status' => ONLINETEST_STATUS_ONGOING
+		))->execute();
+		
+		watchdog('onlinetests','!user started online tests !gname.',
+			array(
+				'!user'=>$GLOBALS['user']->name,
+				'!gname'=>$form_state['values']['gname'],
+			),
+			WATCHDOG_INFO
+		);
+		drupal_set_message(t('Online tests started.'));
+	} else {
+		switch($form_state['clicked_button']['#id']) {
+			case 'edit-save':
+				drupal_set_message(t('File saved.'));
+				break;
+			case 'edit-submit' :
+				drupal_set_message(t('File saved.'));
+				drupal_set_message(t('Online tests ended.'));
+				break;
+		}
+	}
+	
+}
+
