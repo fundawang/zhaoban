@@ -87,6 +87,14 @@ function onlinetests_menu() {
     'access callback' => 'onlinetests_onlinetests_list_perm',
     'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
+  $items['definations/onlinetests/quest/%'] = array(
+    'title' => 'Output all students quest',
+    'page callback' => 'onlinetests_quest_report',
+    'page arguments' => array(3),
+    'access callback' => 'onlinetests_onlinetests_quest_perm',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
 
   $items['myonlinetests'] = array(
     'title' => 'My Online tests',
@@ -231,7 +239,8 @@ function onlinetests_onlinetests_list() {
   	  	  	  case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
   	  	  	  	  $tmp_status=t("About to begin"); break;
   	  	  	  case ONLINETEST_STATUS_ONGOING:
-  	  	  	  	  $tmp_status=t("Now performing"); break;
+  	  	  	  	  $tmp_status=t("Now performing").' '.l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Quest Paper').'"/>',"definations/onlinetests/quest/$r->gid", array('html'=>true));
+  	  	  	  	  break;
   	  	  	  case ONLINETEST_STATUS_ENDED:
   	  	  	  	  $tmp_status=t("Ended"); break;
   	  	  	  case ONLINETEST_STATUS_INTERVIEWING:
@@ -618,3 +627,101 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 	
 }
 
+function onlinetests_onlinetests_quest_perm($gid=NULL) {
+	$query=db_select('vl_going','g')->condition('g.gid',$gid)->condition('g.status',ONLINETEST_STATUS_ONGOING)->fields('g')->countQuery();
+	return onlinetests_admin_perm() && $query->execute()->fetchField();
+}
+
+function onlinetests_quest_report($gid=NULL) {
+	$query=db_select('vl_going','g')->condition('g.gid',$gid)->condition('g.status',ONLINETEST_STATUS_ONGOING)->fields('g');
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$query->addField('r','rname');
+	$query->innerJoin('students_going','sg','sg.gid=g.gid');
+	$query->addField('sg','accesscode');
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->fields('s',array('uid','name'));
+	$query->distinct();
+	$r=$query->execute();
+	
+	if(!$r) { drupal_access_denied(); return; }
+	
+	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/config/lang/eng.php');
+	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/tcpdf.php');
+	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/barcodes.php');
+	
+	ini_set('max_execution_time','500');
+
+	// create new PDF document
+	$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetTitle('中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生专业考试在线考试试题及考试说明');
+	$pdf->SetAuthor('中央音乐学院');
+	
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	// set default font subsetting mode
+	$pdf->setFontSubsetting(false);
+	
+	$pdf->setPrintHeader(false);
+	$pdf->setPrintFooter(false);
+
+	$pdf->SetMargins(6, 6, 6);
+	$pdf->SetAutoPageBreak(false);
+
+	//set some language-dependent strings
+	$pdf->setLanguageArray($l);
+	$pdf->SetFillColor(216,216,216);
+	$pdf->SetDrawColor(255,255,255);
+	$pdf->SetLineWidth(0.5);
+
+	foreach($r as $s) {
+		$pdf->AddPage();
+		$pdf->SetDrawColor(255,255,255);
+
+		// Header
+		$pdf->SetFontSize(25);
+		$pdf->setX(6);$pdf->setY(6);
+		$pdf->Cell(198,20,'中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生在线考试试题',1,1,'C',true);
+		
+		$pdf->SetFontSize(16);
+		$pdf->Cell(198,12,_going_datetime_to_string($s->time).' / '.$s->gname.' / '.$s->rname,1,1,'C',false);
+		
+		$pdf->SetFontSize(10);
+		$description ='&nbsp;<br/>答题要求：<br/><br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;① 使用自己的准考证号和密码登录 '.$GLOBALS['base_url'].' 网站。如遗忘密码可在网站自行重设密码。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;② 登录后选择【我的在线考试】功能。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;③ 根据网站提示输入本试题中提供的试题访问代码，可查看试题及下载有关材料。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;④ 答题结束，将有关答案文件上传至该网站，确定无误后点击网站上的【交卷结束考试】按钮，并在监考员处签名。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;考试时间终了时仍未点击【交卷结束考试】的考生，将被视为白卷。<br/>';
+		$pdf->SetCellPaddings(3,3,3,3);
+		$pdf->WriteHTMLCell(198,40,6,38,$description,1,1,'L',true,'',0,false,'T','T');
+
+		$pdf->Cell(20,6,'准考证号',1,0,'C',true);
+		$pdf->Cell(40,6,$s->uid,0,0,'L',false);
+		$pdf->Cell(20,6,'姓名',1,0,'C',true);
+		$pdf->Cell(60,6,$s->name,0,0,'L',false);
+		$pdf->Cell(30,6,'试题访问代码',1,0,'C',true);
+		$pdf->Cell(80,6,$s->accesscode,0,0,'L',false);
+		
+		$query=db_select('vl_quest','q')->condition('q.gid',$gid);
+		$query->innerJoin('vl_exam','e','q.eid=e.eid');
+		$query->addField('e','ename');
+		$query->fields('q',array('gid','eid','stem'));
+		$query->innerJoin('students_going','sg','sg.gid=q.gid AND sg.eid=e.eid');
+		$query->condition('sg.uid',$s->uid);
+		$query->orderBy('e.eid');
+		$exams=$query->execute();
+		foreach($exams as $e) {
+			$pdf->SetDrawColor(0,0,0);
+			$pdf->Line(6,$pdf->GetY()+12,204,$pdf->GetY()+12);
+			$pdf->SetFontSize(20);
+			$pdf->setY($pdf->GetY()+10);
+			$pdf->Cell(200,4,$e->ename.' 试题',0,0,'L',false);
+			$pdf->SetFontSize(12);
+			$pdf->Ln();
+			$pdf->MultiCell(200,6,$e->stem,0,'L',false);
+		}
+	}
+	$pdf->Output(variable_get('zhaoban_current_year',date('Y')).'_'.$gid.'.pdf', 'I');
+}
