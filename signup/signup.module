@@ -1932,7 +1932,7 @@ function signup_user_examinations_form($form, $form_state) {
 		);
 		$form[$eid]['etype'] = array(
 			'#type' => 'markup',
-			'#markup' => '<div><b>'.t('Testing mode') .':</b> '. ($r->etype==1? t('Writing') : t('Interviewing')).'</div>',
+			'#markup' => '<div><b>'.t('Testing mode') .':</b> '. ($r->etype == 1 ? t('Writing') : (module_exists('onlinetests')&&$r->etype ==3 ? t('Online Tests'):t('Interviewing'))) .'</div>',
 		);
 
 		// Let's fetch the original value
