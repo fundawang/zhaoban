@@ -61,6 +61,7 @@ function onlinetests_schema() {
 				'not null' => TRUE,
 			),
 		),
+		'unique keys' => array('geid' => array('gid', 'eid')),
 	);
 	return $schema;
 }
