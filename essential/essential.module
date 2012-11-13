@@ -30,7 +30,7 @@ function essential_block_info() {
 	
 	$result['weather'] = array(
 		'info' => t('Weather'),
-		'cache' => DRUPAL_NO_CACHE
+		'cache' => DRUPAL_CACHE_GLOBAL,
 	);
 	return $result;
 }

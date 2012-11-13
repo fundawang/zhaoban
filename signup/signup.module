@@ -2468,7 +2468,7 @@ function signup_block_info() {
 	
 	$result['loginlocal'] = array(
 		'info' => t('User login (Local version)'),
-		'cache' => DRUPAL_NO_CACHE
+		'cache' => DRUPAL_CACHE_GLOBAL,
 	);
 
 	$result['progress'] = array(
@@ -2477,11 +2477,11 @@ function signup_block_info() {
 	);
 	$result['hotprof'] = array(
 		'info' => t('Hot professions'),
-		'cache' => DRUPAL_NO_CACHE,
+		'cache' => DRUPAL_CACHE_GLOBAL,
 	);
 	$result['searchstu'] = array(
 		'info' => t('Search students'),
-		'cache' => DRUPAL_NO_CACHE
+		'cache' => DRUPAL_CACHE_GLOBAL,
 	);
 	//var_dump($result);
 	return $result;
