@@ -47,16 +47,22 @@ function essential_block_view($delta = '') {
 			if($r->code='302') {
 				$r=json_decode($r->data)->weatherinfo;
 				$block['subject'] = t('Weather of @city',array('@city'=>$r->city));
-				$img=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/29x20/d%02d.gif" title="'.$r->img_title1.'"/>',$r->img1);
-				$img.=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/29x20/n%02d.gif" title="'.$r->img_title2.'"/>&nbsp;',($r->img2==99?$r->img1:$r->img2));
+				$h=drupal_http_request(sprintf("http://www.weather.com.cn/m2/i/icon_weather/29x20/d%02d.gif",$r->img1));
+				$img=sprintf('&nbsp;<img src="data:image/gif;base64,%s" title="%s">', base64_encode($h->data), $r->img_title1);
+				$h=drupal_http_request(sprintf("http://www.weather.com.cn/m2/i/icon_weather/29x20/n%02d.gif",($r->img2==99?$r->img1:$r->img2)));
+				$img.=sprintf('&nbsp;<img src="data:image/gif;base64,%s" title="%s">&nbsp;', base64_encode($h->data), $r->img_title2);
 				$block['content'] = t('Today: ').$img.$r->weather1.' '.$r->temp1;
 				$block['content'].= '<br/>';
-				$img=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/29x20/d%02d.gif" title="'.$r->img_title3.'"/>',$r->img3);
-				$img.=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/29x20/n%02d.gif" title="'.$r->img_title4.'"/>&nbsp;',($r->img4==99?$r->img3:$r->img4));
+				$h=drupal_http_request(sprintf("http://www.weather.com.cn/m2/i/icon_weather/29x20/d%02d.gif",$r->img3));
+				$img=sprintf('&nbsp;<img src="data:image/gif;base64,%s" title="%s">', base64_encode($h->data), $r->img_title3);
+				$h=drupal_http_request(sprintf("http://www.weather.com.cn/m2/i/icon_weather/29x20/n%02d.gif",($r->img4==99?$r->img3:$r->img4)));
+				$img.=sprintf('&nbsp;<img src="data:image/gif;base64,%s" title="%s">&nbsp;', base64_encode($h->data), $r->img_title4);
 				$block['content'].= t('Tomorrow: ').$img.$r->weather2.' '.$r->temp2;
 				$block['content'].= '<br/>';
-				$img=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/29x20/d%02d.gif" title="'.$r->img_title5.'"/>',$r->img5);
-				$img.=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/29x20/n%02d.gif" title="'.$r->img_title6.'"/>&nbsp;',($r->img6==99?$r->img5:$r->img6));
+				$h=drupal_http_request(sprintf("http://www.weather.com.cn/m2/i/icon_weather/29x20/d%02d.gif",$r->img5));
+				$img=sprintf('&nbsp;<img src="data:image/gif;base64,%s" title="%s">', base64_encode($h->data), $r->img_title5);
+				$h=drupal_http_request(sprintf("http://www.weather.com.cn/m2/i/icon_weather/29x20/n%02d.gif",($r->img6==99?$r->img5:$r->img6)));
+				$img.=sprintf('&nbsp;<img src="data:image/gif;base64,%s" title="%s">&nbsp;', base64_encode($h->data), $r->img_title6);
 				$block['content'].= t('The day after tommorrow: ').$img.$r->weather3.' '.$r->temp3;
 			}
 	}
