@@ -526,7 +526,7 @@ function onlinetests_file_download($uri) {
 		$query=db_select('file_managed','f')->condition('f.uri',$uri)->fields('f');
 		$r=$query->execute()->fetchObject();
 		$headers=array(
-			'Content-type' => $r->filemime,
+			'Content-Type' => $r->filemime,
 			'Content-Transfer-Encoding' => 'binary',
 			'Content-Length' => $r->filesize,
 		);
@@ -550,7 +550,7 @@ function onlinetests_file_download($uri) {
 			$query=db_select('file_managed','f')->condition('f.uri',$uri)->fields('f');
 			$r=$query->execute()->fetchObject();
 			$headers=array(
-				'Content-type' => $r->filemime,
+				'Content-Type' => $r->filemime,
 				'Content-Transfer-Encoding' => 'binary',
 				'Content-Length' => $r->filesize,
 			);
@@ -575,8 +575,8 @@ function onlinetests_myonlinetests_perm($eid=NULL) {
 	$query=db_select('vl_exam','e')->condition('e.etype',3);
 	$query->innerJoin('students_going','sg','sg.eid=e.eid');
 	$query->innerJoin('vl_going','g','g.gid=sg.gid');
-	$query->condition('g.status',array(ONLINETEST_STATUS_ONGOING, ONLINETEST_STATUS_ENDED),'in');
-	$query->fields('sg')->isNotNull('sg.gid')->condition('sg.uid',$GLOBALS['user']->name);
+	$query->condition('g.status',ONLINETEST_STATUS_ONGOING);
+	$query->fields('sg')->isNotNull('sg.gid')->condition('sg.uid',isset($GLOBALS['user']->name)?$GLOBALS['user']->name:NULL);
 	return user_access('participate online exams') && $query->countQuery()->execute()->fetchField();
 }
 
@@ -594,10 +594,6 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 	
 	// If the student has not start his exam, show the access code to enter
 	if($r->status==ONLINETEST_STATUS_ABOUT_TO_BEGIN) {
-		$form['eid']=array(
-			'#type'=>'hidden',
-			'#value'=>$r->eid,
-		);
 		$form['gid']=array(
 			'#type'=>'hidden',
 			'#value'=>$r->gid,
@@ -631,13 +627,18 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		return $form;
 	}
 	
-	$query=db_select('students_going','sg')->fields('sg',array('eid','answers'))
-		->condition('sg.uid',$GLOBALS['user']->name)->condition('sg.gid',$r->gid)->condition('sg.status',ONLINETEST_STATUS_ONGOING);
+	$query=db_select('students_going','sg')->fields('sg',array('eid','status','answers'))
+		->condition('sg.uid',$GLOBALS['user']->name)->condition('sg.gid',$r->gid)->condition('sg.status',array(ONLINETEST_STATUS_ONGOING,ONLINETEST_STATUS_ENDED),'in');
 	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
 	$query->fields('e',array('ename'));
 	$query->innerJoin('vl_quest','q','q.gid=sg.gid AND q.eid=sg.eid');
 	$query->fields('q',array('stem','materials','descriptivetext'));
 	$exams=$query->execute();
+	
+	$form['gid']=array(
+		'#type' => 'hidden',
+		'#value' => $r->gid,
+	);
 	
 	$form['exams']=array(
 		'#type' => 'vertical_tabs',
@@ -671,6 +672,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 				'#type' => 'managed_file',
 				'#required' => TRUE,
 				'#title' => $text,
+				'#disabled' => $e->status==ONLINETEST_STATUS_ENDED,
 				'#default_value' => $answers[$i-1],
 				'#upload_validators' => array('file_validate_extensions'=>array()),
 				'#upload_location' => 'private://onlinetests/answers/',
@@ -689,14 +691,19 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		unset($form['e'.$e->eid]);
 		unset($form['exams']);
 	}
-	$form['save']=array(
-		'#type' => submit,
-		'#value' => t('Save my work for later use, but do not submit it'),
-	);
-	$form['submit']=array(
-		'#type' => submit,
-		'#value' => t('Submit my work and end the test'),
-	);
+	
+	if($e->status != ONLINETEST_STATUS_ENDED) {
+		$form['save']=array(
+			'#type' => 'submit',
+			'#value' => t('Save my work for later use, but do not submit it'),
+		);
+		$form['submit']=array(
+			'#type' => 'submit',
+			'#value' => t('Submit my work and end the test'),
+		);
+	} else {
+		drupal_set_message(t('Online tests ended.'));
+	}
 	return $form;
 }
 
@@ -726,13 +733,52 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 		drupal_set_message(t('Online tests started.'));
 	} else {
 		switch($form_state['clicked_button']['#id']) {
+			case 'edit-submit':
 			case 'edit-save':
-				drupal_set_message(t('File saved.'));
-				break;
-			case 'edit-submit' :
-				drupal_set_message(t('File saved.'));
-				drupal_set_message(t('Online tests ended.'));
-				break;
+				$result=db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->condition('status',2)->fields('sg',array('eid','answers'))->execute();
+				foreach($result as $r) {
+					$orig_answers=explode(', ', $r->answers);
+					$answers=array();
+					foreach($form_state['values'] as $fid => $fvalue) {
+						if(strpos($fid, 'answer_'.$r->eid) !== FALSE)
+							$answers[]=$fvalue;
+					}
+					db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('eid',$r->eid)->fields(array(
+						'answers' => implode(', ', $answers)
+					))->execute();
+					$files_to_add=array_diff($answers, $orig_answers);
+					$files_to_remove=array_diff($orig_answers, $answers);
+					foreach($files_to_add as $fileid) {
+						$file = file_load($fileid);
+						$file->status = FILE_STATUS_PERMANENT;
+						file_save($file);
+						file_usage_add($file, 'onlinetests', 'answer', $GLOBALS['user']->uid);
+					}
+					foreach($files_to_remove as $fileid) {
+						$file = file_load($fileid);
+						if($file) {
+							file_usage_delete($file, 'onlinetests', 'answer', $GLOBALS['user']->uid);
+							file_delete($file);
+						}
+					}
+					if($form_state['clicked_button']['#id']=='edit-submit') {
+						$i=1;
+						foreach($answers as $answer) {
+							$f=file_load($answer);
+							$ext=strrchr($f->uri, '.');
+							file_move($f, 'private://onlinetests/answers/'.$GLOBALS['user']->name.'_'.$r->eid.'_'.$i.$ext);
+							$i++;
+						}
+						
+						db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('eid',$r->eid)->fields(array(
+							'status' => ONLINETEST_STATUS_ENDED
+						))->execute();
+					}
+				}
+				if($form_state['clicked_button']['#id']=='edit-save') drupal_set_message(t('File saved.'));
+				else {
+					drupal_set_message(t('Online tests ended.'));
+				}
 		}
 	}
 	
