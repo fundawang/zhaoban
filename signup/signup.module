@@ -3673,7 +3673,7 @@ function signup_3rd_round_by_province_download($prov) {
 	$filename = '10045-'.$provname.".dbf";
 	$encoded_filename = urlencode($filename);
 
-	if (preg_match("/MSIE/", $ua)) {
+	if (preg_match("/MSIE/", $ua) || preg_match("/Chrome/", $ua)) {
 		drupal_add_http_header('Content-Disposition', 'attachment; filename="' . $encoded_filename . '"');
 	} else if (preg_match("/Firefox/", $ua)) {
 		drupal_add_http_header('Content-Disposition', 'attachment; filename*="utf8\'\'' . $filename . '"');

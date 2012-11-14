@@ -534,7 +534,7 @@ function onlinetests_file_download($uri) {
 		$ua = $_SERVER["HTTP_USER_AGENT"];
 		$filename=$r->filename;
 		$encoded_filename = urlencode($filename);
-		if (preg_match("/MSIE/", $ua)) {
+		if (preg_match("/MSIE/", $ua) || preg_match("/Chrome/", $ua)) {
 			$headers['Content-Disposition'] = 'attachment; filename="' . $encoded_filename . '"';
 		} else if (preg_match("/Firefox/", $ua)) {
 			$headers['Content-Disposition'] = 'attachment; filename*="utf8\'\'' . $filename . '"';
@@ -558,7 +558,7 @@ function onlinetests_file_download($uri) {
 			$ua = $_SERVER["HTTP_USER_AGENT"];
 			$filename=$r->filename;
 			$encoded_filename = urlencode($filename);
-			if (preg_match("/MSIE/", $ua)) {
+			if (preg_match("/MSIE/", $ua) || preg_match("/Chrome/", $ua)) {
 				$headers['Content-Disposition'] = 'attachment; filename="' . $encoded_filename . '"';
 			} else if (preg_match("/Firefox/", $ua)) {
 				$headers['Content-Disposition'] = 'attachment; filename*="utf8\'\'' . $filename . '"';
