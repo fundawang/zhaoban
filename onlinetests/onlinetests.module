@@ -374,6 +374,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 				'#upload_validators' => array('file_validate_extensions'=>array()),
 				'#default_value' => $quests[$i-1],
 				'#required' => TRUE,
+				'#upload_location' => 'private://onlinetests/quests/',
 			);
 		}
 		$answertexts=explode(', ', $default_values->descriptivetext);
@@ -518,6 +519,34 @@ function onlinetests_operations_submit($form, &$form_state) {
 	$form_state['redirect']='definations/onlinetests';
 }
 
+function onlinetests_file_download($uri) {
+	$target=file_uri_target($uri);
+	if($GLOBALS['user']->uid==0) return -1;
+	if(preg_match('/^onlinetests/', $target)) {
+		if(!user_access('administer online exams') && !user_access('participate online exams')) return -1;
+		$query=db_select('file_managed','f')->condition('f.uri',$uri)->fields('f');
+		$r=$query->execute()->fetchObject();
+		$headers=array(
+			'Content-type' => $r->filemime,
+			'Content-Transfer-Encoding' => 'binary',
+			'Content-Length' => $r->filesize,
+		);
+		
+		$ua = $_SERVER["HTTP_USER_AGENT"];
+		$filename=$r->filename;
+		$encoded_filename = urlencode($filename);
+		if (preg_match("/MSIE/", $ua)) {
+			$headers['Content-Disposition'] = 'attachment; filename="' . $encoded_filename . '"';
+		} else if (preg_match("/Firefox/", $ua)) {
+			$headers['Content-Disposition'] = 'attachment; filename*="utf8\'\'' . $filename . '"';
+		} else {
+			$headers['Content-Disposition'] = 'attachment; filename="' . $filename . '"';
+		}
+		return $headers;
+	}
+	return NULL;
+}
+
 function onlinetests_myonlinetests_perm($eid=NULL) {
 	$query=db_select('vl_exam','e')->condition('e.etype',3);
 	$query->innerJoin('students_going','sg','sg.eid=e.eid');
@@ -578,6 +607,49 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		return $form;
 	}
 	
+	$query=db_select('students_going','sg')->fields('sg',array('eid'))
+		->condition('sg.uid',$GLOBALS['user']->name)->condition('sg.gid',$r->gid)->condition('sg.status',ONLINETEST_STATUS_ONGOING);
+	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
+	$query->fields('e',array('ename'));
+	$query->innerJoin('vl_quest','q','q.gid=sg.gid AND q.eid=sg.eid');
+	$query->fields('q',array('stem','materials','descriptivetext'));
+	$exams=$query->execute();
+	
+	$form['exams']=array(
+		'#type' => 'vertical_tabs',
+	);
+	foreach($exams as $e) {
+		$form['e'.$e->eid]=array(
+			'#type' => 'fieldset',
+			'#title' => $e->ename,
+			'#group' => 'exams',
+		);
+		$form['e'.$e->eid]['stem']=array(
+			'#type' => 'item',
+			'#title' => t('Stem'),
+			'#markup' => $e->stem
+		);
+		$materials=explode(', ', $e->materials);
+		$i=1;
+		foreach($materials as $materail) {
+			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$materail)->execute()->fetchObject();
+			$form['e'.$e->eid]['material'.$i]=array(
+				'#type' => 'item',
+				'#title' => t('Material @i', array('@i'=>$i++)),
+				'#markup' => l($q->filename,file_create_url($q->uri)),
+			);
+		}
+	}
+	
+	if($exams->rowCount()==1) {
+		foreach($form['e'.$e->eid] as $k=>$c) {
+			if(substr($k,0,1)!='#')
+				$form[$k]=$form['e'.$e->eid][$k];
+		}
+		drupal_set_title(sprintf("%s - %s", t('My Online tests'), $e->ename));
+		unset($form['e'.$e->eid]);
+		unset($form['exams']);
+	}
 	$form['save']=array(
 		'#type' => submit,
 		'#value' => t('Save my work for later use, but do not submit it'),
