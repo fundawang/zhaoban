@@ -375,6 +375,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 				'#default_value' => $quests[$i-1],
 				'#required' => TRUE,
 				'#upload_location' => 'private://onlinetests/quests/',
+				'#progress_indicator' => 'bar',
 			);
 		}
 		$answertexts=explode(', ', $default_values->descriptivetext);
