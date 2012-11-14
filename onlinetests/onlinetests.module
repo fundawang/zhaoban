@@ -674,6 +674,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 				'#default_value' => $answers[$i-1],
 				'#upload_validators' => array('file_validate_extensions'=>array()),
 				'#upload_location' => 'private://onlinetests/answers/',
+				'#progress_indicator' => 'bar',
 			);
 			$i++;
 		}
