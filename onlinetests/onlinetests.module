@@ -480,6 +480,45 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			$title=t('About to start following test');
 			$description=t('The students will be able to view the quest online after the test begins.');
 			$submit=t('Start the test');
+			break;
+		case ONLINETEST_STATUS_ONGOING: // Now about to end the test
+			// First to check if students are still performing examination
+			$query=db_select('students_going','sg')->condition('sg.gid',$gid)->condition('sg.status',array(ONLINETEST_STATUS_ABOUT_TO_BEGIN,ONLINETEST_STATUS_ONGOING),'in');
+			$query->innerJoin('students','s','s.uid=sg.uid');
+			$query->addField('s','name');
+			$query->fields('sg',array('uid','status'));
+			$query->distinct();
+			$query->orderBy('sg.uid');
+			$result=$query->execute();
+			$rows=array();
+			foreach($result as $r) {
+				$rows[]=array(
+					$r->uid,
+					$r->name,
+					$r->status==ONLINETEST_STATUS_ABOUT_TO_BEGIN?t("About to begin"):t("Now performing"),
+				);
+			}
+			$header=array(
+				array('data'=>t('Student ID')),
+				array('data'=>t('Real Name')),
+				array('data'=>t('Status')),
+			);
+			// Now provides information to start the test
+			$form['info']=array(
+				'#type' => 'markup',
+				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+			);
+			$title=t('About to end the test');
+			$description=t('The students will be forced to end the test.');
+			$submit=t('End the test');
+			if(count($rows)) {
+				$description.=t('Above students have not submit their papers till now. Please check with them.');
+				$form['students']=array(
+					'#type' => 'markup',
+					'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
+				);
+			}
+			break;
 	}
 	if($operation_impossible['status'] ) {
 		drupal_set_message($operation_impossible['description'], 'error');
