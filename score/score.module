@@ -120,7 +120,7 @@ function score_menu() {
   
   $items['score/view/%'] = array(
     'title' => 'View Scores',
-    '#type' => MENU_CALLBACK,
+    'type' => MENU_CALLBACK,
     'weight' => 2,
     'page callback' => 'score_view_detail',
     'page arguments' => array(2),
