@@ -1355,6 +1355,12 @@ function signup_user_view($user, $view_mode, $langcode) {
 		'#markup' => isset($result->name)?$result->name:'',
 		'#weight' => 1,
 	);
+
+	if(db_table_exists('users_weixin') && module_exists('weixin')) {
+		$r=db_select('users_weixin','u')->fields('u')->condition('u.uid',$user->uid)->condition('u.status',1)->countQuery()->execute()->fetchField();
+		if($r)
+			$user->content['pi']['name']['#markup'].='<img src="/'.drupal_get_path('module', 'weixin') . '/weixin_16.png" title="'.t('Bound with weixin').'"/>';
+	}
 	if(!empty($result->picture))
 		$user->content['pi']['name']['#title'] = '<img src="data:image/jpeg;base64,'.$result->picture.'" style="padding-right: 10px" align="left" height="100"/>'.$user->content['pi']['name']['#title'];
 	$user->content['pi']['gender'] = array(
