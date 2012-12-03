@@ -1,0 +1,7 @@
+name = Online Charge
+description = Allow charging online
+dependencies[] = signup
+package = Zhaoban
+core = 7.x
+
+version = 2012.12.3

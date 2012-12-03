@@ -1,0 +1,51 @@
+<?php
+
+/*
+ * This file is licensed under GPLv2+.
+*/
+
+/**
+ * @file
+ * Install, update and uninstall functions for the going module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function onlinecharge_schema() {
+	$schema['vl_charging_standard'] = array(
+		'fields' => array(
+			'scid' => array(
+				'type' => 'varchar',
+				'length' => '3',
+				'not null' => TRUE,
+			),
+			'title' => array(
+				'type' => 'varchar',
+				'length' => '100',
+				'not null' => TRUE,
+			),
+			'fee' => array(
+				'type' => 'int',
+				'not null' => TRUE,
+			),
+			'ucategory' => array(
+				'type' => 'int',
+				'size' => 'tiny',
+				'not null' => TRUE,
+			),
+			'is_passround1' => array(
+				'type' => 'int',
+				'size' => 'tiny',
+				'not null' => TRUE,
+			),
+		),
+		'primary key' => array('scid'),
+		'unique keys' => array(
+			'ucategory_round1' => array('ucategory', 'is_passround1')
+		),
+);
+	return $schema;
+}
+
+

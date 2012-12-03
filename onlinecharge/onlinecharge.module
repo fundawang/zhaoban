@@ -1,0 +1,180 @@
+<?php
+
+/**
+ * Implements hook_help().
+ */
+function onlinecharge_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case 'charge/fee':
+      $output = t('Define charging fees and standard.');
+      break;
+  }
+    return '<p>'.$output.'</p>';
+}
+
+/**
+ * Implements hook_permission
+ */
+function onlinecharge_permission() {
+	return array(
+		'administer charging' => array(
+			'title' => t('Administrater charging fees and view logs'),
+		),
+		'use online charging' => array(
+			'title' => t('Use online charging feature'),
+		),
+	);
+}
+
+function onlinecharge_theme() {
+	return array(
+		'onlinecharge_fee' => array(
+			'render element' => 'form', 
+		),
+	);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function onlinecharge_menu() {
+	$items['charge'] = array(
+		'title' => 'Online charging',
+		'description' => "Features regarding online charging.",
+		'page callback' => 'onlinecharge_admin_page',
+		'access callback' => 'user_access',
+		'access arguments' => array('administer charging'),
+		'expanded' => TRUE,
+	);
+	$items['charge/fee'] = array(
+		'title' => 'Fees',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('onlinecharge_fee'),
+		'weight' => 1,
+		'description' => "Define charging fees and standard.",
+		'access callback' => 'user_access',
+		'access arguments' => array('administer charging'),
+	);
+	return $items;
+}
+
+function onlinecharge_admin_page() {
+	$item = menu_get_item();
+	$content = system_admin_menu_block($item);
+	return theme('admin_block_content', array('content' => $content));
+}
+
+function onlinecharge_fee() {
+	$form=array();
+	$round1title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('is_passround1',0)->execute()->fetchField();
+	$form['round1feetitle']=array(
+		'#type' => 'textfield',
+		'#required' => TRUE,
+		'#title' => t('Title for 1st round charging standard'),
+		'#maxlength' => 100,
+		'#default_value' => $round1title,
+		'#size' => 80,
+	);
+	$round2title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('is_passround1',1)->execute()->fetchField();
+	$form['round2feetitle']=array(
+		'#type' => 'textfield',
+		'#required' => TRUE,
+		'#title' => t('Title for 2nd round charging standard'),
+		'#maxlength' => 100,
+		'#default_value' => $round2title,
+		'#size' => 80,
+	);
+	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
+	$form['detail']=array(
+		'#type' => 'item',
+		'#title' => t('Detail charging standard'),
+		'#required' => TRUE,
+		'#description' => t('Unit: RMB'),
+	);
+	foreach($student_types as $student_type) {
+		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('is_passround1',0)->fields('sc',array('fee'))->execute()->fetchField();
+		$form['feestandard_1_'.$student_type->stid]=array(
+			'#type' => 'textfield',
+			'#required' => TRUE,
+			'#maxlength' => 10,
+			'#default_value'=>$fee,
+			'#size' => 10,
+		);
+		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('is_passround1',1)->fields('sc',array('fee'))->execute()->fetchField();
+		$form['feestandard_2_'.$student_type->stid]=array(
+			'#type' => 'textfield',
+			'#required' => TRUE,
+			'#maxlength' => 10,
+			'#default_value'=>$fee,
+			'#size' => 10,
+		);
+	}
+	$form['submit']=array('#type'=>'submit', '#value'=>t('Save'));
+	return $form;
+}
+
+function theme_onlinecharge_fee($variables) {
+	$form=$variables['form'];
+	$output='';
+	$output.=drupal_render($form['round1feetitle']);
+	$output.=drupal_render($form['round2feetitle']);
+	$output.=drupal_render($form['detail']);
+	$header=array(
+		t('Student Type'),
+		t('1st round standard'),
+		t('2nd and 3rd round total')
+	);
+	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
+	$rows=array();
+	foreach($student_types as $student_type) {
+		$rows[]=array(
+			$student_type->name,
+			drupal_render($form['feestandard_1_'.$student_type->stid]),
+			drupal_render($form['feestandard_2_'.$student_type->stid]),
+		);
+	}
+	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output.=drupal_render($form['submit']);
+	$output.=drupal_render_children($form);
+	return $output;
+}
+
+function onlinecharge_fee_validate($form, $form_state) {
+	foreach($form_state['values'] as $key => $value) {
+		if(preg_match('/^feestandard/', $key)) {
+			if(!is_numeric($value) || intval($value) < 0)
+				form_set_error($key, t('The value you have entered is not numeric.'));
+		}
+	}
+}
+
+function onlinecharge_fee_submit($form, $form_state) {
+	db_truncate('vl_charging_standard')->execute();
+	$student_types=db_select('vl_student_type','st')->fields('st')->orderBy('st.stid')->execute();
+	$i=1;
+	foreach($student_types as $student_type) {
+		db_insert('vl_charging_standard')->fields(array(
+			'scid' => $i++,
+			'title' => $form_state['values']['round1feetitle'],
+			'fee' => $form_state['values']['feestandard_1_'.$student_type->stid],
+			'ucategory' => $student_type->stid,
+			'is_passround1' => 0,
+		))->execute();
+		db_insert('vl_charging_standard')->fields(array(
+			'scid' => $i++,
+			'title' => $form_state['values']['round2feetitle'],
+			'fee' => $form_state['values']['feestandard_2_'.$student_type->stid],
+			'ucategory' => $student_type->stid,
+			'is_passround1' => 1,
+		))->execute();
+	}
+	drupal_set_message(t('Settings have been saved.'));
+	watchdog('onlinecharge',
+		'!user modified charging standard.', array(
+			'!user'=>$GLOBALS['user']->name,
+		WATCHDOG_INFO
+	));
+}
+
+?>
