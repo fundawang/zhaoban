@@ -2601,6 +2601,19 @@ function signup_block_content_PROGRESS() {
 		$result['content'] .= $status[3]!='ok'?t('Gaokao Info'):l(t('Gaokao Info'),'user/'.$GLOBALS['user']->uid.'/edit/gaokao');
 	}
 	$result['content'] .='</p><p></p><p>';
+	
+	// If the user has finished payment?
+	if(module_exists('onlinecharge')) {
+		$total_orders=db_select('orders','o')->condition('o.uid',$GLOBALS['user']->uid)->fields('o')->countQuery()->execute()->fetchField();
+		$unfinished_orders=db_select('orders','o')->condition('o.uid',$GLOBALS['user']->uid)->condition('status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
+		if(arg(0)=='user'&&arg(2)=='payment')
+			$status[4]='warning';
+		else if($total_orders > $unfinished_orders)
+			$status[4]='error';
+		else $status[4]='ok';
+		$result['content'] .= sprintf('<img src="/misc/watchdog-%s.png" align="middle">&nbsp;&nbsp;', $status[4]);
+		$result['content'] .= $status[4]!='ok'?t('Online Charging'):l(t('Online Charging'),'user/'.$GLOBALS['user']->uid.'/payment');
+	}
 	return $result;
 }
 

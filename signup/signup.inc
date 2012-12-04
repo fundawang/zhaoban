@@ -14,7 +14,7 @@ define('signup_progress_PROFESSION', 1);
 define('signup_progress_EXAM', 2);
 define('signup_progress_CONTACT', 3);
 define('signup_progress_GAOKAO', 4);
-define('signup_progress_PAYMENT', 4);
+define('signup_progress_PAYMENT', 5);
 define('signup_progress_FINISH', 10);
 
 define('signup_block_PROGRESS', 'signupprogress');
@@ -66,6 +66,12 @@ function _signup_determine_period($user) {
 	if(!isset($result->city_district) || ($result->city_district == $result->province && $user->ucategory == 1))
 		return signup_progress_GAOKAO; // One must fill his city_district
 
+	// Determine if one has finished his online payment orders
+	if(module_exists('onlinecharge')) {
+		$result=db_select('orders','o')->condition('o.uid',$user->uid)->condition('o.status',100,'<>')->countQuery()->execute()->fetchField();
+		if($result===FALSE) return signup_progress_FINISH;
+		else if($result>0) return signup_progress_PAYMENT;
+	}
 	return signup_progress_FINISH;
 }
 

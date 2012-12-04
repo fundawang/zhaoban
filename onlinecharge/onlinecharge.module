@@ -56,6 +56,14 @@ function onlinecharge_menu() {
 		'access callback' => 'user_access',
 		'access arguments' => array('administer charging'),
 	);
+	$items['user/%user/payment'] = array(
+		'title' => 'Online Charging',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('onlinecharge_user_orders',1),
+		'type' => MENU_LOCAL_TASK,
+		'access callback' => 'onlinecharge_user_access',
+		'access arguments' => array(1),
+	);
 	return $items;
 }
 
@@ -207,4 +215,13 @@ function onlinecharge_fee_submit($form, $form_state) {
 	));
 }
 
+function onlinecharge_user_access($user) {
+	if($user->uid==1) return FALSE;
+	if($user->uid==$GLOBALS['user']->uid) return user_access('use online charging');
+	else return user_access('use online charging', $user) && user_access('administer users');
+}
+
+function onlinecharge_user_orders($form, $form_state, $user) {
+	return array();
+}
 ?>
