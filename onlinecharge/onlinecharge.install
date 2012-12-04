@@ -16,8 +16,8 @@ function onlinecharge_schema() {
 	$schema['vl_charging_standard'] = array(
 		'fields' => array(
 			'scid' => array(
-				'type' => 'varchar',
-				'length' => '3',
+				'type' => 'int',
+				'size' => 'tiny',
 				'not null' => TRUE,
 			),
 			'title' => array(
@@ -39,10 +39,15 @@ function onlinecharge_schema() {
 				'size' => 'tiny',
 				'not null' => TRUE,
 			),
+			'period' => array(
+				'type' => 'int',
+				'size' => 'tiny',
+				'not null' => TRUE,
+			),
 		),
 		'primary key' => array('scid'),
 		'unique keys' => array(
-			'ucategory_round1' => array('ucategory', 'is_passround1')
+			'ucategory_round1' => array('ucategory', 'period')
 		),
 );
 	return $schema;

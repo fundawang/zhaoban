@@ -67,22 +67,31 @@ function onlinecharge_admin_page() {
 
 function onlinecharge_fee() {
 	$form=array();
-	$round1title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('is_passround1',0)->execute()->fetchField();
+	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',1)->execute()->fetchField();
 	$form['round1feetitle']=array(
 		'#type' => 'textfield',
 		'#required' => TRUE,
 		'#title' => t('Title for 1st round charging standard'),
 		'#maxlength' => 100,
-		'#default_value' => $round1title,
+		'#default_value' => $title,
 		'#size' => 80,
 	);
-	$round2title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('is_passround1',1)->execute()->fetchField();
+	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',2)->execute()->fetchField();
 	$form['round2feetitle']=array(
 		'#type' => 'textfield',
 		'#required' => TRUE,
 		'#title' => t('Title for 2nd round charging standard'),
 		'#maxlength' => 100,
-		'#default_value' => $round2title,
+		'#default_value' => $title,
+		'#size' => 80,
+	);
+	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',3)->execute()->fetchField();
+	$form['round3feetitle']=array(
+		'#type' => 'textfield',
+		'#required' => TRUE,
+		'#title' => t('Title for 3rd round charging standard'),
+		'#maxlength' => 100,
+		'#default_value' => $title,
 		'#size' => 80,
 	);
 	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
@@ -93,7 +102,7 @@ function onlinecharge_fee() {
 		'#description' => t('Unit: RMB'),
 	);
 	foreach($student_types as $student_type) {
-		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('is_passround1',0)->fields('sc',array('fee'))->execute()->fetchField();
+		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',1)->fields('sc',array('fee'))->execute()->fetchField();
 		$form['feestandard_1_'.$student_type->stid]=array(
 			'#type' => 'textfield',
 			'#required' => TRUE,
@@ -101,8 +110,16 @@ function onlinecharge_fee() {
 			'#default_value'=>$fee,
 			'#size' => 10,
 		);
-		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('is_passround1',1)->fields('sc',array('fee'))->execute()->fetchField();
+		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',2)->fields('sc',array('fee'))->execute()->fetchField();
 		$form['feestandard_2_'.$student_type->stid]=array(
+			'#type' => 'textfield',
+			'#required' => TRUE,
+			'#maxlength' => 10,
+			'#default_value'=>$fee,
+			'#size' => 10,
+		);
+		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',3)->fields('sc',array('fee'))->execute()->fetchField();
+		$form['feestandard_3_'.$student_type->stid]=array(
 			'#type' => 'textfield',
 			'#required' => TRUE,
 			'#maxlength' => 10,
@@ -119,11 +136,13 @@ function theme_onlinecharge_fee($variables) {
 	$output='';
 	$output.=drupal_render($form['round1feetitle']);
 	$output.=drupal_render($form['round2feetitle']);
+	$output.=drupal_render($form['round3feetitle']);
 	$output.=drupal_render($form['detail']);
 	$header=array(
 		t('Student Type'),
 		t('1st round standard'),
-		t('2nd and 3rd round total')
+		t('2nd round standard'),
+		t('3rd round standard'),
 	);
 	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
 	$rows=array();
@@ -132,6 +151,7 @@ function theme_onlinecharge_fee($variables) {
 			$student_type->name,
 			drupal_render($form['feestandard_1_'.$student_type->stid]),
 			drupal_render($form['feestandard_2_'.$student_type->stid]),
+			drupal_render($form['feestandard_3_'.$student_type->stid]),
 		);
 	}
 	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
@@ -160,6 +180,7 @@ function onlinecharge_fee_submit($form, $form_state) {
 			'fee' => $form_state['values']['feestandard_1_'.$student_type->stid],
 			'ucategory' => $student_type->stid,
 			'is_passround1' => 0,
+			'period' => 1,
 		))->execute();
 		db_insert('vl_charging_standard')->fields(array(
 			'scid' => $i++,
@@ -167,6 +188,15 @@ function onlinecharge_fee_submit($form, $form_state) {
 			'fee' => $form_state['values']['feestandard_2_'.$student_type->stid],
 			'ucategory' => $student_type->stid,
 			'is_passround1' => 1,
+			'period' => 2,
+		))->execute();
+		db_insert('vl_charging_standard')->fields(array(
+			'scid' => $i++,
+			'title' => $form_state['values']['round3feetitle'],
+			'fee' => $form_state['values']['feestandard_3_'.$student_type->stid],
+			'ucategory' => $student_type->stid,
+			'is_passround1' => 1,
+			'period' => 3,
 		))->execute();
 	}
 	drupal_set_message(t('Settings have been saved.'));
