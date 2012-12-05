@@ -303,19 +303,19 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	$query->fields('o')->fields('sc',array('period'));
 	$result=$query->execute();
 	foreach($result as $r) {
-		$form['round'.$r->period]['period']=array(
+		$form['round'.$r->period]['period'.$r->period]=array(
 			'#type' => 'hidden',
 			'#value' => $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')),
 		);
-		$form['round'.$r->period]['orderno']=array(
+		$form['round'.$r->period]['orderno'.$r->period]=array(
 			'#type' => 'hidden',
 			'#value' => $r->orderno,
 		);
-		$form['round'.$r->period]['amount']=array(
+		$form['round'.$r->period]['amount'.$r->period]=array(
 			'#type' => 'hidden',
 			'#value' => $r->amount,
 		);
-		$form['round'.$r->period]['status']=array(
+		$form['round'.$r->period]['status'.$r->period]=array(
 			'#type' => 'hidden',
 			'#value' => $r->status,
 		);
@@ -395,7 +395,20 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 }
 
 function onlinecharge_user_orders_submit($form, $form_state) {
-	var_dump($form_state); exit;
+	$_form_state=array();
+	$i=substr($form_state['clicked_button']['#name'],-1);
+	$time=time();
+	db_update('orders')->condition('orderno',$form_state['values']['orderno'.$i])->fields(array(
+		'ordertime' => $date,
+	))->execute();
+	$_form_state['values']=array(
+		'orderno' => $form_state['values']['orderno'.$i],
+		'amount' => $form_state['values']['amount'.$i],
+		'ordertime' => $time,
+	);
+	$output=module_invoke($form_state['values']['gateway'], 'submit_form_submit', $form, $_form_state);
+	echo($output);
+	exit;
 }
 
 function theme_onlinecharge_user_orders($variables) {
@@ -414,9 +427,9 @@ function theme_onlinecharge_user_orders($variables) {
 	for($i=1;$i<=3;$i++) {
 		if(!isset($form['round'.$i])) continue;
 		$rows[]=array(
-			$form['round'.$i]['period']['#value'],
-			'&yen;'.$form['round'.$i]['amount']['#value'],
-			_onlinecharge_status_text($form['round'.$i]['status']['#value']),
+			$form['round'.$i]['period'.$i]['#value'],
+			'&yen;'.$form['round'.$i]['amount'.$i]['#value'],
+			_onlinecharge_status_text($form['round'.$i]['status'.$i]['#value']),
 			isset($form['submit'.$i])?drupal_render($form['submit'.$i]):'',
 		);
 		unset($form['round'.$i]);
