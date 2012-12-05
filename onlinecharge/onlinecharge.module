@@ -329,7 +329,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 				break;
 			case 10:
 				$form['submit'.$r->period]=array(
-					'#markup' => t('System is processing your order. Please check it later.').'<br/>'.t('You orderno is @orderno, and transaction no is @trans.',
+					'#markup' => t('System is processing your order. Please check it later.').'<br/>'.t('You orderno is @orderno.',
 						array('@orderno'=>$r->orderno, '@trans'=>$r->gatewaytransactionno)),
 				);
 				break;
@@ -351,7 +351,6 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		);
 	}
 	$gateways=module_invoke_all('paymentgatewayinfo');
-	if(count($gateways)==1) unset($header['gateway']);
 	$options=array();
 	foreach($gateways as $k => $v) {
 		$options[$k]='<img src="/'.$v.'"/>';
@@ -386,7 +385,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		t('If you still have inconsistent record here, for instance, multiple sucessful payments, please contact us at @tel.', array('@tel'=>variable_get('charging_telephone')))
 	);
 	foreach($gateways as $key => $value) {
-		$markup[]=module_invoke($key, 'help', 'charge/'.$key);
+		$markup[]=module_invoke($key, 'help', 'charge/'.$key, '');
 	}
 	$form['help']=array(
 		'#markup' => '<p>'.implode('</p><p>',$markup).'</p>',
@@ -399,12 +398,19 @@ function onlinecharge_user_orders_submit($form, $form_state) {
 	$i=substr($form_state['clicked_button']['#name'],-1);
 	$time=time();
 	db_update('orders')->condition('orderno',$form_state['values']['orderno'.$i])->fields(array(
-		'ordertime' => $date,
+		'ordertime' => $time,
+		'gateway' => $form_state['values']['gateway'],
+		'status' => 10,
 	))->execute();
+	$query=db_select('orders','o')->fields('o',array('ordertitle'))->condition('o.orderno',$form_state['values']['orderno'.$i]);
+	$query->innerJoin('users','u','u.uid=o.uid');
+	$query->fields('u',array('uid','name'));
+	$r=$query->execute()->fetchObject();
 	$_form_state['values']=array(
 		'orderno' => $form_state['values']['orderno'.$i],
 		'amount' => $form_state['values']['amount'.$i],
 		'ordertime' => $time,
+		'ordertitle' => $r->uid.$r->name.' '.$r->ordertitle,
 	);
 	$output=module_invoke($form_state['values']['gateway'], 'submit_form_submit', $form, $_form_state);
 	echo($output);
@@ -414,7 +420,6 @@ function onlinecharge_user_orders_submit($form, $form_state) {
 function theme_onlinecharge_user_orders($variables) {
 	$form=$variables['form'];
 	$output='';
-	//unset($form['round1']);
 
 	$header=array(
 		'period' => t('Exam Period'),
@@ -453,5 +458,36 @@ function _onlinecharge_status_text($status) {
 		case 100:
 			return t('Paid successful');
 	}
+}
+
+function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TRUE) {
+	$r=db_select('orders','o')->condition('o.orderno',$orderno)->condition('o.status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
+	if($r==1 && $isbackend) {
+		db_update('orders')->condition('orderno',$orderno)->fields(array(
+			'status' => 100,
+			'gatewaytransactionno' => $transno
+		))->execute();
+		watchdog('onlinecharge',
+			'@orderno payment succeeded via @gateway.', array(
+				'@orderno' => $orderno,
+				'@gateway' => $gateway,
+			WATCHDOG_INFO
+		));
+	}
+	if($isbackend) exit;
+	$query=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o');
+	$query->innerJoin('users','u','o.uid=u.uid');
+	$query->fields('u',array('uid','name'));
+	$r=$query->execute()->fetchObject();
+	if($r->status==100)
+		drupal_set_message(t('@user paid @amount for @title successful.',array(
+			'@user' => $r->name,
+			'@amount' => $r->amount,
+			'@title' => $r->ordertitle
+		)));
+	if($GLOBALS['user']->uid==$r->uid)
+		drupal_goto($GLOBALS['base_url'].'/user/'.$r->uid.'/payment');
+	else
+		drupal_goto($GLOBALS['base_url']);
 }
 ?>
