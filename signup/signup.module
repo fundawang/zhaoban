@@ -2190,7 +2190,7 @@ function signup_user_contact_form($form, $form_state) {
 		'#type' => 'textfield',
 		'#title' => t('The organization which holds your personal record'),
 		'#description' => t('This should be high school for students.'),
-		'#autocomplete_path' => 'signup/schools_autocompletion',
+//		'#autocomplete_path' => 'signup/schools_autocompletion',
 		'#maxlength' => 20,
 		'#required' => 'true',
 		'#default_value' => $default_values['personnel_record_at'],
