@@ -471,7 +471,8 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 			'@orderno payment succeeded via @gateway.', array(
 				'@orderno' => $orderno,
 				'@gateway' => $gateway,
-			WATCHDOG_INFO
+			WATCHDOG_INFO,
+			l(t('View'), 'charge/log')
 		));
 	}
 	if($isbackend) exit;
