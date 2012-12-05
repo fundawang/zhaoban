@@ -58,19 +58,20 @@ function _signup_determine_period($user) {
 	if(!$result)
 		return signup_progress_CONTACT; // One must fill in contact at first.
 
-	// All will be fine if our own student or foreign student
-	if($user->ucategory == 0 || $user->ucategory == 3) return signup_progress_FINISH;
-
-	// Determine whether you hvae filled up your gaokao informatino
-	$result=db_select('students_gk','sg')->fields('sg')->condition('sg.uid',$user->name)->execute()->fetchObject();
-	if(!isset($result->city_district) || ($result->city_district == $result->province && $user->ucategory == 1))
-		return signup_progress_GAOKAO; // One must fill his city_district
+	// Determine whether you hvae filled up your gaokao information
+	if($user->ucategory != 0 && $user->ucategory !==3) {
+		$result=db_select('students_gk','sg')->fields('sg')->condition('sg.uid',$user->name)->execute()->fetchObject();
+		if(!isset($result->city_district) || ($result->city_district == $result->province && $user->ucategory == 1))
+			return signup_progress_GAOKAO; // One must fill his city_district
+	}
 
 	// Determine if one has finished his online payment orders
 	if(module_exists('onlinecharge')) {
-		$result=db_select('orders','o')->condition('o.uid',$user->uid)->condition('o.status',100,'<>')->countQuery()->execute()->fetchField();
-		if($result===FALSE) return signup_progress_FINISH;
-		else if($result>0) return signup_progress_PAYMENT;
+		$total_orders=db_select('orders','o')->condition('o.uid',$user->uid)->fields('o')->countQuery()->execute()->fetchField();
+		$unfinished_orders=db_select('orders','o')->condition('o.uid',$user->uid)->condition('status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
+		//$result=db_select('orders','o')->condition('o.uid',$user->uid)->condition('o.status',100,'<>')->countQuery()->execute()->fetchField();
+		if($unfinished_orders===FALSE) return signup_progress_FINISH;
+		else if($unfinished_orders>0 || $total_orders==0) return signup_progress_PAYMENT;
 	}
 	return signup_progress_FINISH;
 }

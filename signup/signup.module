@@ -420,7 +420,6 @@ function signup_user_goto($user) {
   if(!array_key_exists('5', $user->roles)) return;
 
   $r=_signup_determine_period($user);
-  //var_dump($r);exit();
   drupal_get_messages('error');
   
 
@@ -441,6 +440,12 @@ function signup_user_goto($user) {
               return;
           case signup_progress_GAOKAO:
                   drupal_goto('user/'.$user->uid.'/edit/'.signup_user_GAOKAO);
+              return;
+          case signup_progress_PAYMENT:
+                  drupal_get_messages('status');
+                  drupal_set_message('<big>'.t('You\'ve finished signing up progress. Now you should pay the fees online.').'</big>');
+                  drupal_set_message('<big>'.t('Now you should pay the fees online.').'</big>');
+                  drupal_goto('user/'.$user->uid.'/payment');
               return;
           case signup_progress_FINISH:
                   drupal_get_messages('status');
@@ -2608,11 +2613,11 @@ function signup_block_content_PROGRESS() {
 		$unfinished_orders=db_select('orders','o')->condition('o.uid',$GLOBALS['user']->uid)->condition('status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
 		if(arg(0)=='user'&&arg(2)=='payment')
 			$status[4]='warning';
-		else if($total_orders > $unfinished_orders)
+		else if($unfinished_orders > 0 || $total_orders == 0)
 			$status[4]='error';
 		else $status[4]='ok';
 		$result['content'] .= sprintf('<img src="/misc/watchdog-%s.png" align="middle">&nbsp;&nbsp;', $status[4]);
-		$result['content'] .= $status[4]!='ok'?t('Online Charging'):l(t('Online Charging'),'user/'.$GLOBALS['user']->uid.'/payment');
+		$result['content'] .= onlinecharge_user_access($GLOBALS['user'])?l(t('Online Charging'),'user/'.$GLOBALS['user']->uid.'/payment'):t('Online Charging');
 	}
 	return $result;
 }
