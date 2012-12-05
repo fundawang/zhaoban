@@ -4,13 +4,17 @@
  * Implements hook_help().
  */
 function onlinecharge_help($path, $arg) {
-  $output = '';
-  switch ($path) {
-    case 'charge/fee':
-      $output = t('Define charging fees and standard.');
-      break;
-  }
-    return '<p>'.$output.'</p>';
+	switch ($path) {
+		case 'charge/fee':
+			$output = t('Define charging fees and standard.');
+			break;
+		case 'user/%/payment':
+			$output = '<p>'.t('This page will list all your online payment orders. Please note that we only record the online payment status. So if you pay the order offline, the status will not update.').'</p>';
+			break;
+		default:
+			return;
+	}
+	return '<p>'.$output.'</p>';
 }
 
 /**
@@ -30,6 +34,9 @@ function onlinecharge_permission() {
 function onlinecharge_theme() {
 	return array(
 		'onlinecharge_fee' => array(
+			'render element' => 'form', 
+		),
+		'onlinecharge_user_orders' => array(
 			'render element' => 'form', 
 		),
 	);
@@ -75,13 +82,24 @@ function onlinecharge_admin_page() {
 
 function onlinecharge_fee() {
 	$form=array();
+	$should_disabled=db_select('orders','o')->fields('o')->countQuery()->execute()->fetchField();
 	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',1)->execute()->fetchField();
+	$form['telephone']=array(
+		'#type' => 'textfield',
+		'#required' => TRUE,
+		'#title' => t('Contact phone on charging question'),
+		'#maxlength' => 20,
+		'#default_value' => variable_get('charging_telephone'),
+		'#disabled' => $should_disabled,
+		'#size' => 50,
+	);
 	$form['round1feetitle']=array(
 		'#type' => 'textfield',
 		'#required' => TRUE,
 		'#title' => t('Title for 1st round charging standard'),
 		'#maxlength' => 100,
 		'#default_value' => $title,
+		'#disabled' => $should_disabled,
 		'#size' => 80,
 	);
 	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',2)->execute()->fetchField();
@@ -91,6 +109,7 @@ function onlinecharge_fee() {
 		'#title' => t('Title for 2nd round charging standard'),
 		'#maxlength' => 100,
 		'#default_value' => $title,
+		'#disabled' => $should_disabled,
 		'#size' => 80,
 	);
 	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',3)->execute()->fetchField();
@@ -100,6 +119,7 @@ function onlinecharge_fee() {
 		'#title' => t('Title for 3rd round charging standard'),
 		'#maxlength' => 100,
 		'#default_value' => $title,
+		'#disabled' => $should_disabled,
 		'#size' => 80,
 	);
 	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
@@ -116,6 +136,7 @@ function onlinecharge_fee() {
 			'#required' => TRUE,
 			'#maxlength' => 10,
 			'#default_value'=>$fee,
+			'#disabled' => $should_disabled,
 			'#size' => 10,
 		);
 		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',2)->fields('sc',array('fee'))->execute()->fetchField();
@@ -124,6 +145,7 @@ function onlinecharge_fee() {
 			'#required' => TRUE,
 			'#maxlength' => 10,
 			'#default_value'=>$fee,
+			'#disabled' => $should_disabled,
 			'#size' => 10,
 		);
 		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',3)->fields('sc',array('fee'))->execute()->fetchField();
@@ -132,16 +154,21 @@ function onlinecharge_fee() {
 			'#required' => TRUE,
 			'#maxlength' => 10,
 			'#default_value'=>$fee,
+			'#disabled' => $should_disabled,
 			'#size' => 10,
 		);
 	}
-	$form['submit']=array('#type'=>'submit', '#value'=>t('Save'));
+	if(!$should_disabled)
+		$form['submit']=array('#type'=>'submit', '#value'=>t('Save'));
+	else
+		$form['submit']=array('#type'=>'item', '#title'=>t('Because there are generated orders, so the standard cannot be modified.'));
 	return $form;
 }
 
 function theme_onlinecharge_fee($variables) {
 	$form=$variables['form'];
 	$output='';
+	$output.=drupal_render($form['telephone']);
 	$output.=drupal_render($form['round1feetitle']);
 	$output.=drupal_render($form['round2feetitle']);
 	$output.=drupal_render($form['round3feetitle']);
@@ -207,6 +234,7 @@ function onlinecharge_fee_submit($form, $form_state) {
 			'period' => 3,
 		))->execute();
 	}
+	variable_set('charging_telephone',$form_state['values']['telephone']);
 	drupal_set_message(t('Settings have been saved.'));
 	watchdog('onlinecharge',
 		'!user modified charging standard.', array(
@@ -217,11 +245,200 @@ function onlinecharge_fee_submit($form, $form_state) {
 
 function onlinecharge_user_access($user) {
 	if($user->uid==1) return FALSE;
-	if($user->uid==$GLOBALS['user']->uid) return user_access('use online charging');
-	else return user_access('use online charging', $user) && user_access('administer users');
+	$t=_signup_determine_period($user);
+	if($t==signup_progress_PAYMENT || $t==signup_progress_FINISH) {
+		if($user->uid==$GLOBALS['user']->uid) return user_access('use online charging', $user);
+		else return user_access('use online charging', $user) && user_access('administer users');
+	}
+	else return FALSE;
 }
 
 function onlinecharge_user_orders($form, $form_state, $user) {
-	return array();
+	
+	for($i=1;$i<=3;$i++) {
+		$fee=db_select('vl_charging_standard','c')->fields('c')->condition('c.ucategory',$user->ucategory)->condition('c.period',$i)->condition('c.fee',0,'>')->execute()->fetchObject();
+		if($fee==FALSE) continue;
+		$r=db_select('orders','o')->condition('o.standard',$fee->scid)->condition('o.uid',$user->uid)->fields('o')->countQuery()->execute()->fetchField();
+		if($r==0) {
+			if($fee->period > 1) {
+				$p=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s')->countQuery()->execute()->fetchField();
+				if(!$p) break;
+			}
+			db_insert('orders')->fields(array(
+				'uid' => $user->uid,
+				'orderno' => sprintf('%s%06d',date('YmdHms'),mt_rand(0,999999)),
+				'ordertime' => time(),
+				'standard' => $fee->scid,
+				'ordertitle' => $fee->title,
+				'amount' => $fee->fee,
+				'gateway' => NULL,
+				'gatewaytransactionno' => NULL,
+				'status' => 0,
+			))->execute();
+		}
+	}
+	
+	$form=array();
+	$form['round1']=array(
+		'#type' => 'fieldset',
+		'#title' => t('1st round charging'),
+		'#collapsible' => TRUE,
+	);
+	
+	$r=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s')->countQuery()->execute()->fetchField();
+	if($r>0) {
+		$form['round2']=array(
+			'#type' => 'fieldset',
+			'#title' => t('2nd round charging'),
+			'#collapsible' => TRUE,
+		);
+		$form['round3']=array(
+			'#type' => 'fieldset',
+			'#title' => t('3rd round charging'),
+			'#collapsible' => TRUE,
+		);
+	}
+	$query=db_select('orders','o')->condition('o.uid',$user->uid)->orderBy('o.orderno');
+	$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
+	$query->fields('o')->fields('sc',array('period'));
+	$result=$query->execute();
+	foreach($result as $r) {
+		$form['round'.$r->period]['period']=array(
+			'#type' => 'hidden',
+			'#value' => $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')),
+		);
+		$form['round'.$r->period]['orderno']=array(
+			'#type' => 'hidden',
+			'#value' => $r->orderno,
+		);
+		$form['round'.$r->period]['amount']=array(
+			'#type' => 'hidden',
+			'#value' => $r->amount,
+		);
+		$form['round'.$r->period]['status']=array(
+			'#type' => 'hidden',
+			'#value' => $r->status,
+		);
+		switch($r->status) {
+			case 0:
+				$form['submit'.$r->period]=array(
+					'#type' => 'submit',
+					'#name' => 'submit'.$r->period,
+					'#value' => t('Pay'),
+				);
+				break;
+			case 10:
+				$form['submit'.$r->period]=array(
+					'#markup' => t('System is processing your order. Please check it later.').'<br/>'.t('You orderno is @orderno, and transaction no is @trans.',
+						array('@orderno'=>$r->orderno, '@trans'=>$r->gatewaytransactionno)),
+				);
+				break;
+			case 100:
+				break;
+		}
+	}
+	
+	$rows=array();
+	$result=db_select('orders','o')->fields('o')->condition('o.uid',$user->uid)->orderBy('o.orderno')->execute();
+	foreach($result as $r) {
+		$rows[$r->orderno]=array(
+			'orderno' => $r->orderno,
+			'ordertitle' => $r->ordertitle,
+			'amount' => '&yen;'.$r->amount,
+			'gateway' => $r->gateway,
+			'gatewaytrans' => $r->gatewaytransactionno,
+			'status' => $r->status,
+		);
+	}
+	$gateways=module_invoke_all('paymentgatewayinfo');
+	if(count($gateways)==1) unset($header['gateway']);
+	$options=array();
+	foreach($gateways as $k => $v) {
+		$options[$k]='<img src="/'.$v.'"/>';
+	}
+	if(count($gateways)==1) {
+		$keys=array_keys($gateways);
+		$form['gateway']=array(
+			'#type' => 'hidden',
+			'#value' => $keys[0],
+		);
+		$form['gatewayintro']=array(
+			'#type' => 'item',
+			'#title' => t('Payment Gateway'),
+			'#required' => TRUE,
+			'#markup' => $options[$keys[0]],
+			'#description' => t('We only support above payment gateway now.'),
+		);
+	} else {
+		$form['gateway']=array(
+			'#type' => 'radios',
+			'#title' => t('Payment Gateway Selection'),
+			'#description' => t('Please select your preferred payment gateway.'),
+			'#required' => TRUE,
+			'#options' => $options,
+		);
+		$keys=array_keys($gateways);
+		$form['gateway']['#default_value']=$keys[0];
+	}
+	$markup=array(
+		'<b>'.t('Notice').'</b><br/>'.
+		t('If your payment is successful, but we do not show the result here, please wait a few minutes to have our record updated.').'<br/>'.
+		t('If you still have inconsistent record here, for instance, multiple sucessful payments, please contact us at @tel.', array('@tel'=>variable_get('charging_telephone')))
+	);
+	foreach($gateways as $key => $value) {
+		$markup[]=module_invoke($key, 'help', 'charge/'.$key);
+	}
+	$form['help']=array(
+		'#markup' => '<p>'.implode('</p><p>',$markup).'</p>',
+	);
+	return $form;
+}
+
+function onlinecharge_user_orders_submit($form, $form_state) {
+	var_dump($form_state); exit;
+}
+
+function theme_onlinecharge_user_orders($variables) {
+	$form=$variables['form'];
+	$output='';
+	//unset($form['round1']);
+
+	$header=array(
+		'period' => t('Exam Period'),
+		'amount' => t('Fees'),
+		'status' => t('Status'),
+		'operation' => t('Operation'),
+	);
+	$rows=array();
+	
+	for($i=1;$i<=3;$i++) {
+		if(!isset($form['round'.$i])) continue;
+		$rows[]=array(
+			$form['round'.$i]['period']['#value'],
+			'&yen;'.$form['round'.$i]['amount']['#value'],
+			_onlinecharge_status_text($form['round'.$i]['status']['#value']),
+			isset($form['submit'.$i])?drupal_render($form['submit'.$i]):'',
+		);
+		unset($form['round'.$i]);
+	}
+	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output.=drupal_render($form['gateway']);
+	if(isset($form['gatewayintro']))
+		$output.=drupal_render($form['gatewayintro']);
+	$output.=drupal_render($form['help']);
+	$output.=drupal_render_children($form);
+	
+	return $output;
+}
+
+function _onlinecharge_status_text($status) {
+	switch($status) {
+		case 0:
+			return t('Not paid');
+		case 10:
+			return t('Processing');
+		case 100:
+			return t('Paid successful');
+	}
 }
 ?>
