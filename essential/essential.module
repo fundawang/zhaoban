@@ -13,7 +13,7 @@
  * Implementation of hook_help().
  */
 function essential_help($path, $arg) {
-  return NULL;
+  return;
 }
 
 /**

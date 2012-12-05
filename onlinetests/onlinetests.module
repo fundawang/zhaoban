@@ -29,6 +29,8 @@ function onlinetests_help($path, $arg) {
     case 'definations/onlinetests':
       $output = t('Organize online tests.');
       break;
+    default:
+      return;
   }
     return '<p>'.$output.'</p>';
 }

@@ -16,7 +16,6 @@ function exams_init() {
  * Implements hook_help().
  */
 function exams_help($path, $arg) {
-  $output = '';
   switch ($path) {
     case 'definations':
       $output = t('Define examinations and professions.');
@@ -27,6 +26,8 @@ function exams_help($path, $arg) {
     case 'definations/professions':
       $output = t('Define professions, such as the exam construction of the profession, and the description of the profession.');
       break;
+    default:
+      return;
   }
     return '<p>'.$output.'</p>';
 }

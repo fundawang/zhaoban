@@ -18,7 +18,7 @@ function going_init() {
  * Implementation of hook_help().
  */
 function going_help($path, $arg) {
-  return NULL;
+  return;
 }
 
 /**
