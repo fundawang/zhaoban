@@ -328,6 +328,11 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 				);
 				break;
 			case 10:
+			case 11:
+			case 12:
+			case 13:
+			case 14:
+			case 15:
 				$form['submit'.$r->period]=array(
 					'#markup' => t('System is processing your order. Please check it later.').'<br/>'.t('You orderno is @orderno.',
 						array('@orderno'=>$r->orderno, '@trans'=>$r->gatewaytransactionno)),
@@ -454,6 +459,11 @@ function _onlinecharge_status_text($status) {
 		case 0:
 			return t('Not paid');
 		case 10:
+		case 11:
+		case 12:
+		case 13:
+		case 14:
+		case 15:
 			return t('Processing');
 		case 100:
 			return t('Paid successful');
@@ -470,10 +480,11 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 		watchdog('onlinecharge',
 			'@orderno payment succeeded via @gateway.', array(
 				'@orderno' => $orderno,
-				'@gateway' => $gateway,
+				'@gateway' => $gateway
+			),
 			WATCHDOG_INFO,
 			l(t('View'), 'charge/log')
-		));
+		);
 	}
 	if($isbackend) exit;
 	$query=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o');
@@ -490,5 +501,51 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 		drupal_goto($GLOBALS['base_url'].'/user/'.$r->uid.'/payment');
 	else
 		drupal_goto($GLOBALS['base_url']);
+}
+
+function onlinecharge_cron() {
+	$result=db_select('orders','o')->condition('o.status','100','<>')->isNotNull('o.gateway')->fields('o',array('orderno','gateway','status','ordertime'))->execute();
+	foreach($result as $r) {
+		if($r->status==15) {
+			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+				'status' => 0,
+			))->execute();
+			watchdog('onlinecharge',
+				'@orderno process failed via @gateway.', array(
+					'@orderno' => $r->orderno,
+					'@gateway' => $r->gateway
+				),
+				WATCHDOG_ERROR
+			);
+			continue;
+		}
+		// hook_querystatus returns transaction number if succeeded, or FALSE when failed.
+		$t=module_invoke($r->gateway, 'querystatus', $r->orderno, $r->ordertime);
+		if($t) {
+			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+				'status' => 100,
+				'gatewaytransactionno' => $t
+			))->execute();
+			watchdog('onlinecharge',
+				'@orderno payment succeeded via @gateway.', array(
+					'@orderno' => $r->orderno,
+					'@gateway' => $r->gateway
+				),
+				WATCHDOG_INFO,
+				l(t('View'), 'charge/log')
+			);
+		} else {
+			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+				'status' => $r->status+1,
+			))->execute();
+			watchdog('onlinecharge',
+				'@orderno process without success via @gateway.', array(
+					'@orderno' => $r->orderno,
+					'@gateway' => $r->gateway
+				),
+				WATCHDOG_WARNING
+			);
+		}
+	}
 }
 ?>
