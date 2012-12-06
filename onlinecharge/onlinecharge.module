@@ -409,7 +409,8 @@ function onlinecharge_user_orders_submit($form, $form_state) {
 	))->execute();
 	$query=db_select('orders','o')->fields('o',array('ordertitle'))->condition('o.orderno',$form_state['values']['orderno'.$i]);
 	$query->innerJoin('users','u','u.uid=o.uid');
-	$query->fields('u',array('uid','name'));
+	$query->innerJoin('students','s','s.uid=u.name');
+	$query->fields('s',array('uid','name'));
 	$r=$query->execute()->fetchObject();
 	$_form_state['values']=array(
 		'orderno' => $form_state['values']['orderno'.$i],
