@@ -542,6 +542,7 @@ function onlinecharge_log_form($form, $form_state) {
 		'#title' => t('Student ID'),
 		'#maxlength' => 10,
 		'#size' => 30,
+		'#default_value' => $_COOKIE['Drupal_visitor_user_uid'],
 		'#attributes'=>array('placeholder'=>variable_get('zhaoban_current_year',date('Y')).'BXXXX'),
 	);
 	$form['user']['username']=array(
@@ -549,6 +550,7 @@ function onlinecharge_log_form($form, $form_state) {
 		'#title' => t('Real Name'),
 		'#maxlength' => 10,
 		'#size' => 30,
+		'#default_value' => $_COOKIE['Drupal_visitor_user_username'],
 	);
 	$form['orders']=array(
 		'#type' => 'fieldset',
@@ -563,6 +565,23 @@ function onlinecharge_log_form($form, $form_state) {
 		'#title' => t('Order No.'),
 		'#maxlength' => 20,
 		'#size' => 10,
+		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderno'],
+	);
+	$query=db_select('orders','o');
+	$query->addExpression("FROM_UNIXTIME(o.ordertime, '%m%d')", "orderdate");
+	$query->distinct()->orderBy('orderdate');
+	$result=$query->execute();
+	$options=array(
+		'0000' => '-- '.t('All').' --',
+	);
+	foreach($result as $r) {
+		$options[$r->orderdate]=intval(substr($r->orderdate,0,2)).t('Month').intval(substr($r->orderdate,2,2)).t('Day');
+	}
+	$form['orders']['orderdate']=array(
+		'#type' => 'select',
+		'#title' => t('Order Date'),
+		'#options' => $options,
+		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderdate'],
 	);
 	$form['orders']['status']=array(
 		'#type' => 'select',
@@ -573,21 +592,55 @@ function onlinecharge_log_form($form, $form_state) {
 			'10' => t('Processing'),
 			'100' => t('Paid successful'),
 		),
-		'#default_value' => '100',
+		'#default_value' => isset($_COOKIE['Drupal_visitor_orders_status'])?$_COOKIE['Drupal_visitor_orders_status']:'100',
 	);
 	$form['submit']=array(
 		'#type' => 'submit',
 		'#value' => t('Search'),
+		'#name' => 'search',
 	);
+	$form['clearall']=array(
+		'#type' => 'submit',
+		'#value' => t('Clear all filters'),
+		'#name' => 'clearall',
+		'#attributes' => array('title' => t('So that all the filters could be reset')),
+	);
+	$query=db_select('');
 	return $form;
 }
 
 function theme_onlinecharge_log_form($variables) {
 	$form=$variables['form'];
 	$output='';
+	$output.=drupal_render($form['conditions']);
+	$output.=drupal_render($form['user']);
+	$output.=drupal_render($form['orders']);
+	$output.=drupal_render($form['submit']);
+	$output.=drupal_render($form['clearall']);
 	$output.=drupal_render_children($form);
 	return $output;
 }
+
+function onlinecharge_log_form_submit($form, &$form_state) {
+	switch($form_state['clicked_button']['#name']) {
+	case 'search':
+		user_cookie_save(array(
+			'user_uid' => trim($form_state['values']['uid']),
+			'user_username' => trim($form_state['values']['username']),
+			'orders_orderno' => trim($form_state['values']['orderno']),
+			'orders_orderdate' => trim($form_state['values']['orderdate']),
+			'orders_status' => trim($form_state['values']['status']),
+		));
+		break;
+	case 'clearall':
+		$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_status');
+		foreach($cookies as $c) {
+			user_cookie_delete($c);
+		}
+		break;
+	}
+}
+
 function onlinecharge_cron() {
 	$result=db_select('orders','o')->condition('o.status','100','<>')->isNotNull('o.gateway')->fields('o',array('orderno','gateway','status','ordertime'))->execute();
 	foreach($result as $r) {

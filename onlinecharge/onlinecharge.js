@@ -16,13 +16,14 @@ Drupal.behaviors.chargelogFieldsetSummaries = {
 		$('fieldset#edit-orders', context).drupalSetSummary(function (context) {
 			var searchOrderNumber = $('.form-item-orderno input', context).val();
 			var searchOrderStatus = $('.form-item-status select', context).val();
+			var searchOrderDate = $('.form-item-orderdate select', context).val();
+			var a = Drupal.t('All'); a = Drupal.t('Any order number'); a=Drupal.t('All date');
 			
-			if(searchOrderNumber=="" && searchOrderStatus=='')
-				return Drupal.t('List all orders');
-			else if(searchOrderNumber=="")
-				return searchOrderStatus==-1?Drupal.t('Search all orders'):Drupal.t('Search orders which are @status', { '@status': $('.form-item-status select option:selected', context).text()});
-			else
-				return searchOrderStatus==-1?Drupal.t('Search orders with number @orderno', { '@orderno': searchOrderNumber}):Drupal.t('Search orders which are @status with number @orderno', { '@orderno': searchOrderNumber, '@status': $('.form-item-status select option:selected', context).text()});
+			return Drupal.t('List @status orders with @orderno and @date', {
+				'@status': (searchOrderStatus==-1 ? Drupal.t('All') : $('.form-item-status select option:selected', context).text()),
+				'@orderno': (searchOrderNumber=='' ? Drupal.t('Any order number') : searchOrderNumber),
+				'@date': (searchOrderDate=='0000' ? Drupal.t('All date'): $('.form-item-orderdate select option:selected', context).text())
+			});
 		});
 	}
 };
