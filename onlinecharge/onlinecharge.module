@@ -521,6 +521,62 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 
 function onlinecharge_log_form($form, $form_state) {
 	$form=array();
+	$form['conditions']=array(
+		'#type' => 'vertical_tabs',
+	);
+	$form['activetab']=array(
+		'#type' => 'hidden',
+		'#value' => 'user',
+	);
+	$form['user']=array(
+		'#type' => 'fieldset',
+		'#title' => t('Search by User'),
+		'#group'=>'conditions',
+		'#attached' => array(
+			'js' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.js'),
+		),
+		'#attributes' => array('class' => array('chargelogsearchbyuser')),
+	);
+	$form['user']['uid']=array(
+		'#type' => 'textfield',
+		'#title' => t('Student ID'),
+		'#maxlength' => 10,
+		'#size' => 30,
+	);
+	$form['user']['username']=array(
+		'#type' => 'textfield',
+		'#title' => t('Real Name'),
+		'#maxlength' => 10,
+		'#size' => 30,
+	);
+	$form['orders']=array(
+		'#type' => 'fieldset',
+		'#title' => t('Search by Order'),
+		'#group'=>'conditions',
+		'#attached' => array(
+			'js' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.js'),
+		),
+	);
+	$form['orders']['orderno']=array(
+		'#type' => 'textfield',
+		'#title' => t('Order No.'),
+		'#maxlength' => 20,
+		'#size' => 10,
+	);
+	$form['orders']['status']=array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#options' => array(
+			'-1' => '-- '.t('All').' --',
+			'0' => t('Not paid'),
+			'10' => t('Processing'),
+			'100' => t('Paid successful'),
+		)
+	);
+	$form['submit']=array(
+		'#type' => 'submit',
+		'#value' => t('Search'),
+	);
 	return $form;
 }
 
