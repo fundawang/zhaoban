@@ -568,14 +568,14 @@ function onlinecharge_log_form($form, $form_state) {
 		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderno'],
 	);
 	$query=db_select('orders','o');
-	$query->addExpression("FROM_UNIXTIME(o.ordertime, '%m%d')", "orderdate");
+	$query->addExpression("FROM_UNIXTIME(o.ordertime, '%Y%m%d')", "orderdate");
 	$query->distinct()->orderBy('orderdate');
 	$result=$query->execute();
 	$options=array(
-		'0000' => '-- '.t('All').' --',
+		'00000000' => '-- '.t('All').' --',
 	);
 	foreach($result as $r) {
-		$options[$r->orderdate]=intval(substr($r->orderdate,0,2)).t('Month').intval(substr($r->orderdate,2,2)).t('Day');
+		$options[$r->orderdate]=intval(substr($r->orderdate,0,4)).t('Year').intval(substr($r->orderdate,4,2)).t('Month').intval(substr($r->orderdate,6,2)).t('Day');
 	}
 	$form['orders']['orderdate']=array(
 		'#type' => 'select',

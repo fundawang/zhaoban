@@ -22,7 +22,7 @@ Drupal.behaviors.chargelogFieldsetSummaries = {
 			return Drupal.t('List @status orders with @orderno and @date', {
 				'@status': (searchOrderStatus==-1 ? Drupal.t('All') : $('.form-item-status select option:selected', context).text()),
 				'@orderno': (searchOrderNumber=='' ? Drupal.t('Any order number') : searchOrderNumber),
-				'@date': (searchOrderDate=='0000' ? Drupal.t('All date'): $('.form-item-orderdate select option:selected', context).text())
+				'@date': (searchOrderDate=='00000000' ? Drupal.t('All date'): $('.form-item-orderdate select option:selected', context).text())
 			});
 		});
 	}
