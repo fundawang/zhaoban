@@ -8,6 +8,9 @@ function onlinecharge_help($path, $arg) {
 		case 'charge/fee':
 			$output = t('Define charging fees and standard.');
 			break;
+		case 'charge/log':
+			$output = t('Check payment logs.');
+			break;
 		case 'user/%/payment':
 			$output = '<p>'.t('This page will list all your online payment orders. Please note that we only record the online payment status. So if you pay the order offline, the status will not update.').'</p>';
 			break;
@@ -39,6 +42,9 @@ function onlinecharge_theme() {
 		'onlinecharge_user_orders' => array(
 			'render element' => 'form', 
 		),
+		'onlinecharge_log_form' => array(
+			'render element' => 'form', 
+		),
 	);
 }
 
@@ -60,6 +66,15 @@ function onlinecharge_menu() {
 		'page arguments' => array('onlinecharge_fee'),
 		'weight' => 1,
 		'description' => "Define charging fees and standard.",
+		'access callback' => 'user_access',
+		'access arguments' => array('administer charging'),
+	);
+	$items['charge/log'] = array(
+		'title' => 'Payment Logs',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('onlinecharge_log_form'),
+		'weight' => 2,
+		'description' => "Check payment logs.",
 		'access callback' => 'user_access',
 		'access arguments' => array('administer charging'),
 	);
@@ -85,41 +100,41 @@ function onlinecharge_fee() {
 	$should_disabled=db_select('orders','o')->fields('o')->countQuery()->execute()->fetchField();
 	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',1)->execute()->fetchField();
 	$form['telephone']=array(
-		'#type' => 'textfield',
+		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
 		'#title' => t('Contact phone on charging question'),
 		'#maxlength' => 20,
 		'#default_value' => variable_get('charging_telephone'),
-		'#disabled' => $should_disabled,
+		'#markup' => variable_get('charging_telephone'),
 		'#size' => 50,
 	);
 	$form['round1feetitle']=array(
-		'#type' => 'textfield',
+		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
 		'#title' => t('Title for 1st round charging standard'),
 		'#maxlength' => 100,
 		'#default_value' => $title,
-		'#disabled' => $should_disabled,
+		'#markup' => $title,
 		'#size' => 80,
 	);
 	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',2)->execute()->fetchField();
 	$form['round2feetitle']=array(
-		'#type' => 'textfield',
+		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
 		'#title' => t('Title for 2nd round charging standard'),
 		'#maxlength' => 100,
 		'#default_value' => $title,
-		'#disabled' => $should_disabled,
+		'#markup' => $title,
 		'#size' => 80,
 	);
 	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',3)->execute()->fetchField();
 	$form['round3feetitle']=array(
-		'#type' => 'textfield',
+		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
 		'#title' => t('Title for 3rd round charging standard'),
 		'#maxlength' => 100,
 		'#default_value' => $title,
-		'#disabled' => $should_disabled,
+		'#markup' => $title,
 		'#size' => 80,
 	);
 	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
@@ -132,29 +147,29 @@ function onlinecharge_fee() {
 	foreach($student_types as $student_type) {
 		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',1)->fields('sc',array('fee'))->execute()->fetchField();
 		$form['feestandard_1_'.$student_type->stid]=array(
-			'#type' => 'textfield',
+			'#type' => $should_disabled?'item':'textfield',
 			'#required' => TRUE,
 			'#maxlength' => 10,
 			'#default_value'=>$fee,
-			'#disabled' => $should_disabled,
+			'#markup'=>$fee,
 			'#size' => 10,
 		);
 		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',2)->fields('sc',array('fee'))->execute()->fetchField();
 		$form['feestandard_2_'.$student_type->stid]=array(
-			'#type' => 'textfield',
+			'#type' => $should_disabled?'item':'textfield',
 			'#required' => TRUE,
 			'#maxlength' => 10,
 			'#default_value'=>$fee,
-			'#disabled' => $should_disabled,
+			'#markup'=>$fee,
 			'#size' => 10,
 		);
 		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',3)->fields('sc',array('fee'))->execute()->fetchField();
 		$form['feestandard_3_'.$student_type->stid]=array(
-			'#type' => 'textfield',
+			'#type' => $should_disabled?'item':'textfield',
 			'#required' => TRUE,
 			'#maxlength' => 10,
 			'#default_value'=>$fee,
-			'#disabled' => $should_disabled,
+			'#markup'=>$fee,
 			'#size' => 10,
 		);
 	}
@@ -504,6 +519,17 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 		drupal_goto($GLOBALS['base_url']);
 }
 
+function onlinecharge_log_form($form, $form_state) {
+	$form=array();
+	return $form;
+}
+
+function theme_onlinecharge_log_form($variables) {
+	$form=$variables['form'];
+	$output='';
+	$output.=drupal_render_children($form);
+	return $output;
+}
 function onlinecharge_cron() {
 	$result=db_select('orders','o')->condition('o.status','100','<>')->isNotNull('o.gateway')->fields('o',array('orderno','gateway','status','ordertime'))->execute();
 	foreach($result as $r) {
