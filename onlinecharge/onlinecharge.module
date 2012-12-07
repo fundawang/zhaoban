@@ -343,6 +343,8 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		);
 		switch($r->status) {
 			case 0:
+				$k=db_select('students','s')->condition('s.validated',1)->condition('s.uid',$user->name)->fields('s')->countQuery()->execute()->fetchField();
+				if($k==0 || $r->period!=1)
 				$form['submit'.$r->period]=array(
 					'#type' => 'submit',
 					'#name' => 'submit'.$r->period,
