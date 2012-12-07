@@ -12,7 +12,7 @@ function onlinecharge_help($path, $arg) {
 			$output = t('Check payment logs.');
 			break;
 		case 'user/%/payment':
-			$output = '<p>'.t('This page will list all your online payment orders. Please note that we only record the online payment status. So if you pay the order offline, the status will not update.').'</p>';
+			$output = '<p>'.t('This page will list all your online payment orders.').'</p>';
 			break;
 		default:
 			return;
@@ -330,6 +330,10 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 			'#type' => 'hidden',
 			'#value' => $r->amount,
 		);
+		$form['round'.$r->period]['gateway'.$r->period]=array(
+			'#type' => 'hidden',
+			'#value' => t($r->gateway),
+		);
 		$form['round'.$r->period]['status'.$r->period]=array(
 			'#type' => 'hidden',
 			'#value' => $r->status,
@@ -358,18 +362,6 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		}
 	}
 	
-	$rows=array();
-	$result=db_select('orders','o')->fields('o')->condition('o.uid',$user->uid)->orderBy('o.orderno')->execute();
-	foreach($result as $r) {
-		$rows[$r->orderno]=array(
-			'orderno' => $r->orderno,
-			'ordertitle' => $r->ordertitle,
-			'amount' => '&yen;'.$r->amount,
-			'gateway' => $r->gateway,
-			'gatewaytrans' => $r->gatewaytransactionno,
-			'status' => $r->status,
-		);
-	}
 	$gateways=module_invoke_all('paymentgatewayinfo');
 	$options=array();
 	foreach($gateways as $k => $v) {
@@ -455,7 +447,10 @@ function theme_onlinecharge_user_orders($variables) {
 		$rows[]=array(
 			$form['round'.$i]['period'.$i]['#value'],
 			'&yen;'.$form['round'.$i]['amount'.$i]['#value'],
-			_onlinecharge_status_text($form['round'.$i]['status'.$i]['#value']),
+			_onlinecharge_status_text($form['round'.$i]['status'.$i]['#value']).
+				($form['round'.$i]['gateway'.$i]['#value']?
+				sprintf('(%s)',$form['round'.$i]['gateway'.$i]['#value']=='offline'?t('Offline'):$form['round'.$i]['gateway'.$i]['#value']):
+				''),
 			isset($form['submit'.$i])?drupal_render($form['submit'.$i]):'',
 		);
 		unset($form['round'.$i]);
@@ -665,7 +660,7 @@ function onlinecharge_log_form($form, $form_state) {
 			'#markup' => sprintf("%s (&yen;%s)", $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')), $r->amount),
 		);
 		$form['orderlist'][$r->orderno]['gateway']=array(
-			'#markup' => $r->gateway,
+			'#markup' => $r->gateway=='offline'?t('Offline'):$r->gateway,
 		);
 		$form['orderlist'][$r->orderno]['status']=array(
 			'#markup' => _onlinecharge_status_text($r->status),
@@ -724,7 +719,7 @@ function theme_onlinecharge_log_form($variables) {
 		if($value['#type']!='fieldset') continue;
 		$orderno=drupal_render($form['orderlist'][$key]['orderno']);
 		if($form['orderlist'][$key]['gateway']['#markup'])
-			$orderno.='<br/>'.t('Via @gateway',array('@gateway'=>drupal_render($form['orderlist'][$key]['gateway'])));
+			$orderno.='<br/>'.t('Via @gateway',array('@gateway'=>t(drupal_render($form['orderlist'][$key]['gateway']))));
 		if($form['orderlist'][$key]['gatewaytransactionno']['#markup'])
 			$orderno.='<br/>'.t('Transno @transno',array('@transno'=>drupal_render($form['orderlist'][$key]['gatewaytransactionno'])));
 		$rows[]=array(
@@ -765,7 +760,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 		if(preg_match('/^payoffline/', $form_state['clicked_button']['#name'])) {
 			$orderno=substr($form_state['clicked_button']['#name'],-20);
 			db_update('orders')->condition('orderno',$orderno)->fields(array(
-				'gateway' => 'cod',
+				'gateway' => 'offline',
 				'status' => 100
 			))->execute();
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
