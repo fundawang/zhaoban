@@ -952,11 +952,11 @@ function score_mark_2nd_round_list() {
 
 function score_mark_2nd_round_list_check() {
 	global $user;
-	$query=db_select('students','s')->fields('s')->condition('s.validated','1');
+	$query=db_select('students','s')->condition('s.validated','1');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->condition('p.uid',$user->name)->groupBy('p.uid');
 	$query->addExpression('MAX(allow_round1)','num');
-	$can_students=$query->countQuery()->execute()->fetchField();
+	$can_students=$query->execute()->fetchField();
 
 	return (user_access('mark 2nd round students') && $can_students);
 }
