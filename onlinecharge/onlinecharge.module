@@ -277,7 +277,12 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		if($r==0) {
 			if($fee->period > 1) {
 				$p=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s')->countQuery()->execute()->fetchField();
-				if(!$p) break;
+				if(!$p) {
+					$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
+					$query->innerJoin('students_passthrough','sp','sp.idcard_number=s.idcard_number');
+					$p=$query->countQuery()->execute()->fetchField();
+					if($p==0) break;
+				}
 			}
 			db_insert('orders')->fields(array(
 				'uid' => $user->uid,
