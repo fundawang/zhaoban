@@ -515,7 +515,7 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 	if($r->status==100)
 		drupal_set_message(t('@user paid @amount for @title successful.',array(
 			'@user' => $r->name,
-			'@amount' => '&yen;'.$r->amount,
+			'@amount' => $r->amount,
 			'@title' => $r->ordertitle
 		)));
 	if($GLOBALS['user']->uid==$r->uid)
