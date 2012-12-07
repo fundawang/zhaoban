@@ -662,6 +662,9 @@ function onlinecharge_log_form($form, $form_state) {
 		$form['orderlist'][$r->orderno]['gateway']=array(
 			'#markup' => $r->gateway=='offline'?t('Offline'):$r->gateway,
 		);
+		$form['orderlist'][$r->orderno]['gatewaytransactionno']=array(
+			'#markup' => $r->gatewaytransactionno,
+		);
 		$form['orderlist'][$r->orderno]['status']=array(
 			'#markup' => _onlinecharge_status_text($r->status),
 		);
@@ -716,6 +719,7 @@ function theme_onlinecharge_log_form($variables) {
 	$rows=array();
 	foreach($form['orderlist'] as $key => $value) {
 		if(substr($key,1,1)=='#') continue;
+		if(!isset($value['#type'])) continue;
 		if($value['#type']!='fieldset') continue;
 		$orderno=drupal_render($form['orderlist'][$key]['orderno']);
 		if($form['orderlist'][$key]['gateway']['#markup'])
