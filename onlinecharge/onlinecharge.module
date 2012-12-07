@@ -831,4 +831,11 @@ function onlinecharge_cron() {
 		}
 	}
 }
+
+function onlinecharging_user_logout() {
+	$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_status');
+	foreach($cookies as $c) {
+		user_cookie_delete($c);
+	}
+}
 ?>
