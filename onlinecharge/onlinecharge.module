@@ -686,6 +686,7 @@ function onlinecharge_log_form($form, $form_state) {
 					'#type' => t('submit'),
 					'#name' => 'requery'.$r->orderno,
 					'#value' => t('Query status'),
+					'#attributes' => array('title' => t('Use online interface to query the status of specific order')),
 				);
 				$form['orderlist'][$r->orderno]['setfailed']=array(
 					'#type' => t('submit'),
@@ -719,6 +720,7 @@ function theme_onlinecharge_log_form($variables) {
 	$rows=array();
 	foreach($form['orderlist'] as $key => $value) {
 		if(substr($key,1,1)=='#') continue;
+		if(!is_array($value)) continue;
 		if(!isset($value['#type'])) continue;
 		if($value['#type']!='fieldset') continue;
 		$orderno=drupal_render($form['orderlist'][$key]['orderno']);
@@ -771,6 +773,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			user_cookie_save(array(
 				'orders_orderno' => $orderno,
 			));
+			user_cookie_delete('orders_orderdate');
+			user_cookie_delete('orders_status');
 		}
 		if(preg_match('/^setfail/', $form_state['clicked_button']['#name'])) {
 			$orderno=substr($form_state['clicked_button']['#name'],-20);
@@ -781,6 +785,57 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			user_cookie_save(array(
 				'orders_orderno' => $orderno,
 			));
+			user_cookie_delete('orders_orderdate');
+			user_cookie_delete('orders_status');
+		}
+		if(preg_match('/^requery/', $form_state['clicked_button']['#name'])) {
+			$orderno=substr($form_state['clicked_button']['#name'],-20);
+			$r=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o')->execute()->fetchObject();
+			$t=module_invoke($r->gateway, 'querystatus', $orderno, $r->ordertime);
+			if($t) {
+				db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+					'status' => 100,
+					'gatewaytransactionno' => $t
+				))->execute();
+				watchdog('onlinecharge',
+					'@orderno payment succeeded via @gateway.', array(
+						'@orderno' => $r->orderno,
+						'@gateway' => $r->gateway
+					),
+					WATCHDOG_INFO,
+					l(t('View'), 'charge/log')
+				);
+				drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
+				user_cookie_save(array(
+					'orders_orderno' => $orderno,
+				));
+				user_cookie_delete('orders_orderdate');
+				user_cookie_delete('orders_status');
+			} else {
+				if($r->status==15) {
+					db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+						'status' => 0,
+					))->execute();
+					drupal_set_message(t('Order @orderno process failed.',array('@orderno'=>$orderno)), 'error');
+					watchdog('onlinecharge',
+						'@orderno process failed via @gateway.', array(
+							'@orderno' => $r->orderno,
+							'@gateway' => $r->gateway
+						),
+						WATCHDOG_ERROR
+					);
+					user_cookie_save(array(
+						'orders_orderno' => $orderno,
+					));
+					user_cookie_delete('orders_orderdate');
+					user_cookie_delete('orders_status');
+				} else {
+					db_update('orders')->condition('orderno',$orderno)->fields(array(
+						'status' => $r->status+1,
+					))->execute();
+					drupal_set_message(t('Order @orderno status is not updated.',array('@orderno'=>$orderno)), 'warning');
+				}
+			}
 		}
 	}
 }
