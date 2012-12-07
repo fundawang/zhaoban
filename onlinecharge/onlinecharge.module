@@ -583,7 +583,7 @@ function onlinecharge_log_form($form, $form_state) {
 		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderdate'],
 	);
 	if(!isset($_COOKIE['Drupal_visitor_orders_status']))
-		$_COOKIE['Drupal_visitor_orders_status']='100';
+		$_COOKIE['Drupal_visitor_orders_status']='-1';
 	$form['orders']['status']=array(
 		'#type' => 'select',
 		'#title' => t('Status'),
