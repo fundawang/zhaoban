@@ -822,7 +822,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 							'@orderno' => $r->orderno,
 							'@gateway' => $r->gateway
 						),
-						WATCHDOG_ERROR
+						WATCHDOG_ERROR,
+						l(t('View'), 'charge/log')
 					);
 					user_cookie_save(array(
 						'orders_orderno' => $orderno,
