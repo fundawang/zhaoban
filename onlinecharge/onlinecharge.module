@@ -524,10 +524,6 @@ function onlinecharge_log_form($form, $form_state) {
 	$form['conditions']=array(
 		'#type' => 'vertical_tabs',
 	);
-	$form['activetab']=array(
-		'#type' => 'hidden',
-		'#value' => 'user',
-	);
 	$form['user']=array(
 		'#type' => 'fieldset',
 		'#title' => t('Search by User'),
@@ -537,6 +533,8 @@ function onlinecharge_log_form($form, $form_state) {
 		),
 		'#attributes' => array('class' => array('chargelogsearchbyuser')),
 	);
+	if(!isset($_COOKIE['Drupal_visitor_user_uid']))
+		$_COOKIE['Drupal_visitor_user_uid']='';
 	$form['user']['uid']=array(
 		'#type' => 'textfield',
 		'#title' => t('Student ID'),
@@ -545,6 +543,8 @@ function onlinecharge_log_form($form, $form_state) {
 		'#default_value' => $_COOKIE['Drupal_visitor_user_uid'],
 		'#attributes'=>array('placeholder'=>variable_get('zhaoban_current_year',date('Y')).'BXXXX'),
 	);
+	if(!isset($_COOKIE['Drupal_visitor_user_username']))
+		$_COOKIE['Drupal_visitor_user_username']='';
 	$form['user']['username']=array(
 		'#type' => 'textfield',
 		'#title' => t('Real Name'),
@@ -560,6 +560,8 @@ function onlinecharge_log_form($form, $form_state) {
 			'js' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.js'),
 		),
 	);
+	if(!isset($_COOKIE['Drupal_visitor_orders_orderno']))
+		$_COOKIE['Drupal_visitor_orders_orderno']='';
 	$form['orders']['orderno']=array(
 		'#type' => 'textfield',
 		'#title' => t('Order No.'),
@@ -577,12 +579,16 @@ function onlinecharge_log_form($form, $form_state) {
 	foreach($result as $r) {
 		$options[$r->orderdate]=intval(substr($r->orderdate,0,4)).t('Year').intval(substr($r->orderdate,4,2)).t('Month').intval(substr($r->orderdate,6,2)).t('Day');
 	}
+	if(!isset($_COOKIE['Drupal_visitor_orders_orderdate']))
+		$_COOKIE['Drupal_visitor_orders_orderdate']='00000000';
 	$form['orders']['orderdate']=array(
 		'#type' => 'select',
 		'#title' => t('Order Date'),
 		'#options' => $options,
 		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderdate'],
 	);
+	if(!isset($_COOKIE['Drupal_visitor_orders_status']))
+		$_COOKIE['Drupal_visitor_orders_status']='100';
 	$form['orders']['status']=array(
 		'#type' => 'select',
 		'#title' => t('Status'),
@@ -592,7 +598,7 @@ function onlinecharge_log_form($form, $form_state) {
 			'10' => t('Processing'),
 			'100' => t('Paid successful'),
 		),
-		'#default_value' => isset($_COOKIE['Drupal_visitor_orders_status'])?$_COOKIE['Drupal_visitor_orders_status']:'100',
+		'#default_value' => $_COOKIE['Drupal_visitor_orders_status'],
 	);
 	$form['submit']=array(
 		'#type' => 'submit',
@@ -605,7 +611,93 @@ function onlinecharge_log_form($form, $form_state) {
 		'#name' => 'clearall',
 		'#attributes' => array('title' => t('So that all the filters could be reset')),
 	);
-	$query=db_select('');
+	$header=array(
+		'suid' => array('data' => t('Student ID'), 'field'=> 'suid'),
+		'name' => array('data' => t('Real Name'), 'field'=> 'sname'),
+		'ordertitle' => array('data' => t('Order Title'), 'field'=> 'ordertitle'),
+		'orderno' => array('data' => t('Order No'), 'field'=> 'orderno', 'sort'=>'desc'),
+		'gateway' => array('data' => t('Gateway'), 'field'=> 'gateway'),
+		'transno' => array('data' => t('Transaction No'), 'field'=> 'gatewaytransactionno'),
+		'status' => array('data' => t('Status'), 'field'=> 'status'),
+		'operation' => array('data' => t('Operation')),
+	);
+	
+	$query=db_select('orders','o')->fields('o');
+	$query->innerJoin('vl_charging_standard','sc','o.standard=sc.scid');
+	$query->fields('sc',array('period'));
+	$query->innerJoin('users','u','u.uid=o.uid');
+	$query->innerJoin('students','s','s.uid=u.name');
+	$query->addExpression('CONVERT(s.name USING gbk)', 'sname');
+
+	$query->addExpression('s.uid','suid');
+	$query=$query->extend('PagerDefault')->limit(20)->extend('TableSort')->orderByHeader($header);
+	if(!empty($_COOKIE['Drupal_visitor_user_uid']))
+		$query->condition('s.uid',$_COOKIE['Drupal_visitor_user_uid']);
+	if(!empty($_COOKIE['Drupal_visitor_user_username']))
+		$query->condition('s.name',$_COOKIE['Drupal_visitor_user_username']);
+	if(!empty($_COOKIE['Drupal_visitor_orders_orderno']))
+		$query->condition('o.orderno',$_COOKIE['Drupal_visitor_orders_orderno']);
+	if($_COOKIE['Drupal_visitor_orders_orderdate']!='00000000')
+		$query->where("FROM_UNIXTIME(o.ordertime, '%Y%m%d')=".$_COOKIE['Drupal_visitor_orders_orderdate']);
+	if($_COOKIE['Drupal_visitor_orders_status']!='-1')
+		if($_COOKIE['Drupal_visitor_orders_status']=='10')
+			$query->condition('o.status','10','>=')->condition('o.orderno','100','<>');
+		else
+			$query->condition('o.status',$_COOKIE['Drupal_visitor_orders_status']);
+	$result=$query->execute();
+	$form['orderlist']=array(
+		'#type'=>'fieldset',
+	);
+	foreach($result as $r) {
+		$form['orderlist'][$r->orderno]=array(
+			'#type'=>'fieldset',
+		);
+		$form['orderlist'][$r->orderno]['suid']=array(
+			'#markup' => l($r->suid, sprintf('user/%s',$r->uid)),
+		);
+		$form['orderlist'][$r->orderno]['sname']=array(
+			'#markup' => $r->sname,
+		);
+		$form['orderlist'][$r->orderno]['orderno']=array(
+			'#markup' => $r->orderno,
+		);
+		$form['orderlist'][$r->orderno]['ordertitle']=array(
+			'#markup' => sprintf("%s (&yen;%s)", $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')), $r->amount),
+		);
+		$form['orderlist'][$r->orderno]['gateway']=array(
+			'#markup' => $r->gateway,
+		);
+		$form['orderlist'][$r->orderno]['status']=array(
+			'#markup' => _onlinecharge_status_text($r->status),
+		);
+		switch($r->status) {
+			case 0:
+				$form['orderlist'][$r->orderno]['payoffline']=array(
+					'#type' => t('submit'),
+					'#name' => 'payoffline'.$r->orderno,
+					'#value' => t('Paid offline'),
+				);
+				break;
+			case 10:
+			case 11:
+			case 12:
+			case 13:
+			case 14:
+			case 15:
+				$form['orderlist'][$r->orderno]['requery']=array(
+					'#type' => t('submit'),
+					'#name' => 'requery'.$r->orderno,
+					'#value' => t('Query status'),
+				);
+				$form['orderlist'][$r->orderno]['setfailed']=array(
+					'#type' => t('submit'),
+					'#name' => 'setfail'.$r->orderno,
+					'#value' => t('Set as unpaid'),
+				);
+				break;
+			case 100:
+		}
+	}
 	return $form;
 }
 
@@ -617,7 +709,38 @@ function theme_onlinecharge_log_form($variables) {
 	$output.=drupal_render($form['orders']);
 	$output.=drupal_render($form['submit']);
 	$output.=drupal_render($form['clearall']);
+	$output.='<p/>';
+	$header=array(
+		'suid' => array('data' => t('Student ID'), 'field'=> 'suid'),
+		'name' => array('data' => t('Real Name'), 'field'=> 'sname'),
+		'ordertitle' => array('data' => t('Order Title'), 'field'=> 'ordertitle'),
+		'orderno' => array('data' => t('Order No.'), 'field'=> 'orderno', 'sort'=>'desc'),
+		'status' => array('data' => t('Status'), 'field'=> 'status'),
+		'operation' => array('data' => t('Operation')),
+	);
+	$rows=array();
+	foreach($form['orderlist'] as $key => $value) {
+		if(substr($key,1,1)=='#') continue;
+		if($value['#type']!='fieldset') continue;
+		$orderno=drupal_render($form['orderlist'][$key]['orderno']);
+		if($form['orderlist'][$key]['gateway']['#markup'])
+			$orderno.='<br/>'.t('Via @gateway',array('@gateway'=>drupal_render($form['orderlist'][$key]['gateway'])));
+		if($form['orderlist'][$key]['gatewaytransactionno']['#markup'])
+			$orderno.='<br/>'.t('Transno @transno',array('@transno'=>drupal_render($form['orderlist'][$key]['gatewaytransactionno'])));
+		$rows[]=array(
+			'suid' => drupal_render($form['orderlist'][$key]['suid']),
+			'name' => drupal_render($form['orderlist'][$key]['sname']),
+			'ordertitle' => drupal_render($form['orderlist'][$key]['ordertitle']),
+			'orderno' => $orderno,
+			'status' => drupal_render($form['orderlist'][$key]['status']),
+			'operation' => drupal_render_children($form['orderlist'][$key]),
+		);
+		unset($form['orderlist'][$key]);
+	}
+	unset($form['orderlist']);
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable orders.').t('Please check if you have set correct order status.')));
 	$output.=drupal_render_children($form);
+	$output .= theme('pager');
 	return $output;
 }
 
