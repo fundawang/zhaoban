@@ -641,7 +641,7 @@ function onlinecharge_log_form($form, $form_state) {
 		$query->where("FROM_UNIXTIME(o.ordertime, '%Y%m%d')=".$_COOKIE['Drupal_visitor_orders_orderdate']);
 	if($_COOKIE['Drupal_visitor_orders_status']!='-1')
 		if($_COOKIE['Drupal_visitor_orders_status']=='10')
-			$query->condition('o.status','10','>=')->condition('o.orderno','100','<>');
+			$query->condition('o.status','10','>=')->condition('o.status','100','<>');
 		else
 			$query->condition('o.status',$_COOKIE['Drupal_visitor_orders_status']);
 	$result=$query->execute();
@@ -761,6 +761,28 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			user_cookie_delete($c);
 		}
 		break;
+	default:
+		if(preg_match('/^payoffline/', $form_state['clicked_button']['#name'])) {
+			$orderno=substr($form_state['clicked_button']['#name'],-20);
+			db_update('orders')->condition('orderno',$orderno)->fields(array(
+				'gateway' => 'cod',
+				'status' => 100
+			))->execute();
+			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
+			user_cookie_save(array(
+				'orders_orderno' => $orderno,
+			));
+		}
+		if(preg_match('/^setfail/', $form_state['clicked_button']['#name'])) {
+			$orderno=substr($form_state['clicked_button']['#name'],-20);
+			db_update('orders')->condition('orderno',$orderno)->fields(array(
+				'status' => 0
+			))->execute();
+			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
+			user_cookie_save(array(
+				'orders_orderno' => $orderno,
+			));
+		}
 	}
 }
 
