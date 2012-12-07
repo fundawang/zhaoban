@@ -332,7 +332,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		);
 		$form['round'.$r->period]['gateway'.$r->period]=array(
 			'#type' => 'hidden',
-			'#value' => t($r->gateway),
+			'#value' => ($r->gateway?t($r->gateway):''),
 		);
 		$form['round'.$r->period]['status'.$r->period]=array(
 			'#type' => 'hidden',
