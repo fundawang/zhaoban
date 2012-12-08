@@ -1210,7 +1210,7 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 					if($fee->fee<=0) continue;
 					db_insert('orders')->fields(array(
 						'uid' => $localuser->uid,
-						'orderno' => sprintf('%s%06d',date('YmdHms'),mt_rand(0,999999)),
+						'orderno' => onlinecharge_generate_random_orderno(),
 						'ordertime' => time(),
 						'standard' => $fee->scid,
 						'ordertitle' => $fee->title,

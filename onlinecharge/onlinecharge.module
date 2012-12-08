@@ -286,7 +286,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 			}
 			db_insert('orders')->fields(array(
 				'uid' => $user->uid,
-				'orderno' => sprintf('%s%06d',date('YmdHms'),mt_rand(0,999999)),
+				'orderno' => onlinecharge_generate_random_orderno(),
 				'ordertime' => time(),
 				'standard' => $fee->scid,
 				'ordertitle' => $fee->title,
@@ -413,6 +413,14 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		'#markup' => '<p>'.implode('</p><p>',$markup).'</p>',
 	);
 	return $form;
+}
+
+function onlinecharge_generate_random_orderno() {
+	do {
+		$rand=sprintf('%s%06d',date('YmdHms'),mt_rand(0,999999));
+		$r=db_select('orders','o')->condition('o.orderno',$rand)->fields('o')->countQuery()->execute()->fetchField();
+	} while ($r==0);
+	return $rand;
 }
 
 function onlinecharge_user_orders_submit($form, $form_state) {
@@ -805,7 +813,6 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			if($t) {
 				db_update('orders')->condition('orderno',$r->orderno)->fields(array(
 					'status' => 100,
-					'gatewaytransactionno' => $t
 				))->execute();
 				watchdog('onlinecharge',
 					'@orderno payment succeeded via @gateway.', array(
