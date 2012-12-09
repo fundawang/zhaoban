@@ -700,12 +700,14 @@ function onlinecharge_log_form($form, $form_state) {
 			case 13:
 			case 14:
 			case 15:
-				$form['orderlist'][$r->orderno]['requery']=array(
-					'#type' => t('submit'),
-					'#name' => 'requery'.$r->orderno,
-					'#value' => t('Query status'),
-					'#attributes' => array('title' => t('Use online interface to query the status of specific order')),
-				);
+				if(module_hook($r->gateway, 'querystatus')) {
+					$form['orderlist'][$r->orderno]['requery']=array(
+						'#type' => t('submit'),
+						'#name' => 'requery'.$r->orderno,
+						'#value' => t('Query status'),
+						'#attributes' => array('title' => t('Use online interface to query the status of specific order')),
+					);
+				}
 				$form['orderlist'][$r->orderno]['setfailed']=array(
 					'#type' => t('submit'),
 					'#name' => 'setfail'.$r->orderno,
@@ -875,6 +877,7 @@ function onlinecharge_cron() {
 			continue;
 		}
 		// hook_querystatus returns transaction number if succeeded, or FALSE when failed.
+		if(!module_hook($r->gateway, 'querystatus')) return;
 		$t=module_invoke($r->gateway, 'querystatus', $r->orderno, $r->ordertime);
 		if($t) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
