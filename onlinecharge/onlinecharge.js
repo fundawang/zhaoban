@@ -17,12 +17,14 @@ Drupal.behaviors.chargelogFieldsetSummaries = {
 			var searchOrderNumber = $('.form-item-orderno input', context).val();
 			var searchOrderStatus = $('.form-item-status select', context).val();
 			var searchOrderDate = $('.form-item-orderdate select', context).val();
-			var a = Drupal.t('All'); a = Drupal.t('Any order number'); a=Drupal.t('All date');
+			var searchOrderGateway = $('.form-item-ordergateway select', context).val();
+			var a = Drupal.t('All'); a = Drupal.t('Any order number'); a = Drupal.t('All date'); a = Drupal.t('All gateways');
 			
-			return Drupal.t('List @status orders with @orderno and @date', {
+			return Drupal.t('List @status orders with @orderno and @date via @gateway', {
 				'@status': (searchOrderStatus==-1 ? '': $('.form-item-status select option:selected', context).text()),
 				'@orderno': (searchOrderNumber=='' ? Drupal.t('Any order number') : searchOrderNumber),
-				'@date': (searchOrderDate=='00000000' ? Drupal.t('All date'): $('.form-item-orderdate select option:selected', context).text())
+				'@date': (searchOrderDate=='00000000' ? Drupal.t('All date'): $('.form-item-orderdate select option:selected', context).text()),
+				'@gateway': (searchOrderGateway=='0' ? Drupal.t('All gateways'): $('.form-item-ordergateway select option:selected', context).text())
 			});
 		});
 	}

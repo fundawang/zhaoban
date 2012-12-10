@@ -601,6 +601,23 @@ function onlinecharge_log_form($form, $form_state) {
 		'#options' => $options,
 		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderdate'],
 	);
+	if(!isset($_COOKIE['Drupal_visitor_orders_gateway']))
+		$_COOKIE['Drupal_visitor_orders_gateway']='0';
+	$options=array(
+		'0'=>'-- '.t('All').' --',
+		'offline' => t('Offline'),
+	);
+	$gateways=module_invoke_all('paymentgatewayinfo');
+	foreach($gateways as $k => $v) {
+		if(module_hook($k, 'submit_form_submit'))
+			$options[$k]=t($k);
+	}
+	$form['orders']['ordergateway']=array(
+		'#type' => 'select',
+		'#title' => t('Payment Gateway'),
+		'#options' => $options,
+		'#default_value' => $_COOKIE['Drupal_visitor_orders_gateway'],
+	);
 	if(!isset($_COOKIE['Drupal_visitor_orders_status']))
 		$_COOKIE['Drupal_visitor_orders_status']='-1';
 	$form['orders']['status']=array(
@@ -647,6 +664,8 @@ function onlinecharge_log_form($form, $form_state) {
 		$query->condition('s.name',$_COOKIE['Drupal_visitor_user_username']);
 	if(!empty($_COOKIE['Drupal_visitor_orders_orderno']))
 		$query->condition('o.orderno',$_COOKIE['Drupal_visitor_orders_orderno']);
+	if($_COOKIE['Drupal_visitor_orders_gateway']!='0')
+		$query->condition('o.gateway',$_COOKIE['Drupal_visitor_orders_gateway']);
 	if($_COOKIE['Drupal_visitor_orders_orderdate']!='00000000')
 		$query->where("FROM_UNIXTIME(o.ordertime, '%Y%m%d')=".$_COOKIE['Drupal_visitor_orders_orderdate']);
 	if($_COOKIE['Drupal_visitor_orders_status']!='-1')
@@ -786,10 +805,11 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			'orders_orderno' => trim($form_state['values']['orderno']),
 			'orders_orderdate' => trim($form_state['values']['orderdate']),
 			'orders_status' => trim($form_state['values']['status']),
+			'orders_gateway' => trim($form_state['values']['ordergateway']),
 		));
 		break;
 	case 'clearall':
-		$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_status');
+		$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_gateway', 'orders_status');
 		foreach($cookies as $c) {
 			user_cookie_delete($c);
 		}
@@ -807,6 +827,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 				'orders_orderno' => $orderno,
 			));
 			user_cookie_delete('orders_orderdate');
+			user_cookie_delete('orders_gateway');
 			user_cookie_delete('orders_status');
 		}
 		if(preg_match('/^setfail/', $form_state['clicked_button']['#name'])) {
@@ -819,6 +840,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 				'orders_orderno' => $orderno,
 			));
 			user_cookie_delete('orders_orderdate');
+			user_cookie_delete('orders_gateway');
 			user_cookie_delete('orders_status');
 		}
 		if(preg_match('/^requery/', $form_state['clicked_button']['#name'])) {
@@ -842,6 +864,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 					'orders_orderno' => $orderno,
 				));
 				user_cookie_delete('orders_orderdate');
+				user_cookie_delete('orders_gateway');
 				user_cookie_delete('orders_status');
 			} else {
 				if($r->status==15) {
@@ -861,6 +884,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 						'orders_orderno' => $orderno,
 					));
 					user_cookie_delete('orders_orderdate');
+					user_cookie_delete('orders_gateway');
 					user_cookie_delete('orders_status');
 				} else {
 					db_update('orders')->condition('orderno',$orderno)->fields(array(
@@ -921,14 +945,14 @@ function onlinecharge_cron() {
 }
 
 function onlinecharging_user_logout() {
-	$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_status');
+	$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_gateway', 'orders_status');
 	foreach($cookies as $c) {
 		user_cookie_delete($c);
 	}
 }
 
 function onlinecharging_user_login() {
-	$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_status');
+	$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_gateway', 'orders_status');
 	foreach($cookies as $c) {
 		user_cookie_delete($c);
 	}
