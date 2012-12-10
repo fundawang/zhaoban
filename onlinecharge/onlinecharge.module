@@ -820,6 +820,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			db_update('orders')->condition('orderno',$orderno)->fields(array(
 				'gateway' => 'offline',
 				'ordertime' => time(),
+				'gatewaytransactionno' => NULL,
 				'status' => 100
 			))->execute();
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
