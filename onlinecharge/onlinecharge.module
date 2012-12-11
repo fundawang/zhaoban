@@ -714,6 +714,10 @@ function onlinecharge_log_form($form, $form_state) {
 		$form['orderlist'][$r->orderno]['gatewaytransactionno']=array(
 			'#markup' => $r->gatewaytransactionno,
 		);
+		if(!empty($r->gatewaysettledate))
+			$form['orderlist'][$r->orderno]['gatewaysettledate']=array(
+				'#markup' => intval(substr($r->gatewaysettledate,0,2)).t('Month').intval(substr($r->gatewaysettledate,2,2)).t('Day'),
+			);
 		$form['orderlist'][$r->orderno]['status']=array(
 			'#markup' => _onlinecharge_status_text($r->status),
 		);
@@ -781,6 +785,8 @@ function theme_onlinecharge_log_form($variables) {
 			$orderno.='<br/>'.t('Via @gateway',array('@gateway'=>t(drupal_render($form['orderlist'][$key]['gateway']))));
 		if($form['orderlist'][$key]['gatewaytransactionno']['#markup'])
 			$orderno.='<br/>'.t('Transno @transno',array('@transno'=>drupal_render($form['orderlist'][$key]['gatewaytransactionno'])));
+		if($form['orderlist'][$key]['gatewaysettledate']['#markup'])
+			$orderno.='<br/>'.t('Settle Date @date',array('@date'=>drupal_render($form['orderlist'][$key]['gatewaysettledate'])));
 		$rows[]=array(
 			'suid' => drupal_render($form['orderlist'][$key]['suid']),
 			'name' => drupal_render($form['orderlist'][$key]['sname']),
