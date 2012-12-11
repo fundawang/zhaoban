@@ -500,12 +500,15 @@ function _onlinecharge_status_text($status) {
 	}
 }
 
-function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TRUE) {
-	$r=db_select('orders','o')->condition('o.orderno',$orderno)->condition('o.status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
-	if($r==1 && $isbackend) {
+function onlinecharge_gatewayreponse($orderno, $params) {
+	$gateways=array_keys($params);
+	$gateway=$gateways[0];
+	$r=db_select('orders','o')->condition('o.orderno',$orderno)->condition('o.gateway', $gateway)->condition('o.status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
+	if($r==1 && $params[$gateway]['is_backend']) {
 		db_update('orders')->condition('orderno',$orderno)->fields(array(
 			'status' => 100,
-			'gatewaytransactionno' => $transno
+			'gatewaytransactionno' => $params[$gateway]['transactionno'],
+			'gatewaysettledate' => isset($params[$gateway]['settledate'])?$params[$gateway]['settledate']:date('md'),
 		))->execute();
 		watchdog('onlinecharge',
 			'@orderno payment succeeded via @gateway.', array(
@@ -516,7 +519,7 @@ function onlinecharge_gatewayreponse($orderno, $transno, $gateway, $isbackend=TR
 			l(t('View'), 'charge/log')
 		);
 	}
-	if($isbackend) exit;
+	if($params[$gateway]['is_backend']) exit;
 	$query=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o');
 	$query->innerJoin('users','u','o.uid=u.uid');
 	$query->fields('u',array('uid','name'));
@@ -583,21 +586,20 @@ function onlinecharge_log_form($form, $form_state) {
 		'#size' => 10,
 		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderno'],
 	);
-	$query=db_select('orders','o');
-	$query->addExpression("FROM_UNIXTIME(o.ordertime, '%Y%m%d')", "orderdate");
-	$query->distinct()->orderBy('orderdate');
+	$query=db_select('orders','o')->fields('o',array('gatewaysettledate'))->isNotNull('o.gatewaysettledate');
+	$query->distinct()->orderBy('gatewaysettledate');
 	$result=$query->execute();
 	$options=array(
 		'00000000' => '-- '.t('All').' --',
 	);
 	foreach($result as $r) {
-		$options[$r->orderdate]=intval(substr($r->orderdate,0,4)).t('Year').intval(substr($r->orderdate,4,2)).t('Month').intval(substr($r->orderdate,6,2)).t('Day');
+		$options[$r->gatewaysettledate]=intval(substr($r->gatewaysettledate,0,2)).t('Month').intval(substr($r->gatewaysettledate,2,2)).t('Day');
 	}
 	if(!isset($_COOKIE['Drupal_visitor_orders_orderdate']))
 		$_COOKIE['Drupal_visitor_orders_orderdate']='00000000';
 	$form['orders']['orderdate']=array(
 		'#type' => 'select',
-		'#title' => t('Order Date'),
+		'#title' => t('Order Settle Date'),
 		'#options' => $options,
 		'#default_value' => $_COOKIE['Drupal_visitor_orders_orderdate'],
 	);
@@ -667,7 +669,7 @@ function onlinecharge_log_form($form, $form_state) {
 	if($_COOKIE['Drupal_visitor_orders_gateway']!='0')
 		$query->condition('o.gateway',$_COOKIE['Drupal_visitor_orders_gateway']);
 	if($_COOKIE['Drupal_visitor_orders_orderdate']!='00000000')
-		$query->where("FROM_UNIXTIME(o.ordertime, '%Y%m%d')=".$_COOKIE['Drupal_visitor_orders_orderdate']);
+		$query->condition('o.gatewaysettledate',$_COOKIE['Drupal_visitor_orders_orderdate']);
 	if($_COOKIE['Drupal_visitor_orders_status']!='-1')
 		if($_COOKIE['Drupal_visitor_orders_status']=='10')
 			$query->condition('o.status','10','>=')->condition('o.status','100','<>');
@@ -819,8 +821,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			$orderno=substr($form_state['clicked_button']['#name'],-20);
 			db_update('orders')->condition('orderno',$orderno)->fields(array(
 				'gateway' => 'offline',
-				'ordertime' => time(),
 				'gatewaytransactionno' => NULL,
+				'gatewaysettledate' => date('md'),
 				'status' => 100
 			))->execute();
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
@@ -834,6 +836,9 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 		if(preg_match('/^setfail/', $form_state['clicked_button']['#name'])) {
 			$orderno=substr($form_state['clicked_button']['#name'],-20);
 			db_update('orders')->condition('orderno',$orderno)->fields(array(
+				'gateway' => NULL,
+				'gatewaytransactionno' => NULL,
+				'gatewaysettledate' => NULL,
 				'status' => 0
 			))->execute();
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
@@ -850,6 +855,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			$t=module_invoke($r->gateway, 'querystatus', $orderno, $r->ordertime);
 			if($t) {
 				db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+					'gatewaytransactionno' => $t[$r->gateway]['transactionno'],
+					'gatewaysettledate' => isset($t[$r->gateway]['settledate'])?$t[$r->gateway]['settledate']:date('md'),
 					'status' => 100,
 				))->execute();
 				watchdog('onlinecharge',
@@ -870,6 +877,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			} else {
 				if($r->status==15) {
 					db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+						'gatewaytransactionno' => NULL,
+						'gatewaysettledate' => NULL,
 						'status' => 0,
 					))->execute();
 					drupal_set_message(t('Order @orderno process failed.',array('@orderno'=>$orderno)), 'error');
@@ -903,6 +912,8 @@ function onlinecharge_cron() {
 	foreach($result as $r) {
 		if($r->status==15) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+				'gatewaytransactionno' => NULL,
+				'gatewaysettledate' => NULL,
 				'status' => 0,
 			))->execute();
 			watchdog('onlinecharge',
@@ -919,8 +930,9 @@ function onlinecharge_cron() {
 		$t=module_invoke($r->gateway, 'querystatus', $r->orderno, $r->ordertime);
 		if($t) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+				'gatewaytransactionno' => $t[$r->gateway]['transactionno'],
+				'gatewaysettledate' => isset($t[$r->gateway]['settledate'])?$t[$r->gateway]['settledate']:date('md'),
 				'status' => 100,
-				'gatewaytransactionno' => $t
 			))->execute();
 			watchdog('onlinecharge',
 				'@orderno payment succeeded via @gateway.', array(
