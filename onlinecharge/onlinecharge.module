@@ -375,7 +375,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	$gateways=module_invoke_all('paymentgatewayinfo');
 	$options=array();
 	foreach($gateways as $k => $v) {
-		if(module_hook($r->gateway, 'submit_form_submit'))
+		if(module_hook($k, 'submit_form_submit'))
 			$options[$k]='<img src="/'.$v.'"/>';
 	}
 	if(count($gateways)==1) {
