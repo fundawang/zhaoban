@@ -420,7 +420,7 @@ function onlinecharge_generate_random_orderno() {
 	do {
 		$rand=sprintf('%s%06d',date('YmdHms'),mt_rand(0,999999));
 		$r=db_select('orders','o')->condition('o.orderno',$rand)->fields('o')->countQuery()->execute()->fetchField();
-	} while ($r==0);
+	} while ($r!=0);
 	return $rand;
 }
 
