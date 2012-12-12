@@ -864,9 +864,16 @@ function signup_user_account_form($form, $form_state) {
 		}
          break;
      }
+     if(!empty($default_values->picture)) {
+     	 $form['personal']['current_photo'] = array(
+     	 	 '#type' => 'item',
+     	 	 '#title' => t('Current Picture'),
+     	 	 '#markup' => '<img src="data:image/jpeg;base64,'.$default_values->picture.'" style="padding-right: 10px"/>'
+     	 );
+     }
      $form['personal']['photo'] = array(
      	 '#type' => 'managed_file',
-     	 '#title' => t('Photo'),
+     	 '#title' => empty($default_values->picture)?t('Photo'):t('Change Photo'),
      	 '#required' => TRUE,
      	 '#required' => empty($default_values->picture),
      	 '#disabled' => $isvalidated,
@@ -874,9 +881,6 @@ function signup_user_account_form($form, $form_state) {
      	 '#description' => t('Only image files are allowed to be uploaded.'),
      );
      if(!empty($default_values->picture)) {
-     	 $form['personal']['current_photo'] = array(
-     	 	 '#markup' => '<img src="data:image/jpeg;base64,'.$default_values->picture.'" style="padding-right: 10px" align="left"/>'
-     	 );
      	 $form['personal']['photo']['#description'] .= t('If you want to change the picture, please upload it here. Otherwise, just leave it blank.');
      }
      $form['#validate'][]='signup_user_account_form_validate';
@@ -1105,6 +1109,18 @@ function signup_user_account_form_save($form, &$form_state) {
 					'city_district' => $edit['country'],
 				))->execute();
 			break;
+	}
+	
+	if($edit['photo']) {
+		$file=file_load($edit['photo']);
+		$fd=fopen($file->uri,'rb');
+		$data='';
+		while (!feof($fd)) {
+			$data.=fread($fd, 1024);
+		}
+		db_update('students')->condition('uid',$user->name)->fields(array(
+			'picture' => base64_encode($data),
+		))->execute();
 	}
 	
 	$data=array();
