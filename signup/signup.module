@@ -864,6 +864,15 @@ function signup_user_account_form($form, $form_state) {
 		}
          break;
      }
+     $form['personal']['photo'] = array(
+     	 '#type' => 'managed_file',
+     	 '#title' => t('Photo'),
+     	 '#required' => TRUE,
+     	 '#required' => !$isvalidated,
+     	 '#disabled' => $isvalidated,
+     	 '#upload_validators' => array('file_validate_extensions' => array('jpg png jpeg'), 'file_validate_image_resolution' => array(200, 10)),
+     	 '#description' => t('Only image files are allowed to be uploaded.'),
+     );
      $form['#validate'][]='signup_user_account_form_validate';
      $form['#submit'][]='signup_user_account_form_save';
 	 return $form;
@@ -953,6 +962,11 @@ function signup_user_account_form_validate($form, $form_state) {
 				}
 			}
 			break;
+	}
+	if($edit['photo']) {
+		$file=file_load($edit['photo']);
+		$errors=file_validate_is_image($file);
+		if(count($errors)!=0) form_set_error('photo', $errors[0]);
 	}
 }
 
