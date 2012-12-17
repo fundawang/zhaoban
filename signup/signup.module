@@ -98,6 +98,9 @@ function signup_permission() {
     'print user report' => array(
       'title' => t('Print users report'),
     ),
+    'print admission ticket' => array(
+      'title' => t('Print Admission Ticket'),
+    ),
   );
 }
 
@@ -297,18 +300,20 @@ function signup_menu() {
   );
   $items['user/%user/report'] = array(
     'title' => 'Print Signup Report',
-    'page callback' => 'sign_up_report',
+    'page callback' => 'signup_report',
     'page arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
-    'access callback' => 'sign_up_report_perm',
+    'weight' => 10,
+    'access callback' => 'signup_report_perm',
     'access arguments'=> array(1),
   );
-  $items['user/%user/picture.jpg'] = array(
-    'title' => 'Fetch picture of student',
-    'page callback' => 'sign_up_picture',
+  $items['user/%user/ticket'] = array(
+    'title' => 'Print Admission Ticket',
+    'page callback' => 'signup_ticket_report',
     'page arguments' => array(1),
-    'type' => MENU_CALLBACK,
-    'access callback' => 'sign_up_picture_perm',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 11,
+    'access callback' => 'signup_ticket_report_perm',
     'access arguments'=> array(1),
   );
   return $items;
@@ -333,19 +338,8 @@ function signup_3rd_overview() {
 	return user_access('view passround3') && $r;
 }
 
-function sign_up_report_perm($uid) {
+function signup_report_perm($uid) {
 	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField();
-}
-
-function sign_up_picture_perm($uid) {
-	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $uid->name);
-	$img_tmp=$query->execute()->fetchField();
-	if($img_tmp)
-		$test=imagecreatefromstring(base64_decode($img_tmp));
-	else $test=false;
-	if($test)
-		imagedestroy($test);
-	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField() && $test;
 }
 
 /**
@@ -4486,7 +4480,7 @@ function signup_preset_passthrough_submit($form, &$form_state) {
 	}
 }
 
-function sign_up_report($account) {
+function signup_report($account) {
 
 	$result = db_select('students','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	$result_gk = db_select('students_gk','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
@@ -4698,29 +4692,143 @@ function sign_up_report($account) {
 
 }
 
-function sign_up_picture($account) {
-	$query=db_select('students','s')->fields('s',array('picture'))->condition('s.uid',$account->name);
-	$img_tmp=$query->execute()->fetchField();
-	if(!$img_tmp) return NULL;
-	$img=imagecreatefromstring(base64_decode($img_tmp));
-	$newheight=100;
-	$newwidth=imagesx($img)*100/imagesy($img);
-	
-	$newimg=imagecreatetruecolor($newwidth, $newheight);
-	imagecopyresampled($newimg, $img, 0, 0, 0, 0, $newwidth, $newheight, imagesx($img), imagesy($img));
-	
-	drupal_add_http_header('Content-type', 'image/jpg; charset=binary', TRUE);
-	drupal_add_http_header('Content-Transfer-Encoding', 'binary', TRUE);
+function signup_ticket_report_perm($user) {
+	$isvalidated=db_select('students', 's')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
+	if(!$isvalidated) return FALSE;
+	if(user_access('view draft') && user_access('print admission ticket', $user)) return TRUE;
+	if(user_access('print admission ticket', $user) && $user->uid==$GLOBALS['user']->uid) return TRUE;
+	return FALSE;
+}
 
-	// Do not expire image file, because it causes overload of server :(
-	// seconds, minutes, hours, days
-	$expires = 60*60*24*300;
-	drupal_add_http_header("Pragma", "public", TRUE);
-	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
-	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
-	imagejpeg($newimg, NULL, 100);
-	imagedestroy($img);
-	imagedestroy($newimg);
+function signup_ticket_report($user) {
+	$query=db_select('students','s')->condition('s.uid',$user->name);
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('vl_department','d','p.did=d.did');
+	$query->fields('s')->fields('p',array('pname'))->fields('d',array('dname'));
+	$student=$query->execute()->fetchObject();
+	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/barcodes.php');
+	
+	ini_set('max_execution_time','500');
+
+	// create new PDF document
+	$pdf = new TCPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetTitle('中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生专业考试准考证');
+	$pdf->SetAuthor('中央音乐学院');
+	$pdf->SetSubject($student->uid.' '.$student->name);
+
+	// Set font
+	// dejavusans is a UTF-8 Unicode font, if you only need to
+	// print standard ASCII chars, you can use core fonts like
+	// helvetica or times to reduce file size.
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	// set default font subsetting mode
+	$pdf->setFontSubsetting(false);
+	
+	$pdf->setPrintHeader(false);
+	$pdf->setPrintFooter(false);
+
+	$pdf->SetMargins(6, 6, 6);
+	$pdf->SetAutoPageBreak(false);
+
+	//set some language-dependent strings
+	$pdf->setLanguageArray($l);
+
+	// Add a page
+	// This method has several options, check the source code documentation for more information.
+	$pdf->AddPage();
+	$pdf->SetFillColor(216,216,216);
+	$pdf->SetDrawColor(255,255,255);
+	$pdf->SetLineWidth(0.5);
+
+	// Header
+	$pdf->SetFontSize(30);
+	$pdf->Text(23,15,'中央音乐学院本科招生');
+	$pdf->Text(22,29,variable_get('zhaoban_current_year',date('Y')).'年专业考试准考证');
+	$pdf->LN();
+	$pdf->Image('@'.base64_decode($student->picture), 55, 45, 45, 60);
+	
+	$pdf->SetFontSize(14);
+	$pdf->Text(54,117,'准考证号');
+	$pdf->SetFontSize(28);
+	$pdf->Text(76,113,$student->uid);
+	$pdf->SetFontSize(14);
+	$pdf->Text(64,126,'姓名');
+	$pdf->Text(76,126,$student->name);
+	$pdf->Text(64,135,'性别');
+	$pdf->Text(76,135,$student->gender==2?'女':'男');
+	$pdf->Text(54,144,'证件号码');
+	$pdf->Text(76,144,$student->idcard_number);
+	$pdf->Text(54,153,'报考专业');
+	$pdf->Text(76,153,$student->pname);
+
+	$pdf->Text(47,183,'中央音乐学院招生委员会办公室');
+	$pdf->Text(40,189,'此证需配合有效身份证件使用方为有效');
+	$pdf->Text(54,195,'发证日期：'.date('Y年m月'));
+
+	$barcode=new TCPDFBarcode($student->uid,'C128B');
+	$pdf->StartTransform();
+	$pdf->Rotate(90, 70, 110);
+	$pdf->SetFontSize(8);
+	$pdf->Write1DBarcode($student->uid,'C128B',79,141,100,15,'',array('text'=>TRUE));
+	$pdf->Write1DBarcode($student->uid,'C128B',10,71,100,15,'',array('text'=>TRUE));
+	$pdf->StopTransform();
+	$pdf->SetDrawColor(0,0,0);
+	$pdf->SetLineWidth(0.1);
+	$pdf->Line(150,10,150,205);
+	
+	$pdf->SetFontSize(20);
+	$pdf->Text(200,15,'考试科目及曲目');
+	
+	$pdf->SetXY(155,27);
+	$pdf->SetFontSize(11);
+	$pdf->SetDrawColor(255,255,255);
+	$pdf->SetLineWidth(0.5);
+	$pdf->Cell(55,6,'科目',1,0,'C',$fill=TRUE);
+	$pdf->Cell(83,6,'曲目',1,0,'C',$fill=TRUE);
+	$query->innerJoin('students_going','sg','sg.uid=s.uid');
+	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
+	$query->fields('e',array('ename','elevel'))->fields('sg',array('eid','opus'))->orderBy('sg.eid');
+	$exams=$query->execute();
+	$pdf->setXY(155,35);
+	foreach($exams as $r) {
+		$opus=unserialize($r->opus);
+		$pdf->setX(155);
+		$pdf->Cell(55,7,$r->ename.($r->elevel?$r->elevel:''));
+		$i=0;
+		//var_dump($opus);
+		foreach($opus as $enum => $evalue) {
+			$pdf->setX(210);
+			if($enum=='eadditional') {
+				if($evalue!=='')
+					$t='主试乐器: '.t($evalue);
+				else
+					$t='主试乐器: 钢琴';
+			}
+			else
+				$t=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue;
+			$pdf->Cell(90, 7, $t, 0,1,'L',false);
+		}
+		if(count($opus)>1) $pdf->setY($pdf->getY()-6);
+		$pdf->Ln();
+		$pdf->SetDrawColor(216,216,216);
+		$pdf->SetLineStyle(array('dash' => '1,2'));
+		$pdf->SetLineWidth(0.2);
+		$pdf->Line(155,$pdf->getY(),291,$pdf->getY());
+	}
+	
+	$pdf->SetFontSize(20);
+	$pdf->Text(183,157,'以上曲目考试时不得更改');
+	$pdf->Text(193,165,'请考生自备2B铅笔');
+	$pdf->SetFontSize(12);
+	$pdf->Text(195,195,'http://zhaoban.ccom.edu.cn');
+
+	$pdf->SetProtection(array('copy','modify','extract','assemble'));
+	$pdf->Output($student->uid.'ticket.pdf', 'I');
 }
 
 function signup_schools_autocomplete($string) {
