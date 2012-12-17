@@ -11,3 +11,6 @@ div.form-item-gateway label.option {
 	line-height: 50px;
 	height: 50px;
 }
+div.form-item-gateway label.option img {
+	line-height: 50px;
+}
