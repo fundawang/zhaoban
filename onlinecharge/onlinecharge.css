@@ -14,3 +14,19 @@ div.form-item-gateway label.option {
 div.form-item-gateway label.option img {
 	line-height: 50px;
 }
+
+div.form-item-orderdate label {
+	width: 200px;
+	text-align: right;
+	display: inline;
+}
+div.form-item-ordergateway label {
+	width: 200px;
+	text-align: right;
+	display: inline;
+}
+div.form-item-status label {
+	width: 200px;
+	text-align: right;
+	display: inline;
+}

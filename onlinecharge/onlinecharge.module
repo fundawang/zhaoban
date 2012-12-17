@@ -550,6 +550,7 @@ function onlinecharge_log_form($form, $form_state) {
 		'#group'=>'conditions',
 		'#attached' => array(
 			'js' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.js'),
+			'css' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.css'),
 		),
 		'#attributes' => array('class' => array('chargelogsearchbyuser')),
 	);
