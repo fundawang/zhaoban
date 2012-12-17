@@ -398,6 +398,9 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 			'#description' => t('Please select your preferred payment gateway.'),
 			'#required' => TRUE,
 			'#options' => $options,
+			'#attached' => array(
+				'css' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.css'),
+			),
 		);
 		$keys=array_keys($gateways);
 		$form['gateway']['#default_value']=$keys[0];
