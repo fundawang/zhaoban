@@ -878,7 +878,7 @@ function signup_user_account_form($form, $form_state) {
      	 $form['personal']['photo']['#description'] .= t('If you want to change the picture, please upload it here. Otherwise, just leave it blank.');
      }
      $form['#validate'][]='signup_user_account_form_validate';
-     $form['#submit'][]='signup_user_account_form_save';
+     $form['#submit']=array('signup_user_account_form_save');
 	 return $form;
 }
 
@@ -1119,7 +1119,8 @@ function signup_user_account_form_save($form, &$form_state) {
 	
 	$data=array();
 	$data['roles']=array( '5' => 'students');
-	$data['pass']=$edit['pass'];
+	if(!empty($edit['pass']))
+		$data['pass']=$edit['pass'];
 	user_save($user, $data);
 	signup_user_goto($user);
 }
