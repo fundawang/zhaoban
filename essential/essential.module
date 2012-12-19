@@ -94,3 +94,10 @@ function essential_cron() {
 	if($r->code=='200') variable_set('current_weather', $r->data);
 	else variable_del('current_weather');
 }
+
+function essential_username_alter(&$name, $account) {
+	$query=db_select('vl_research_sec','r')->condition('uid',$account->name)->fields('r',array('rname'));
+	$r=$query->execute()->fetchObject();
+	if($r)
+		$name=$r->rname;
+}
