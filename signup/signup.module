@@ -24,7 +24,12 @@ function signup_help($path, $arg) {
   	case 'user/register':
   	  $output = t('Before you signup, it is suggested you must read the registration guide.');
   	  $output .= l(t('For demo, please click here.'), 'sites/default/files/zhaoban_demo.htm', array('attributes' => array('target' => array('_blank'))));
-  	  
+  	  $output .= '<br/><br/><span class="error"><b>';
+  	  if(module_exists('onlinecharge')) {
+	  	  $output .= t('You will need to pay the fee online, please get it ready before starting signing up.').'<br/>';
+	  }
+	  $output .= t('Please make sure you have your digital photo ready, otherwise you cannot proceed.');
+	  $output .= '</b></span>';
   	  break;
     case 'signup/overview':
       $output = t('Get an overview of how many students have signed up as a draft.');
@@ -2650,6 +2655,12 @@ function signup_block_content_PROGRESS() {
 		$result['content'] .= sprintf('<img src="/misc/watchdog-%s.png" align="middle">&nbsp;&nbsp;', $status[4]);
 		$result['content'] .= onlinecharge_user_access($GLOBALS['user'])?l(t('Online Charging'),'user/'.$GLOBALS['user']->uid.'/payment'):t('Online Charging');
 	}
+	
+	// If the user could print ticket report
+	$result['content'] .='</p><p></p><p>';
+	$result['content'] .= sprintf('<img src="/misc/watchdog-warning.png" align="middle">&nbsp;&nbsp;');
+	$result['content'] .= signup_ticket_report_perm($GLOBALS['user'])?l(t('Print Admission Ticket'),'user/'.$GLOBALS['user']->uid.'/ticket'):'<span title="'.t('You are not allowed to print the ticket now.').'">'.t('Print Admission Ticket').'</span>';
+	
 	return $result;
 }
 
