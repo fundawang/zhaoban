@@ -95,6 +95,43 @@ function onlinecharge_admin_page() {
 	return theme('admin_block_content', array('content' => $content));
 }
 
+/**
+ * Implements hook_block_info().
+ */
+function onlinecharge_block_info() {
+	$result=array();
+	
+	$result['gateways'] = array(
+		'info' => t('Supported Gateways'),
+		'cache' => DRUPAL_CACHE_GLOBAL,
+	);
+	return $result;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function onlinecharge_block_view($delta = '') {
+	global $user;
+	$block = array();
+	switch ($delta) {
+		case 'gateways':
+			$block['subject'] = t('Supported Gateways');
+			$gateways=module_invoke_all('paymentgatewayinfo');
+			$options=array();
+			foreach($gateways as $k => $v) {
+				if(module_hook($k, 'submit_form_submit'))
+					if(is_array($v))
+						$options[$k]='<img src="/'.$v['front'].'"/>';
+					else
+						$options[$k]='<img src="/'.$v.'"/>';
+			}
+			$block['content'] = implode('<br/>',$options);
+			return $block;
+			break;
+  		}
+}
+
 function onlinecharge_fee() {
 	$form=array();
 	$should_disabled=db_select('orders','o')->fields('o')->countQuery()->execute()->fetchField();
@@ -376,7 +413,10 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	$options=array();
 	foreach($gateways as $k => $v) {
 		if(module_hook($k, 'submit_form_submit'))
-			$options[$k]='<img src="/'.$v.'"/>';
+			if(is_array($v))
+				$options[$k]='<img src="/'.$v['front'].'"/>';
+			else
+				$options[$k]='<img src="/'.$v.'"/>';
 	}
 	if(count($gateways)==1) {
 		$keys=array_keys($options);
