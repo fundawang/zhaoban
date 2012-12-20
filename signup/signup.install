@@ -36,7 +36,7 @@ $schema['students'] = array(
          'pass_round1_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
          'pass_round3_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
          'pass_roundg_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
-         'picture' => array('type' => 'text', 'not null' => FALSE),
+         'picture' => array('type' => 'text', 'size' => 'big', 'not null' => FALSE),
          'randnum' => array('type' => 'float', 'size' => 'big', 'not null' => FALSE)),
     'primary key' => array('uid'),
     'indexes' => array(
