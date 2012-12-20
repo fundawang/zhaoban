@@ -108,7 +108,7 @@ function going_menu() {
 function going_menu_perm()
 {
 	$r=db_select('vl_going','g')->fields('g')->condition('department',$GLOBALS['user']->name)->countQuery()->execute()->fetchField();
-	return user_access('administer going')||(user_access('administer own going' && $r));
+	return user_access('administer going')||(user_access('administer own going') && $r);
 }
 
 function going_menu_assign_modify($gid)
@@ -197,7 +197,6 @@ function going_goinglist_filter($form, $form_state) {
 	foreach($dates as $date) {
 		$options[$date->d]=intval(substr($date->d,4,2)).t('Month').intval(substr($date->d,6,2)).t('Day');
 	}
-	//var_dump(variable_get('zhaoban_going_list_date_filter_plain','all'));
 	$form['date']=array(
 		'#type' => 'select',
 		'#title' => t('Date'),
