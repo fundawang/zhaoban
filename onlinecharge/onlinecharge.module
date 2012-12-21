@@ -731,7 +731,7 @@ function onlinecharge_log_form($form, $form_state) {
 	$query->addExpression('s.uid','suid');
 	$query->fields('o')->fields('sc',array('period'));
 	$query->addExpression('CONVERT(s.name USING gbk)', 'sname');
-	$query=$query->extend('PagerDefault')->limit(20)->extend('TableSort')->orderByHeader($header);
+	$query=$query->extend('PagerDefault')->limit(10)->extend('TableSort')->orderByHeader($header);
 	$result=$query->execute();
 	$form['orderlist']=array(
 		'#type'=>'fieldset',
