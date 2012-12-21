@@ -467,6 +467,14 @@ function onlinecharge_generate_random_orderno() {
 	return $rand;
 }
 
+function onlinecharge_user_orders_validate($form, $form_state) {
+	$i=substr($form_state['clicked_button']['#name'],-1);
+	$query=db_select('orders','o')->fields('o',array('status'))->condition('o.orderno',$form_state['values']['orderno'.$i]);
+	$r=$query->execute()->fetchObject();
+	if($r->status != 0)
+		drupal_set_message(t('The order status have been changed.'), 'error');
+}
+
 function onlinecharge_user_orders_submit($form, $form_state) {
 	$_form_state=array();
 	$i=substr($form_state['clicked_button']['#name'],-1);
