@@ -1048,14 +1048,4 @@ function onlinecharge_user_login() {
 	}
 }
 
-function onlinecharge_user_cancel_methods_alter(&$methods) {
-	$query=db_select('orders','o')->condition('o.uid',arg(1))->condition('status',0,'<>')->fields('o');
-	$r=$query->countQuery()->execute()->fetchField();
-	if($r) {
-		drupal_set_message(t('Due to there are orders related with this user, the user cannot be deleted.'), 'warning');
-		unset($methods['user_cancel_reassign']);
-		unset($methods['user_cancel_delete']);
-	}
-}
-
 ?>
