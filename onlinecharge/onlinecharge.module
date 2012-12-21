@@ -749,6 +749,9 @@ function onlinecharge_log_form($form, $form_state) {
 		$form['orderlist'][$r->orderno]['orderno']=array(
 			'#markup' => $r->orderno,
 		);
+		$form['orderlist'][$r->orderno]['ordertime']=array(
+			'#markup' => date(t('nMonthjday'),$r->ordertime),
+		);
 		$form['orderlist'][$r->orderno]['ordertitle']=array(
 			'#markup' => sprintf("%s (&yen;%s)", $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')), $r->amount),
 		);
@@ -825,6 +828,8 @@ function theme_onlinecharge_log_form($variables) {
 		if(!isset($value['#type'])) continue;
 		if($value['#type']!='fieldset') continue;
 		$orderno=drupal_render($form['orderlist'][$key]['orderno']);
+		if($form['orderlist'][$key]['ordertime']['#markup'])
+			$orderno.='<br/>'.t('Order submit date @date',array('@date'=>t(drupal_render($form['orderlist'][$key]['ordertime']))));
 		if($form['orderlist'][$key]['gateway']['#markup'])
 			$orderno.='<br/>'.t('Via @gateway',array('@gateway'=>t(drupal_render($form['orderlist'][$key]['gateway']))));
 		if($form['orderlist'][$key]['gatewaytransactionno']['#markup'])
