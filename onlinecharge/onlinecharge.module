@@ -358,9 +358,9 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 			'#collapsible' => TRUE,
 		);
 	}
-	$query=db_select('orders','o')->condition('o.uid',$user->uid)->orderBy('o.orderno');
+	$query=db_select('orders','o')->condition('o.uid',$user->uid);
 	$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
-	$query->fields('o')->fields('sc',array('period'));
+	$query->fields('o')->fields('sc',array('period'))->orderBy('sc.period');
 	$result=$query->execute();
 	foreach($result as $r) {
 		$form['round'.$r->period]['period'.$r->period]=array(
@@ -551,9 +551,10 @@ function _onlinecharge_status_text($status) {
 	}
 }
 
-function onlinecharge_gatewayreponse($orderno, $params) {
+function onlinecharge_gatewayreponse($params) {
 	$gateways=array_keys($params);
 	$gateway=$gateways[0];
+	$orderno=$params[$gateway]['orderno'];
 	$r=db_select('orders','o')->condition('o.orderno',$orderno)->condition('o.gateway', $gateway)->condition('o.status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
 	if($r==1 && $params[$gateway]['is_backend']) {
 		db_update('orders')->condition('orderno',$orderno)->fields(array(
