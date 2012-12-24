@@ -3798,10 +3798,10 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	    	$this->SetX(10);
 	    	$this->SetY(8);
 	        // Set font
-	        $this->SetFont('droidsansfallback', 'B', 24, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
 	        // Title
 	        $this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	        $this->SetFont('droidsansfallback', 'B', 10, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
 	    	$this->SetX(1);
 	    	$this->SetY(18);
 	        $this->Cell(10, 2, '序号',0, false, 'C');
@@ -3828,7 +3828,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	        $this->Line(5,198,292,198,array('width'=>0.5));
 	        // Set font
 	        // Page number
-	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
 	        $this->Cell(30, 12, date('Y年n月j日'));
 	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其平均序，非成绩。', 0, false, 'C');
 	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
@@ -3844,7 +3844,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	$pdf->setHeaderMargin(30);
@@ -4268,10 +4268,10 @@ function signup_ground_by_province_report($prov=NULL) {
 	    	$this->SetX(10);
 	    	$this->SetY(8);
 	        // Set font
-	        $this->SetFont('droidsansfallback', 'B', 24, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
 	        // Title
 	        $this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	        $this->SetFont('droidsansfallback', 'B', 10, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
 	    	$this->SetX(1);
 	    	$this->SetY(18);
 	        $this->Cell(10, 2, '序号',0, false, 'C');
@@ -4296,7 +4296,7 @@ function signup_ground_by_province_report($prov=NULL) {
 	        $this->Line(5,198,292,198,array('width'=>0.5));
 	        // Set font
 	        // Page number
-	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
 	        $this->Cell(30, 12, date('Y年n月j日'));
 	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:高考成绩未标明者为文科。校考成绩带括号者为其平均序，非成绩。', 0, false, 'C');
 	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
@@ -4312,7 +4312,7 @@ function signup_ground_by_province_report($prov=NULL) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	$pdf->setHeaderMargin(30);
@@ -4517,7 +4517,7 @@ function signup_report($account) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	
@@ -4737,7 +4737,7 @@ function signup_ticket_report($user) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	
