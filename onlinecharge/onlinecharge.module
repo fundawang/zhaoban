@@ -895,10 +895,10 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			))->execute();
 			watchdog('onlinecharge',
 				'@orderno payment succeeded offline.', array(
-					'@orderno' => $r->orderno,
+					'@orderno' => $orderno,
 				),
 				WATCHDOG_INFO,
-				l(t('View'), 'charge/log/'.$r->orderno)
+				l(t('View'), 'charge/log/'.$orderno)
 			);
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
 			user_cookie_save(array(
@@ -918,10 +918,10 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			))->execute();
 			watchdog('onlinecharge',
 				'@orderno set as failed.', array(
-					'@orderno' => $r->orderno,
+					'@orderno' => $orderno,
 				),
 				WATCHDOG_INFO,
-				l(t('View'), 'charge/log/'.$r->orderno)
+				l(t('View'), 'charge/log/'.$orderno)
 			);
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
 			user_cookie_save(array(
