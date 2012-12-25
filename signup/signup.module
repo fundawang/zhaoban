@@ -330,7 +330,7 @@ function signup_access_overview($ar=NULL) {
 }
 
 function signup_check_access() {
-	return user_access('view draft')||user_access('view own draft');
+	return user_access('view draft')||user_access('view own draft')||user_access('preset passthrough');
 }
 
 function signup_2nd_overview() {
@@ -469,9 +469,6 @@ function signup_form_user_register_form_alter(&$form, &$form_state) {
 	$form['account']['mail']['#type']='hidden';
 	$form['account']['mail']['#value']=signup_get_random_mail_address();
 	
-	if(!_is_valid_remote_address()) {
-		drupal_access_denied(); exit();
-	}
 	// If guest is about to register as student
 	if(!user_access('administer users')) {
 		drupal_set_title(t('Sign up for new users'));
