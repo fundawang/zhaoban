@@ -484,14 +484,14 @@ function onlinecharge_user_orders_submit($form, $form_state) {
 		'gateway' => $form_state['values']['gateway'],
 		'status' => 10,
 	))->execute();
-	$query=db_select('orders','o')->fields('o',array('ordertitle'))->condition('o.orderno',$form_state['values']['orderno'.$i]);
+	$query=db_select('orders','o')->fields('o',array('ordertitle','amount'))->condition('o.orderno',$form_state['values']['orderno'.$i]);
 	$query->innerJoin('users','u','u.uid=o.uid');
 	$query->innerJoin('students','s','s.uid=u.name');
 	$query->fields('s',array('uid','name'));
 	$r=$query->execute()->fetchObject();
 	$_form_state['values']=array(
 		'orderno' => $form_state['values']['orderno'.$i],
-		'amount' => $form_state['values']['amount'.$i],
+		'amount' => $r->amount,
 		'ordertime' => $time,
 		'ordertitle' => $r->uid.$r->name.' '.$r->ordertitle,
 	);
