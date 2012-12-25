@@ -1112,11 +1112,15 @@ function signup_user_account_form_save($form, &$form_state) {
 	
 	if($edit['photo']) {
 		$file=file_load($edit['photo']);
-		$fd=fopen($file->uri,'rb');
+		$image=image_load($file->uri);
+		image_save($image, $file->uri.'.jpg');
+		$fd=fopen($file->uri.'.jpg','rb');
 		$data='';
 		while (!feof($fd)) {
 			$data.=fread($fd, 1024);
 		}
+		fclose($fd);
+		file_unmanaged_delete($file->uri.'.jpg');
 		db_update('students')->condition('uid',$user->name)->fields(array(
 			'picture' => base64_encode($data),
 		))->execute();
