@@ -568,7 +568,7 @@ function onlinecharge_gatewayreponse($params) {
 				'@gateway' => $gateway
 			),
 			WATCHDOG_INFO,
-			l(t('View'), 'charge/log')
+			l(t('View'), 'charge/log/'.$orderno)
 		);
 	}
 	if($params[$gateway]['is_backend']) exit;
@@ -588,7 +588,11 @@ function onlinecharge_gatewayreponse($params) {
 		drupal_goto($GLOBALS['base_url']);
 }
 
-function onlinecharge_log_form($form, $form_state) {
+function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
+	if($pre_orderno) {
+		onlinecharge_user_logout();
+		$_COOKIE['Drupal_visitor_orders_orderno']=$pre_orderno;
+	}
 	$form=array();
 	$form['conditions']=array(
 		'#type' => 'vertical_tabs',
@@ -894,7 +898,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 					'@orderno' => $r->orderno,
 				),
 				WATCHDOG_INFO,
-				l(t('View'), 'charge/log')
+				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
 			user_cookie_save(array(
@@ -917,7 +921,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 					'@orderno' => $r->orderno,
 				),
 				WATCHDOG_INFO,
-				l(t('View'), 'charge/log')
+				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
 			user_cookie_save(array(
@@ -943,7 +947,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 						'@gateway' => $r->gateway
 					),
 					WATCHDOG_INFO,
-					l(t('View'), 'charge/log')
+					l(t('View'), 'charge/log/'.$r->orderno)
 				);
 				drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
 				user_cookie_save(array(
@@ -966,7 +970,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 							'@gateway' => $r->gateway
 						),
 						WATCHDOG_ERROR,
-						l(t('View'), 'charge/log')
+						l(t('View'), 'charge/log/'.$r->orderno)
 					);
 					user_cookie_save(array(
 						'orders_orderno' => $orderno,
@@ -983,6 +987,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			}
 		}
 	}
+	drupal_goto('charge/log');
 }
 
 function onlinecharge_cron() {
