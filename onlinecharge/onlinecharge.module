@@ -735,7 +735,7 @@ function onlinecharge_log_form($form, $form_state) {
 	$amount=$amountq->execute()->fetchField(1);
 	if($transnum > 0)
 		$form['summary']=array(
-			'#markup' => '<b>'.t('Based on current conditions, @num transactions were found, and the related amount is @amount.',array('@num'=>$transnum, '@amount'=>$amount)).'</b>',
+			'#markup' => '<b>'.t('Based on current conditions, @num transactions were found, and the related amount is @amount.',array('@num'=>$transnum, '@amount'=>number_format($amount))).'</b>',
 		);
 	$query->addExpression('s.uid','suid');
 	$query->fields('o')->fields('sc',array('period'));
