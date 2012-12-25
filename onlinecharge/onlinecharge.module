@@ -1004,7 +1004,8 @@ function onlinecharge_cron() {
 					'@orderno' => $r->orderno,
 					'@gateway' => $r->gateway
 				),
-				WATCHDOG_ERROR
+				WATCHDOG_ERROR,
+				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 			continue;
 		}
@@ -1023,7 +1024,7 @@ function onlinecharge_cron() {
 					'@gateway' => $r->gateway
 				),
 				WATCHDOG_INFO,
-				l(t('View'), 'charge/log')
+				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 		} else {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
@@ -1034,7 +1035,8 @@ function onlinecharge_cron() {
 					'@orderno' => $r->orderno,
 					'@gateway' => $r->gateway
 				),
-				WATCHDOG_WARNING
+				WATCHDOG_WARNING,
+				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 		}
 	}
