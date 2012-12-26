@@ -385,13 +385,23 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		);
 		switch($r->status) {
 			case 0:
+				$should_show_pay=TRUE;
 				$k=db_select('students','s')->condition('s.validated',1)->condition('s.uid',$user->name)->fields('s')->countQuery()->execute()->fetchField();
-				if($k==0 || $r->period!=1)
-				$form['submit'.$r->period]=array(
-					'#type' => 'submit',
-					'#name' => 'submit'.$r->period,
-					'#value' => t('Pay'),
-				);
+				if($k!=0) { // If it is validated
+					if($r->period==1) // Then disable pay 1st round fee.
+						$should_show_pay=FALSE;
+				}
+				else {
+					$examplace=db_select('students','s')->condition('s.uid',$user->name)->fields('s',array('examplace'))->execute()->fetchField();
+					if($examplace!='110000' && $r->period==1) // If the user has selected outside examplace.
+						$should_show_pay=FALSE;
+				}
+				if($should_show_pay)
+					$form['submit'.$r->period]=array(
+						'#type' => 'submit',
+						'#name' => 'submit'.$r->period,
+						'#value' => t('Pay'),
+					);
 				break;
 			case 10:
 			case 11:
