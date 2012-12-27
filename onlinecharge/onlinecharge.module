@@ -126,7 +126,7 @@ function onlinecharge_block_view($delta = '') {
 					else
 						$options[$k]='<img src="/'.$v.'"/>';
 			}
-			$block['content'] = implode('<br/>',$options);
+			$block['content'] = '<div style="text-align: center">'.implode('<br/>',$options).'</div>';
 			return $block;
 			break;
   		}
@@ -461,11 +461,16 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		t('If you still have inconsistent record here, for instance, multiple sucessful payments, please contact us at @tel.', array('@tel'=>variable_get('charging_telephone')))
 	);
 	foreach($gateways as $key => $value) {
-		$markup[]=module_invoke($key, 'help', 'charge/'.$key, '');
+		$form['help-'.$key]=array(
+			'#type' => 'item',
+			'#markup' => module_invoke($key, 'help', 'charge/'.$key, ''),
+			'#states' => array(
+				'visible' => array(
+					'input[name="gateway"]' => array('value' =>$key),
+				),
+			),
+		);
 	}
-	$form['help']=array(
-		'#markup' => '<p>'.implode('</p><p>',$markup).'</p>',
-	);
 	return $form;
 }
 
@@ -539,7 +544,7 @@ function theme_onlinecharge_user_orders($variables) {
 	$output.=drupal_render($form['gateway']);
 	if(isset($form['gatewayintro']))
 		$output.=drupal_render($form['gatewayintro']);
-	$output.=drupal_render($form['help']);
+	//$output.=drupal_render($form['help']);
 	$output.=drupal_render_children($form);
 	
 	return $output;
