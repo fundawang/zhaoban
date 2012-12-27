@@ -580,6 +580,10 @@ function onlinecharge_gatewayreponse($params) {
 			WATCHDOG_INFO,
 			l(t('View'), 'charge/log/'.$orderno)
 		);
+		if(!empty($params[$gateway]['echostr'])) {
+			echo $params[$gateway]['echostr'];
+			exit;
+		}
 	}
 	if($params[$gateway]['is_backend']) exit;
 	$query=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o');
