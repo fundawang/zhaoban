@@ -61,8 +61,8 @@ function _signup_determine_period($user) {
 	// Determine whether you hvae filled up your gaokao information
 	$result = db_select('students', 's')->fields('s')->condition('s.uid',$user->name)->execute()->fetchObject();
 	if($result->ucategory != 0 && $result->ucategory !==3) {
-		$result=db_select('students_gk','sg')->fields('sg')->condition('sg.uid',$user->name)->execute()->fetchObject();
-		if(!isset($result->city_district) || ($result->city_district == $result->province && $user->ucategory == 1))
+		$resultg=db_select('students_gk','sg')->fields('sg')->condition('sg.uid',$user->name)->execute()->fetchObject();
+		if(!isset($resultg->city_district) || ($resultg->city_district == $resultg->province && $result->ucategory == 1))
 			return signup_progress_GAOKAO; // One must fill his city_district
 	}
 
