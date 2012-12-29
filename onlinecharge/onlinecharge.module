@@ -571,7 +571,7 @@ function onlinecharge_gatewayreponse($params) {
 	$gateways=array_keys($params);
 	$gateway=$gateways[0];
 	$orderno=$params[$gateway]['orderno'];
-	$r=db_select('orders','o')->condition('o.orderno',$orderno)->condition('o.gateway', $gateway)->condition('o.status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
+	$r=db_select('orders','o')->condition('o.orderno',$orderno)->condition('o.gateway', $gateway)->condition('o.amount', $params[$gateway]['amount'])->condition('o.status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
 	if($r==1 && $params[$gateway]['is_backend']) {
 		db_update('orders')->condition('orderno',$orderno)->fields(array(
 			'status' => 100,
