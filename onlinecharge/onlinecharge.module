@@ -827,6 +827,7 @@ function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
 					'#type' => t('submit'),
 					'#name' => 'setfail'.$r->orderno,
 					'#value' => t('Set as unpaid'),
+					'#attributes' => array('title' => t('Force set the order as unpaid, and regenerate the orderno. Please do this AFTER relative operations in payment gateway.')),
 				);
 				break;
 			case 100:
@@ -936,16 +937,20 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 				'gatewaysettledate' => NULL,
 				'status' => 0
 			))->execute();
+			$neworderno=onlinecharge_generate_random_orderno();
+			db_update('orders')->condition('orderno',$orderno)->fields(array(
+				'orderno' => $neworderno
+			))->execute();
 			watchdog('onlinecharge',
 				'@orderno set as failed.', array(
 					'@orderno' => $orderno,
 				),
 				WATCHDOG_INFO,
-				l(t('View'), 'charge/log/'.$orderno)
+				l(t('View'), 'charge/log/'.$neworderno)
 			);
-			drupal_set_message(t('Order @orderno status updated.',array('@orderno'=>$orderno)));
+			drupal_set_message(t('Order @orderno status updated. The new order number is @new.',array('@orderno'=>$orderno, '@new'=>$neworderno)), 'error');
 			user_cookie_save(array(
-				'orders_orderno' => $orderno,
+				'orders_orderno' => $neworderno,
 			));
 			user_cookie_delete('orders_orderdate');
 			user_cookie_delete('orders_gateway');

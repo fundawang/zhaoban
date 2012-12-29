@@ -31,3 +31,19 @@ Drupal.behaviors.chargelogFieldsetSummaries = {
 };
 
 })(jQuery);
+
+(function ($) {
+Drupal.behaviors.setfailListener = {
+	attach: function () {
+		var which;
+		$("#onlinecharge-log-form input").click(function () {
+		    which = $(this).attr("name");
+		});
+		$("#onlinecharge-log-form").submit(function () {
+			if(which.match("^setfail"))
+				return window.confirm(Drupal.t("Use this feature will refresh the order number. Only do this AFTER relative operations was done in payment gateway.")+"\n\n"+Drupal.t("Are you sure?"));
+			else return true;
+		});
+	}
+};
+})(jQuery);
