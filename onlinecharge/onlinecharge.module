@@ -1020,6 +1020,7 @@ function onlinecharge_cron() {
 	foreach($result as $r) {
 		if($r->status==15) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
+				'gateway' => NULL,
 				'gatewaytransactionno' => NULL,
 				'gatewaysettledate' => NULL,
 				'status' => 0,
