@@ -1052,8 +1052,11 @@ function onlinecharge_cron() {
 				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 		} else {
+			$status=$r->status+1;
+			if($r->ordertime < (time() - 7200))
+				$status=15;
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
-				'status' => $r->status+1,
+				'status' => $status,
 			))->execute();
 			watchdog('onlinecharge',
 				'@orderno process without success via @gateway.', array(
