@@ -344,7 +344,7 @@ function score_check_perm_gk() {
 }
 
 function score_input_check_access($eid) {
-	return 1;
+	return user_access('review my score') || user_access('input score');
 	/*
 	global $user;
 	if (db_result(db_query('SELECT count(*) FROM {vl_exam} e WHERE e.uid="%s" AND e.eid="%s"', $GLOBALS['user']->name, $eid))>0)
