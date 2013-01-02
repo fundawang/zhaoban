@@ -1,5 +1,10 @@
 <?php
 
+define('onlinecharge_PAYMENT_SUCCESS', 1);
+define('onlinecharge_PAYMENT_PROCESSING', 0);
+define('onlinecharge_PAYMENT_FAILED', -1);
+define('onlinecharge_PAYMENT_INVALID', -2);
+
 /**
  * Implements hook_help().
  */
@@ -960,7 +965,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			$orderno=substr($form_state['clicked_button']['#name'],-20);
 			$r=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o')->execute()->fetchObject();
 			$t=module_invoke($r->gateway, 'querystatus', $orderno, $r->ordertime);
-			if($t) {
+			if(is_array($t)) {
 				db_update('orders')->condition('orderno',$r->orderno)->fields(array(
 					'gatewaytransactionno' => $t[$r->gateway]['transactionno'],
 					'gatewaysettledate' => isset($t[$r->gateway]['settledate'])?$t[$r->gateway]['settledate']:date('md'),
@@ -982,7 +987,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 				user_cookie_delete('orders_gateway');
 				user_cookie_delete('orders_status');
 			} else {
-				if($r->status==15) {
+				if($t==onlinecharge_PAYMENT_INVALID || $t==onlinecharge_PAYMENT_FAILED ) {
 					db_update('orders')->condition('orderno',$r->orderno)->fields(array(
 						'gatewaytransactionno' => NULL,
 						'gatewaysettledate' => NULL,
@@ -1004,9 +1009,6 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 					user_cookie_delete('orders_gateway');
 					user_cookie_delete('orders_status');
 				} else {
-					db_update('orders')->condition('orderno',$orderno)->fields(array(
-						'status' => $r->status+1,
-					))->execute();
 					drupal_set_message(t('Order @orderno status is not updated.',array('@orderno'=>$orderno)), 'warning');
 				}
 			}
@@ -1038,7 +1040,7 @@ function onlinecharge_cron() {
 		// hook_querystatus returns array of transaction number, settledate, etc., if succeeded, or FALSE when failed.
 		if(!module_hook($r->gateway, 'querystatus')) return;
 		$t=module_invoke($r->gateway, 'querystatus', $r->orderno, $r->ordertime);
-		if($t) {
+		if(is_array($t)) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
 				'gatewaytransactionno' => $t[$r->gateway]['transactionno'],
 				'gatewaysettledate' => isset($t[$r->gateway]['settledate'])?$t[$r->gateway]['settledate']:date('md'),
@@ -1053,8 +1055,8 @@ function onlinecharge_cron() {
 				l(t('View'), 'charge/log/'.$r->orderno)
 			);
 		} else {
-			$status=$r->status+1;
-			if($r->ordertime < (time() - 7200))
+			$status=$r->status;
+			if($t==onlinecharge_PAYMENT_INVALID || $t==onlinecharge_PAYMENT_FAILED )
 				$status=15;
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
 				'status' => $status,
