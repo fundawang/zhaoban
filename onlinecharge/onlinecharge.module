@@ -1056,7 +1056,9 @@ function onlinecharge_cron() {
 			);
 		} else {
 			$status=$r->status;
-			if($t==onlinecharge_PAYMENT_INVALID || $t==onlinecharge_PAYMENT_FAILED )
+			if($t==onlinecharge_PAYMENT_INVALID && time()-$r->ordertime >= 1800)
+				$status=15;
+			if($t==onlinecharge_PAYMENT_FAILED)
 				$status=15;
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
 				'status' => $status,
