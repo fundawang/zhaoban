@@ -1056,7 +1056,7 @@ function onlinecharge_cron() {
 			);
 		} else {
 			$status=$r->status;
-			if($t==onlinecharge_PAYMENT_INVALID && time()-$r->ordertime >= 1800)
+			if(($t==onlinecharge_PAYMENT_INVALID || $t==onlinecharge_PAYMENT_PROCESSING ) && time()-$r->ordertime >= 7200)
 				$status=15;
 			if($t==onlinecharge_PAYMENT_FAILED)
 				$status=15;
