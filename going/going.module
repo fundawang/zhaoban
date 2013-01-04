@@ -92,6 +92,7 @@ function going_menu() {
 		'page callback' => 'going_print_orderlist',
 		'page arguments' => array(3),
 		'access callback' => 'going_print_orderlist_perm',
+		'access arguments' => array(3),
 		'type' => MENU_CALLBACK,
 	);
 	$items['definations/arrange/printscorereport/%'] = array(
@@ -115,11 +116,25 @@ function going_menu_assign_modify($gid)
 {
 	$r=db_select('vl_going', 'g')->fields('g')->condition('g.gid',$gid)->execute()->fetchObject();
 	$is_passed=date('YmdHi0000') > $r->time;
-	return (going_menu_perm() && !$is_passed);
+	$query=db_select('students','s')->fields('s');
+	$query->innerJoin('students_going','sg','s.uid=sg.uid');
+	$query->isNull('sg.gid')->condition('s.validated',1);
+	$exam_ids=explode(', ', $r->valid_exams);
+	if(substr($exam_ids[0],0,1)<>'1')
+		$query->condition('s.pass_round1_major','1');
+	$empty_students=$query->countQuery()->execute()->fetchField();
+	return (going_menu_perm() && !$is_passed && $empty_students);
 }
-function going_print_orderlist_perm()
+function going_print_orderlist_perm($gid=NULL)
 {
-	return going_menu_perm() && user_access('print order list');
+	if($gid) {
+		$query=db_select('students_going','sg')->condition('sg.gid',$gid);
+		$query->innerJoin('students','s','s.uid=sg.uid');
+		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+		$query->condition('p.uid',$GLOBALS['user']->name)->fields('s');
+		$r=$query->countQuery()->execute()->fetchField();
+	} else $r=1;
+	return going_menu_perm() && user_access('print order list') && $r;
 }
 
 function going_goinglist() {
@@ -537,9 +552,8 @@ function going_assign_list() {
 	$query=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'))
 		->fields('g')
 		->extend('TableSort')
-		->orderByHeader($header);
-
-	if(!$is_dep_only) $query->extend('PagerDefault')->limit(25);
+		->orderByHeader($header)
+		->extend('PagerDefault')->limit(25);
 
 	$result = $query->execute();
 
@@ -554,19 +568,20 @@ function going_assign_list() {
 			->execute()->fetchField();
 		$exam_ids=explode(', ', $r->valid_exams);
 		if($num)
-			if(going_print_orderlist_perm()) {
+			if(going_print_orderlist_perm($r->gid)) {
 				$tmp_satus=l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Order List').'"/>',"definations/arrange/printorderlist/$r->gid", array('html'=>true));
+				
 				if(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exam_ids[0])->execute()->fetchField()=='2')
 					$tmp_satus.=l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score Report').'"/>',"definations/arrange/printscorereport/$r->gid", array('html'=>true));
 			}
-		else
-			$tmp_satus='<img src="/misc/watchdog-ok.png"/>';
+			else
+				$tmp_satus='<img src="/misc/watchdog-ok.png"/>';
 		else
 			$tmp_satus='<img src="/misc/watchdog-error.png"/>';
 
 		if($is_dep_only) {
 			$exam_ids=explode(', ', $r->valid_exams);
-			if(db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
+			if(!going_print_orderlist_perm($r->gid) && db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
 				continue;
 		}
 
@@ -579,7 +594,10 @@ function going_assign_list() {
 			'<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
 		);
 		if(!$is_passed) {
-			$rows[count($rows)-1][]='<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>';
+			if(going_menu_assign_modify($r->gid))
+				$rows[count($rows)-1][]='<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>';
+			else
+				$rows[count($rows)-1][]='';
 			$rows[count($rows)-1][]='<nobr>'.(($num)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>';
 		} else {
 			$rows[count($rows)-1][]=array(
@@ -589,7 +607,7 @@ function going_assign_list() {
 	}
 
 	$output = drupal_render(drupal_get_form('going_goinglist_filter'));
-	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty' => 'No going have been filled.'));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty' => t('No going have been filled.')));
 	$output .= theme('pager');
 
 	return $output;
@@ -786,7 +804,7 @@ function going_print_orderlist($gid=NULL)
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(true);
 
@@ -973,15 +991,15 @@ function going_print_score_report($gid=NULL)
 	    	$this->SetX(10);
 	    	$this->SetY(8);
 	        // Set font
-	        $this->SetFont('droidsansfallback', 'B', 24, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
 	        // Title
 	        $header_titles=explode(',', $this->header_title);
 	        $this->Cell(0, 10, $header_titles[0], 0, false, 'C', 0, '', 0, false, 'M', 'M');
 	        $this->Ln();
-	        $this->SetFont('droidsansfallback', 'B', 15, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 15, '', true);
 	        $this->Cell(60, 5, $header_titles[1], 0, false, 'C', 0, '', 0, false, 'M', 'M');
 	        $this->Cell(0, 5, $header_titles[2], 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	        $this->SetFont('droidsansfallback', 'B', 12, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 12, '', true);
 	        $this->Ln();
 	    	//$this->SetX(1);
 	    	//$this->SetY(18);
@@ -1002,7 +1020,7 @@ function going_print_score_report($gid=NULL)
 	        //$this->Line(5,198,292,198,array('width'=>0.5));
 	        // Set font
 	        // Page number
-	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
+	        $this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
 	        $this->Cell(220,12, '评委签字', 0, false, 'C');
 	    }
 	}
@@ -1045,7 +1063,7 @@ function going_print_score_report($gid=NULL)
 	$pdf->SetLineStyle(array('dash'=>2));
 	
 	$results=$query->execute();
-	$pdf->SetFont('droidsansfallback', 'B', 12, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 12, '', true);
 	foreach($results as $r) {
 		$pdf->SetFillColor(216,216,216);
 		$pdf->Cell(10,2,$r->gorder, 0, false, 'C',true);
