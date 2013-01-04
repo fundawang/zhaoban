@@ -321,25 +321,24 @@ function score_input_going_list_batch_check() {
 
 function score_check_perm_view() {
 	//$r=db_result(db_query('SELECT MAX(gid) FROM {students_going}'));
-	$r=1;
+	$query=db_select('students_going');
+	$query->addExpression('MAX(gid)', 'g');
+	$r=$query->execute()->fetchField();
 	return user_access('review all score') && $r;
 }
 
 function score_check_perm_prepare3rd() {
-	//$r=db_result(db_query('SELECT count(*) FROM {students} WHERE pass_round1_major=1'));
-	$r=1;
+	$r=db_select('students','s')->condition('s.pass_round1_major',1)->fields('s')->countQuery()->execute()->fetchField();
 	return user_access('review all score') && $r;
 }
 
 function score_check_perm_inputgk() {
-	//$r=db_result(db_query('SELECT count(*) FROM {students} WHERE pass_round3_major=1'));
-	$r=1;
+	$r=db_select('students','s')->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();
 	return user_access('input gaokao score')&& $r;
 }
 
 function score_check_perm_gk() {
-	//$r=db_result(db_query('SELECT count(*) FROM {students} WHERE pass_round3_major=1'));
-	$r=1;
+	$r=db_select('students','s')->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();;
 	return (user_access('input gaokao score') || user_access('view gaokao score'))&& $r;
 }
 
