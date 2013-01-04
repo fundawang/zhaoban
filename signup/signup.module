@@ -3001,7 +3001,7 @@ function signup_overview_by_profession_detail($prof=NULL) {
   	  );
   }
   
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+  $output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable students.')));
   $output .= theme('pager');
   $output .= "</div>";
   
