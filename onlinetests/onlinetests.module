@@ -229,6 +229,9 @@ function onlinetests_onlinetests_list() {
   $rows=array();
   
   foreach($result as $r) {
+  	  $exam_ids=explode(' ',$r->valid_exams);
+  	  $etype=db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->fields('e',array('etype'))->execute()->fetchField();
+  	  if($etype != 3) continue;
   	  $num=db_select('students_going','sg')
   	  	  ->fields('sg')
   	  	  ->groupBy('sg.uid')
