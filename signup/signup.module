@@ -2251,9 +2251,11 @@ function signup_user_contact_form_save($form, $form_state) {
 	// If is our own students, lets fill in some more information automatically
 	if($user->ucategory==0) {
 		$sid=db_select('students','s')->fields('s',array('idcard_number'))->condition('uid',$user->name)->execute()->fetchField();
-		db_set_active('xjinfo');
-		$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',$sid)->execute()->fetchObject();
-		db_set_active('default');
+		if(!is_null(Database::getConnectionInfo('xjinfo'))) {
+			db_set_active('xjinfo');
+			$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',$sid)->execute()->fetchObject();
+			db_set_active('default');
+		} else $r='';
 		$depname=db_select('vl_department','d')->fields('d',array('dname'))->condition('did_exchange',$r->xsh)->execute()->fetchField();
 
 		$edit['address_round3'] = '中央音乐学院'.$depname;
@@ -4571,6 +4573,10 @@ function signup_report($account) {
 	$pdf->Cell(90,6,isset($result_contact->personnel_record_at)?$result_contact->personnel_record_at:'',0,0,'L',false);
 	$pdf->Cell(20,6,'政治面貌',1,0,'C',true);
 	$pdf->Cell(30,6,db_select('vl_politics_features','p')->fields('p',array('name'))->condition('p.pid',$result->politics_feature)->execute()->fetchField(),0,1,'L',false);
+	
+	if($result->picture)
+		$pdf->Image('@'.base64_decode($result->picture), 175, 18.5, 0, 25);
+
 
 	$pdf->SetX(6);
 	$pdf->SetFontSize(18);
