@@ -1022,6 +1022,7 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 
 function onlinecharge_cron() {
 	$result=db_select('orders','o')->condition('o.status','100','<>')->condition('o.status','0','<>')->isNotNull('o.gateway')->fields('o',array('orderno','gateway','status','ordertime'))->execute();
+	if(!$result) return;
 	foreach($result as $r) {
 		if($r->status==15) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
