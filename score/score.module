@@ -342,27 +342,13 @@ function score_check_perm_gk() {
 	return (user_access('input gaokao score') || user_access('view gaokao score'))&& $r;
 }
 
-function score_input_check_access($eid) {
-	return user_access('review my score') || user_access('input score');
-	/*
-	global $user;
-	if (db_result(db_query('SELECT count(*) FROM {vl_exam} e WHERE e.uid="%s" AND e.eid="%s"', $GLOBALS['user']->name, $eid))>0)
-		return TRUE;
-	if(user_access('review all score'))
-		return TRUE;
-	$rdbo=db_query('SELECT exams FROM {vl_professions} p WHERE uid="%s"',$user->name);
-	$all_exams=array();
-	while($r=db_fetch_object($rdbo)) {
-		$exams=array_keys(unserialize($r->exams));
-		//var_dump($exams);
-		$all_exams=array_merge($all_exams, $exams);
-	}
-	$all_exams=array_unique($all_exams);
-	if(user_access('review my score') && in_array($eid, $all_exams)) {
-		return TRUE;
-	}
-	else return FALSE;
-	*/
+function score_input_check_access($eid=NULL) {
+	if(!user_access('review my score') && !user_access('input score')) return FALSE;
+	if($eid) {
+		$query=db_select('students_going','sg')->isNotNull('sg.gid')->condition('sg.eid',$eid)->fields('sg');
+		$r=$query->countQuery()->execute()->fetchField();
+		return $r > 0;
+	} else return TRUE;
 }
 
 function score_input_going_list() {
