@@ -399,6 +399,7 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 		);
 		$fileobj=(object)$file;
 		$fileobj=file_save($fileobj);
+		file_move($fileobj,'private://onlinetests/quests/'.$material['name']);
 		file_usage_add($fileobj, 'onlinetests', 'quest', $GLOBALS['user']->uid);
 		$files[]=$fileobj->fid;
 	}
