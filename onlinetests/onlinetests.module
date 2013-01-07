@@ -264,7 +264,7 @@ function onlinetests_onlinetests_list() {
   	  	  $num,
   	  	  '<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
   	  );
-  	  if(1) {
+  	  if($num) {
   	  	if($r->status===FALSE) $status=ONLINETEST_STATUS_ABOUT_TO_BEGIN;
 		switch($r->status) {
 			case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
