@@ -415,20 +415,27 @@ function going_going_edit_validate($form, &$form_state) {
 	for($i=1;$i<=going_going_MAX_EXAMS;$i++) {
 		if($form_state['values']['exam'.$i]!='0') {
 			$r=db_select('vl_exam', 'e')->fields('e',array('uid','etype'))->condition('e.eid',$form_state['values']['exam'.$i])->execute()->fetchObject();
+			$exams[]=$form_state['values']['exam'.$i];
 			$sec[]=$r->uid;
 			$types[]=$r->etype;
 		}
 	}
+	$sec=array_unique($sec);
+	$types=array_unique($types);
+	$exams=array_unique($exams);
 
 	if(count($sec)==0) { // No exam defined
 		form_set_error('valid_exams', t('There is no examinations in this schedule.'));
 	}
-	else if(count(array_unique($sec))!=1) { // Conflict research section
+	else if(count($sec)!=1) { // Conflict research section
 		form_set_error('valid_exams', t('Conflict research section detected.'));
-	} else if(count(array_unique($types))!=1) { // Different exam type
+	} else if(count($types)!=1) { // Different exam type
 		form_set_error('valid_exams', t('Conflict exam type detected.'));
 	}
-	
+	if(module_exists('onlinetests')) {
+		if($types[0]=='3' && count($exams) >1)
+			form_set_error('valid_exams', t('Only one exam is allowed for online tests going.'));
+	}
 	// Check if the time is valid
 	if(preg_match('/\d{16}/', $form_state['values']['time'])||preg_match('/\d{12}/', $form_state['values']['time']))
 		return;
