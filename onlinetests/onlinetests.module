@@ -255,7 +255,7 @@ function onlinetests_onlinetests_list() {
   	  	  }
   	  }
   	  else
-  	  	  $tmp_satus=t('About to begin');
+  	  	  $tmp_status=t('About to begin');
   	  
   	  $rows[] = array(
   	  	  '<nobr>'.$tmp_status.'</nobr>',
