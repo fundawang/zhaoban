@@ -721,7 +721,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		);
 		
 		foreach($answers as $answer) {
-			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$material)->execute()->fetchObject();
+			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$answer)->execute()->fetchObject();
 			$form['orig_answers']['orig_answer'.$i]=array(
 				'#type' => 'item',
 				'#title' => t('Material @i', array('@i'=>$i++)),
@@ -730,7 +730,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		}
 	}
 
-	if($e->status != ONLINETEST_STATUS_ENDED) {
+	if($r->status != ONLINETEST_STATUS_ENDED) {
 		$form['answersframe']=array(
 			'#type' => 'fieldset',
 			'#title' => t('Upload new answers'),
@@ -830,9 +830,10 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 				}
 				if($form_state['clicked_button']['#id']=='edit-submit') {
 					$i=1;
+					$answers=explode(', ',db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->condition('status',2)->fields('sg',array('answers'))->execute()->fetchField());
 					foreach($answers as $answer) {
 						$f=file_load($answer);
-						$ext=strrchr($f->uri, '.');
+						$ext=strrchr($f->filename, '.');
 						file_move($f, 'private://onlinetests/answers/'.$GLOBALS['user']->name.'_'.$eid.'_'.$i.$ext);
 						$i++;
 					}
