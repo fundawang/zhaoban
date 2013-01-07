@@ -350,10 +350,38 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 		'#required' => TRUE,
 	);
 	$r=db_select('vl_itemspec','i')->condition('eid',$exam_id)->fields('i')->execute()->fetchObject();
-	if(!$is_passed)
-		$form['materials']=array(
+	
+	if(!empty($default_values->materials)) {
+		$materials=explode(', ', $default_values->materials);
+		$i=1;
+		$form['orig_material']=array(
+			'#type' => 'fieldset',
+			'#title' => t('Existing Material'),
+			'#collapsible' => TRUE,
+			'#collapsed' => FALSE,
+		);
+		
+		foreach($materials as $material) {
+			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$material)->execute()->fetchObject();
+			$form['orig_material']['orig_material'.$i]=array(
+				'#type' => 'item',
+				'#title' => t('Material @i', array('@i'=>$i++)),
+				'#markup' => l($q->filename,file_create_url($q->uri)),
+			);
+		}
+	}
+
+	if(!$is_passed) {
+		$form['materialframe']=array(
+			'#type' => 'fieldset',
+			'#title' => t('New Materials'),
+			'#collapsible' => TRUE,
+			'#collapsed' => count($materials),
+		);
+		if(!empty($default_values->materials))
+			$form['materialframe']['#description']=t('Please note that existing materails will be removed completely.');
+		$form['materialframe']['materials']=array(
 			'#type' => 'plupload',
-			'#title' => t('Materials'),
 			'#required' => TRUE,
 			'#upload_validators' => array(
 				'file_validate_extensions' => NULL,
@@ -362,6 +390,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 				'max_file_size' => '800mb',
 			),
 		);
+	}
 	
 	if(!$is_passed)	{
 		$form['submit'] = array('#type' => 'submit', '#value' =>t('Save'));
