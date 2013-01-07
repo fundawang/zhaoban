@@ -80,6 +80,7 @@ function onlinetests_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('onlinetests_modify_quest',3),
     'access callback' => 'onlinetests_onlinetests_list_perm',
+    'access arguments' => array(3),
     'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['definations/onlinetests/op/%'] = array(
@@ -87,6 +88,7 @@ function onlinetests_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('onlinetests_operations',3),
     'access callback' => 'onlinetests_onlinetests_list_perm',
+    'access arguments' => array(3),
     'type' => MENU_VISIBLE_IN_BREADCRUMB,
   );
   $items['definations/onlinetests/quest/%'] = array(
@@ -309,6 +311,7 @@ function onlinetests_onlinetests_list() {
 }
 
 function onlinetests_onlinetests_list_perm($gid=NULL) {
+	if($GLOBALS['user']->uid==0) return FALSE;
 	$is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
 	if(!$is_dep_only)
 		return user_access('administer online exams');
@@ -644,6 +647,10 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 			'#type'=>'hidden',
 			'#value'=>$r->gid,
 		);
+		$form['eid']=array(
+			'#type'=>'hidden',
+			'#value'=>$r->eid,
+		);
 		$form['gname']=array(
 			'#type'=>'hidden',
 			'#value'=>$r->gname,
@@ -673,72 +680,79 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		return $form;
 	}
 	
-	$query=db_select('students_going','sg')->fields('sg',array('eid','status','answers'))
+	$query=db_select('students_going','sg')->fields('sg',array('gid','eid','status','answers'))
 		->condition('sg.uid',$GLOBALS['user']->name)->condition('sg.gid',$r->gid)->condition('sg.status',array(ONLINETEST_STATUS_ONGOING,ONLINETEST_STATUS_ENDED),'in');
 	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
 	$query->fields('e',array('ename'));
 	$query->innerJoin('vl_quest','q','q.gid=sg.gid AND q.eid=sg.eid');
 	$query->fields('q',array('stem','materials','descriptivetext'));
-	$exams=$query->execute();
+	$r=$query->execute()->fetchObject();
 	
 	$form['gid']=array(
 		'#type' => 'hidden',
 		'#value' => $r->gid,
 	);
 	
-	$form['exams']=array(
-		'#type' => 'vertical_tabs',
+	$form['stem']=array(
+		'#type' => 'item',
+		'#title' => t('Stem'),
+		'#markup' => $r->stem,
 	);
-	foreach($exams as $e) {
-		$form['e'.$e->eid]=array(
-			'#type' => 'fieldset',
-			'#title' => $e->ename,
-			'#group' => 'exams',
-		);
-		$form['e'.$e->eid]['stem']=array(
+
+	$materials=explode(', ', $r->materials);
+	$i=1;
+	foreach($materials as $material) {
+		$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$material)->execute()->fetchObject();
+		$form['orig_material'.$i]=array(
 			'#type' => 'item',
-			'#title' => t('Stem'),
-			'#markup' => $e->stem
+			'#title' => t('Material @i', array('@i'=>$i++)),
+			'#markup' => l($q->filename,file_create_url($q->uri)),
 		);
-		$materials=explode(', ', $e->materials);
+	}
+	
+	if(!empty($r->answers)) {
+		$answers=explode(', ', $r->answers);
 		$i=1;
-		foreach($materials as $materail) {
-			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$materail)->execute()->fetchObject();
-			$form['e'.$e->eid]['material'.$i]=array(
+		$form['orig_answers']=array(
+			'#type' => 'fieldset',
+			'#title' => t('Existing Answers'),
+			'#collapsible' => TRUE,
+			'#collapsed' => FALSE,
+		);
+		
+		foreach($answers as $answer) {
+			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$material)->execute()->fetchObject();
+			$form['orig_answers']['orig_answer'.$i]=array(
 				'#type' => 'item',
 				'#title' => t('Material @i', array('@i'=>$i++)),
 				'#markup' => l($q->filename,file_create_url($q->uri)),
 			);
 		}
-		$descriptivetext=explode(', ', $e->descriptivetext);
-		$i=1;
-		$answers=explode(', ', $e->answers);
-		foreach($descriptivetext as $text) {
-			$form['e'.$e->eid]['answer_'.$e->eid.'_'.$i]=array(
-				'#type' => 'managed_file',
-				'#required' => TRUE,
-				'#title' => $text,
-				'#disabled' => $e->status==ONLINETEST_STATUS_ENDED,
-				'#default_value' => $answers[$i-1],
-				'#upload_validators' => array('file_validate_extensions'=>array()),
-				'#upload_location' => 'private://onlinetests/answers/',
-				'#progress_indicator' => 'bar',
-			);
-			$i++;
-		}
 	}
-	
-	if($exams->rowCount()==1) {
-		foreach($form['e'.$e->eid] as $k=>$c) {
-			if(substr($k,0,1)!='#')
-				$form[$k]=$form['e'.$e->eid][$k];
-		}
-		drupal_set_title(sprintf("%s - %s", t('My Online tests'), $e->ename));
-		unset($form['e'.$e->eid]);
-		unset($form['exams']);
-	}
-	
+
 	if($e->status != ONLINETEST_STATUS_ENDED) {
+		$form['answersframe']=array(
+			'#type' => 'fieldset',
+			'#title' => t('Upload new answers'),
+			'#description' => '<span style="font-weight: bold; color:red">'.t('Please note that existing answer files will be removed completely, if you upload new answers.').'</span>',
+			'#collapsible' => TRUE,
+			'#collapsed' => count($answers),
+		);
+		$form['answersframe']['answers']=array(
+			'#type' => 'plupload',
+			'#title' => t('Answers'),
+			'#required' => !count($answers),
+			'#upload_validators' => array(
+				'file_validate_extensions' => NULL,
+			),
+			'#plupload_settings' => array(
+				'max_file_size' => '800mb',
+			),
+		);
+		if(!count($answers)) {
+			$form['answers']=$form['answersframe']['answers'];
+			unset($form['answersframe']);
+		}
 		$form['save']=array(
 			'#type' => 'submit',
 			'#value' => t('Save my work for later use, but do not submit it'),
@@ -778,56 +792,61 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 		);
 		drupal_set_message(t('Online tests started.'));
 	} else {
+		$eid=db_select('vl_going','g')->condition('gid',$form_state['values']['gid'])->fields('g',array('valid_exams'))->execute()->fetchField();
 		switch($form_state['clicked_button']['#id']) {
 			case 'edit-submit':
 			case 'edit-save':
-				$result=db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->condition('status',2)->fields('sg',array('eid','answers'))->execute();
-				foreach($result as $r) {
-					$orig_answers=explode(', ', $r->answers);
-					$answers=array();
-					foreach($form_state['values'] as $fid => $fvalue) {
-						if(strpos($fid, 'answer_'.$r->eid) !== FALSE)
-							$answers[]=$fvalue;
-					}
-					db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('eid',$r->eid)->fields(array(
-						'answers' => implode(', ', $answers)
-					))->execute();
-					$files_to_add=array_diff($answers, $orig_answers);
-					$files_to_remove=array_diff($orig_answers, $answers);
-					foreach($files_to_add as $fileid) {
-						$file = file_load($fileid);
-						$file->status = FILE_STATUS_PERMANENT;
-						file_save($file);
-						file_usage_add($file, 'onlinetests', 'answer', $GLOBALS['user']->uid);
-					}
-					foreach($files_to_remove as $fileid) {
-						$file = file_load($fileid);
-						if($file) {
-							file_usage_delete($file, 'onlinetests', 'answer', $GLOBALS['user']->uid);
-							file_delete($file);
-						}
-					}
-					if($form_state['clicked_button']['#id']=='edit-submit') {
-						$i=1;
-						foreach($answers as $answer) {
-							$f=file_load($answer);
-							$ext=strrchr($f->uri, '.');
-							file_move($f, 'private://onlinetests/answers/'.$GLOBALS['user']->name.'_'.$r->eid.'_'.$i.$ext);
-							$i++;
-						}
-						
-						db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('eid',$r->eid)->fields(array(
-							'status' => ONLINETEST_STATUS_ENDED
-						))->execute();
-					}
+				// Let's upload all new files into file_managed
+				$files=array();
+				foreach($form_state['values']['answers'] as $answer) {
+					$file=array(
+						'uid' => $GLOBALS['user']->uid,
+						'filename' => $answer['name'],
+						'uri' => $answer['tmppath'],
+						'filemime' => file_get_mimetype($answer['tmppath']),
+						'filesize' => filesize($answer['tmppath']),
+						'timestamp' => time(),
+					);
+					$fileobj=(object)$file;
+					$fileobj=file_save($fileobj);
+					file_usage_add($fileobj, 'onlinetests', 'answer', $GLOBALS['user']->uid);
+					$files[]=$fileobj->fid;
 				}
-				if($form_state['clicked_button']['#id']=='edit-save') drupal_set_message(t('File saved.'));
-				else {
-					drupal_set_message(t('Online tests ended.'));
+				if(count($files)>0) {
+					$result=db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->condition('status',2)->fields('sg',array('answers'))->execute();
+					foreach($result as $r) {
+						$orig_answers=explode(', ', $r->answers);
+						foreach($orig_answers as $fileid) {
+							$file = file_load($fileid);
+							if($file) {
+								file_usage_delete($file, 'onlinetests', 'quest', $GLOBALS['user']->uid);
+								file_delete($file);
+							}
+						}
+					}
+					db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->condition('status',2)->condition('eid',$eid)->fields(array(
+						'answers' => implode(', ', $files),
+					))->execute();
+				}
+				if($form_state['clicked_button']['#id']=='edit-submit') {
+					$i=1;
+					foreach($answers as $answer) {
+						$f=file_load($answer);
+						$ext=strrchr($f->uri, '.');
+						file_move($f, 'private://onlinetests/answers/'.$GLOBALS['user']->name.'_'.$eid.'_'.$i.$ext);
+						$i++;
+					}
+					
+					db_update('students_going')->condition('uid',$GLOBALS['user']->name)->condition('eid',$eid)->fields(array(
+						'status' => ONLINETEST_STATUS_ENDED
+					))->execute();
 				}
 		}
+		if($form_state['clicked_button']['#id']=='edit-save') drupal_set_message(t('File saved.'));
+		else {
+			drupal_set_message(t('Online tests ended.'));
+		}
 	}
-	
 }
 
 function onlinetests_onlinetests_quest_perm($gid=NULL) {
@@ -846,7 +865,7 @@ function onlinetests_quest_report($gid=NULL) {
 	$query->distinct();
 	$r=$query->execute();
 	
-	if(!$r) { drupal_access_denied(); return; }
+	if(!$r) { return MENU_ACCESS_DENIED; }
 	
 	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/tcpdf.php');
@@ -862,7 +881,7 @@ function onlinetests_quest_report($gid=NULL) {
 	$pdf->SetTitle('中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生专业考试在线考试试题及考试说明');
 	$pdf->SetAuthor('中央音乐学院');
 	
-	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	
