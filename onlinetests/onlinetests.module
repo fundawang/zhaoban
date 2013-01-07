@@ -379,10 +379,11 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 			'#collapsed' => count($materials),
 		);
 		if(!empty($default_values->materials))
-			$form['materialframe']['#description']=t('Please note that existing materails will be removed completely.');
+			$form['materialframe']['#description']=t('Please note that existing materails will be removed completely, if you upload new materials.');
 		$form['materialframe']['materials']=array(
 			'#type' => 'plupload',
-			'#required' => TRUE,
+			'#title' => t('Materials'),
+			'#required' => !count($materials),
 			'#upload_validators' => array(
 				'file_validate_extensions' => NULL,
 			),
@@ -405,7 +406,7 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 
 	// First delete all the existing materials
 	$orig_materials=explode(', ',db_select('vl_quest','q')->fields('q',array('materials'))->condition('gid',$going->gid)->condition('eid',$going->valid_exams)->execute()->fetchField());
-	if($orig_materials)
+	if($orig_materials && count($form_state['values']['materials'])>0)
 		foreach($orig_materials as $fileid) {
 			$file = file_load($fileid);
 			if($file) {
@@ -432,6 +433,8 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 		file_usage_add($fileobj, 'onlinetests', 'quest', $GLOBALS['user']->uid);
 		$files[]=$fileobj->fid;
 	}
+	
+	if(empty($files)) $files=$orig_materials;
 	
 	db_delete('vl_quest')->condition('gid',$going->gid)->condition('eid',$going->valid_exams)->execute();
 	db_insert('vl_quest')->fields(array(
