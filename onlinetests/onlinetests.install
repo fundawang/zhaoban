@@ -58,7 +58,7 @@ function onlinetests_schema() {
 			'descriptivetext' => array(
 				'type' => 'varchar',
 				'length' => '1024',
-				'not null' => TRUE,
+				'not null' => FALSE,
 			),
 		),
 		'unique keys' => array('geid' => array('gid', 'eid')),
