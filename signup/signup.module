@@ -321,6 +321,14 @@ function signup_menu() {
     'access callback' => 'signup_ticket_report_perm',
     'access arguments'=> array(1),
   );
+  $items['user/%user/picture.jpg'] = array(
+    'title' => 'Fetch picture of student',
+    'page callback' => 'signup_picture',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'signup_picture_perm',
+    'access arguments'=> array(1),
+  );  
   return $items;
 }
 
@@ -345,6 +353,17 @@ function signup_3rd_overview() {
 
 function signup_report_perm($uid) {
 	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField();
+}
+
+function signup_picture_perm($user) {
+	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $user->name);
+	$img_tmp=$query->execute()->fetchField();
+	if($img_tmp)
+		$test=imagecreatefromstring(base64_decode($img_tmp));
+	else $test=false;
+	if($test)
+		imagedestroy($test);
+	return $test != FALSE;
 }
 
 /**
@@ -866,6 +885,9 @@ function signup_user_account_form($form, $form_state) {
      	 	 '#title' => t('Current Picture'),
      	 	 '#markup' => '<img src="data:image/jpeg;base64,'.$default_values->picture.'" style="padding-right: 10px"/>'
      	 );
+     	 if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
+     	 	 $form['personal']['current_photo']['#markup'] = sprintf('<img src="/user/%s/picture.jpg" style="padding-right: 10px"/>', $user->uid);
+     	 }
      }
      $form['personal']['photo'] = array(
      	 '#type' => 'managed_file',
@@ -1403,8 +1425,14 @@ function signup_user_view($user, $view_mode, $langcode) {
 		if($r)
 			$user->content['pi']['name']['#markup'].='<img src="/'.drupal_get_path('module', 'weixin') . '/weixin_16.png" title="'.t('Bound with weixin').'"/>';
 	}
-	if(!empty($result->picture))
-		$user->content['pi']['name']['#title'] = '<img src="data:image/jpeg;base64,'.$result->picture.'" style="padding-right: 10px" align="left" height="100"/>'.$user->content['pi']['name']['#title'];
+	if(!empty($result->picture)) {
+		if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
+			$img=sprintf('<img src="/user/%s/picture.jpg" style="padding-right: 10px" align="left" height="100"/>', $user->uid);
+		} else {
+			$img=sprintf('<img src="data:image/jpeg;base64,%s" style="padding-right: 10px" align="left" height="100"/>', $result->picture);
+		}
+		$user->content['pi']['name']['#title'] = $img.$user->content['pi']['name']['#title'];
+	}
 	$user->content['pi']['gender'] = array(
 		'#type' => 'user_profile_item',
 		'#title' => t('Gender'),
@@ -4493,6 +4521,31 @@ function signup_preset_passthrough_submit($form, &$form_state) {
 		$n=db_select('students','s')->fields('s',array('name'))->condition('s.idcard_number',$new_idnumber)->execute()->fetchField();
 		drupal_set_message(t('!idnum has been marked as passthrough student.', array('!idnum'=>$new_idnumber.($n?' ('.$n.')':''))));
 	}
+}
+
+function signup_picture($account) {
+	$query=db_select('students','s')->fields('s',array('picture'))->condition('s.uid',$account->name);
+	$img_tmp=$query->execute()->fetchField();
+	if(!$img_tmp) return NULL;
+	$img=imagecreatefromstring(base64_decode($img_tmp));
+	$newheight=100;
+	$newwidth=imagesx($img)*100/imagesy($img);
+
+	$newimg=imagecreatetruecolor($newwidth, $newheight);
+	imagecopyresampled($newimg, $img, 0, 0, 0, 0, $newwidth, $newheight, imagesx($img), imagesy($img));
+
+	drupal_add_http_header('Content-type', 'image/jpg; charset=binary', TRUE);
+	drupal_add_http_header('Content-Transfer-Encoding', 'binary', TRUE);
+
+	// Do not expire image file, because it causes overload of server :(
+	// seconds, minutes, hours, days
+	$expires = 60*60*24*300;
+	drupal_add_http_header("Pragma", "public", TRUE);
+	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
+	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
+	imagejpeg($newimg, NULL, 100);
+	imagedestroy($img);
+	imagedestroy($newimg);
 }
 
 function signup_report($account) {
