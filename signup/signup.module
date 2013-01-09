@@ -321,13 +321,13 @@ function signup_menu() {
 		'access callback' => 'signup_ticket_report_perm',
 		'access arguments'=> array(1),
 	);
-	$items['user/%user/picture.jpg'] = array(
+	$items['user/%user/%/picture.jpg'] = array(
 		'title' => 'Fetch picture of student',
 		'page callback' => 'signup_picture',
 		'page arguments' => array(1),
 		'type' => MENU_CALLBACK,
 		'access callback' => 'signup_picture_perm',
-		'access arguments'=> array(1),
+		'access arguments'=> array(1,2),
 	);  
 	return $items;
 }
@@ -355,10 +355,11 @@ function signup_report_perm($uid) {
 	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField();
 }
 
-function signup_picture_perm($user) {
+function signup_picture_perm($user,$md5=NULL) {
 	if(!user_view_access($user)) return FALSE;
 	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $user->name);
 	$img_tmp=$query->execute()->fetchField();
+	if(substr(md5($img_tmp), 0,4)!=$md5) return FALSE;
 	if($img_tmp)
 		$test=imagecreatefromstring(base64_decode($img_tmp));
 	else $test=false;
@@ -880,7 +881,7 @@ function signup_user_account_form($form, $form_state) {
 				'#markup' => '<img src="data:image/jpeg;base64,'.$default_values->picture.'" style="padding-right: 10px"/>'
 			);
 			if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
-				$form['personal']['current_photo']['#markup'] = sprintf('<img src="/user/%s/picture.jpg" style="padding-right: 10px"/>', $user->uid);
+				$form['personal']['current_photo']['#markup'] = sprintf('<img src="/user/%s/%s/picture.jpg" style="padding-right: 10px"/>', $user->uid, substr(md5($default_values->picture),0,4));
 			}
 		}
 		$form['personal']['photo'] = array(
@@ -1413,7 +1414,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 	}
 	if(!empty($result->picture)) {
 		if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
-			$img=sprintf('<img src="/user/%s/picture.jpg" style="padding-right: 10px" align="left" height="100"/>', $user->uid);
+			$img=sprintf('<img src="/user/%s/%s/picture.jpg" style="padding-right: 10px" align="left" height="100"/>', $user->uid, substr(md5($result->picture),0,4));
 		} else {
 			$img=sprintf('<img src="data:image/jpeg;base64,%s" style="padding-right: 10px" align="left" height="100"/>', $result->picture);
 		}
@@ -4422,7 +4423,7 @@ function signup_picture($account) {
 
 	// Do not expire image file, because it causes overload of server :(
 	// seconds, minutes, hours, days
-	$expires = 1;
+	$expires = 60*60*24*300;
 	drupal_add_http_header("Pragma", "public", TRUE);
 	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
 	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
@@ -4436,7 +4437,6 @@ function signup_report($account) {
 	$result = db_select('students','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	$result_gk = db_select('students_gk','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	$result_contact = db_select('students_contact','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
-	//var_dump($account);
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/barcodes.php');
