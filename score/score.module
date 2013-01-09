@@ -1245,13 +1245,17 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 }
 
 function score_transfer_list_check() {
-	global $user;
-	$query=db_select('vl_professions','p')->condition('p.uid',$user->name)->groupBy('p.exams');
+	$query=db_select('students_going','sg')->isNotNull('sg.gid')->fields('sg');
+	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
+	$query->condition('e.uid',$GLOBALS['user']->name);
+	$r=$query->countQuery()->execute()->fetchField();
+	if($r==0) return FALSE;
+	$query=db_select('vl_professions','p')->condition('p.uid',$GLOBALS['user']->name)->groupBy('p.exams');
 	$query->addExpression('count(pid)','pid_count');
 	$query=db_select($query,'pcount');
 	$query->addExpression('MAX(pid_count)','num');
 	$r=$query->execute()->fetchField();
-	return ($r>1) && user_access('mark 2nd round students') || ($user->uid==1);
+	return ($r>1) && user_access('mark 2nd round students') || ($GLOBALS['user']->uid==1);
 }
 
 function score_transfer_list() {
