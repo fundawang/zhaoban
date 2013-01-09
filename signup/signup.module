@@ -4411,8 +4411,8 @@ function signup_picture($account) {
 	$img_tmp=$query->execute()->fetchField();
 	if(!$img_tmp) return NULL;
 	$img=imagecreatefromstring(base64_decode($img_tmp));
-	$newheight=100;
-	$newwidth=imagesx($img)*100/imagesy($img);
+	$newheight=200;
+	$newwidth=imagesx($img)*200/imagesy($img);
 
 	$newimg=imagecreatetruecolor($newwidth, $newheight);
 	imagecopyresampled($newimg, $img, 0, 0, 0, 0, $newwidth, $newheight, imagesx($img), imagesy($img));
@@ -4422,7 +4422,7 @@ function signup_picture($account) {
 
 	// Do not expire image file, because it causes overload of server :(
 	// seconds, minutes, hours, days
-	$expires = 60*60*24*300;
+	$expires = 1;
 	drupal_add_http_header("Pragma", "public", TRUE);
 	drupal_add_http_header("Cache-Control", "maxage=".$expires, TRUE);
 	drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT', TRUE);
