@@ -356,6 +356,7 @@ function signup_report_perm($uid) {
 }
 
 function signup_picture_perm($user) {
+	if(!user_view_access($user)) return FALSE;
 	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $user->name);
 	$img_tmp=$query->execute()->fetchField();
 	if($img_tmp)
