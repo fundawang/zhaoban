@@ -289,7 +289,7 @@ function score_permission() {
 function score_input_going_list_check() {
 	$query=db_select('students_going','sg')->isNotNull('sg.gid')->fields('sg');
 	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
-	if(!user_access('review all score'))
+	if(!user_access('review all score') && $GLOBALS['user']->uid)
 		$query->condition('e.uid',$GLOBALS['user']->name);
 	$r=$query->countQuery()->execute()->fetchField();
 	if(user_access('input score') || user_access('review my score'))
