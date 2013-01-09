@@ -834,6 +834,8 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 					foreach($answers as $answer) {
 						$f=file_load($answer);
 						$ext=strrchr($f->filename, '.');
+						$f->status=FILE_STATUS_PERMANENT;
+						$f=file_save($f);
 						file_move($f, 'private://onlinetests/answers/'.$GLOBALS['user']->name.'_'.$eid.'_'.$i.$ext);
 						$i++;
 					}
