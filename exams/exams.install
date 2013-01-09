@@ -13,59 +13,60 @@
  * Implementation of hook_schema().
  */
 function exams_schema() {
+	// The examinations list
+	$schema['vl_exam'] = array(
+		'description' => t('This table holds all the examinations.'),
+		'fields' => array(
+			'eid' => array('type' => 'varchar', 'length' => '3', 'not null' => TRUE, 'description' => t('The ID of the examination') ),
+			'ename' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE, 'description' => t('The name of the examination') ),
+			'eadditional' => array('type' => 'varchar', 'length' => '300', 'not null' => FALSE, 'description' => t('The additional info required by the examination itself, which will be shown just before the details of opus')),
+			'elevel' => array('type' => 'varchar', 'length' => '1', 'not null' => FALSE, 'description' => t('The level of the examination, useful when comparing the difficulty of different examination with the same name')),
+			'etype' => array('type' => 'varchar', 'length' => '1', 'not null' => TRUE, 'description' => t('Whether the examination is paper exam or not')),
+			'opus' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('The number of opus this exam requires')),
+			'uid' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE, 'description' => t('Which research section will give the score of this examination')),
+			'department' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE)
+		),
+		'primary key' => array('eid'),
+		'indexes' => array(
+			'elevel' => array('elevel'),
+			'ename' => array('ename'),
+			'etype' => array('etype'),
+			'uid' => array('uid')
+		),
+	);
 
-// The examinations list
-$schema['vl_exam'] = array(
-	'description' => t('This table holds all the examinations.'),
-    'fields' => array(
-         'eid' => array('type' => 'varchar', 'length' => '3', 'not null' => TRUE, 'description' => t('The ID of the examination') ),
-         'ename' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE, 'description' => t('The name of the examination') ),
-         'eadditional' => array('type' => 'varchar', 'length' => '300', 'not null' => FALSE, 'description' => t('The additional info required by the examination itself, which will be shown just before the details of opus')),
-         'elevel' => array('type' => 'varchar', 'length' => '1', 'not null' => FALSE, 'description' => t('The level of the examination, useful when comparing the difficulty of different examination with the same name')),
-         'etype' => array('type' => 'varchar', 'length' => '1', 'not null' => TRUE, 'description' => t('Whether the examination is paper exam or not')),
-         'opus' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('The number of opus this exam requires')),
-         'uid' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE, 'description' => t('Which research section will give the score of this examination')),
-         'department' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE)),
-    'primary key' => array('eid'),
-    'indexes' => array(
-         'elevel' => array('elevel'),
-         'ename' => array('ename'),
-         'etype' => array('etype'),
-         'uid' => array('uid')),
-);
+	// The profession lists
+	$schema['vl_professions'] = array(
+		'description' => t('This table holds all the professions, from which users can sign up for'),
+		'fields' => array(
+			'pid' => array('type' => 'varchar', 'length' => '4', 'not null' => TRUE),
+			'did' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE),
+			'uid' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'pname' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'pnamememo' => array('type' => 'varchar','length' => '30','not null' => TRUE,),
+			'years' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 4, 'disp-width' => '1'),
+			'num_professors' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE, 'default' => 0, 'disp-width' => '1'),
+			'enabled' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '1'),
+			'exams' => array('type' => 'varchar', 'length' => '500', 'not null' => FALSE),
+			'gb_pid' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE),
+			'gb_pname' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE),
+			'gb_scode' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE),
+			'wb_pid' => array('type' => 'varchar', 'length' => '8', 'not null' => TRUE),
+			'wb_pname' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE),
+			'allow_round1' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '1'),
+			'plan' => array('type' => 'varchar', 'length' => '50', 'not null' => FALSE),
+			'memo' => array('type' => 'varchar', 'length' => '100', 'not null' => FALSE),
+			'extracondition' => array('type' => 'varchar', 'length' => '500', 'not null' => FALSE),
+		),
+		'primary key' => array('pid'),
+		'indexes' => array(
+			'allow_round1' => array('allow_round1'),
+			'did' => array('did', 'uid'),
+			'gb_scode' => array('gb_scode'),
+		),
+	);
 
-// The profession lists
-$schema['vl_professions'] = array(
-	'description' => t('This table holds all the professions, from which users can sign up for'),
-    'fields' => array(
-         'pid' => array('type' => 'varchar', 'length' => '4', 'not null' => TRUE),
-         'did' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE),
-         'uid' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-         'pname' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-	 'pnamememo' => array('type' => 'varchar','length' => '30','not null' => TRUE,),
-         'years' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 4, 'disp-width' => '1'),
-         'num_professors' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE, 'default' => 0, 'disp-width' => '1'),
-         'enabled' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '1'),
-         'exams' => array('type' => 'varchar', 'length' => '500', 'not null' => FALSE),
-         'gb_pid' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE),
-         'gb_pname' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE),
-         'gb_scode' => array('type' => 'varchar', 'length' => '2', 'not null' => TRUE),
-         'wb_pid' => array('type' => 'varchar', 'length' => '8', 'not null' => TRUE),
-         'wb_pname' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE),
-         'allow_round1' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '1'),
-         'plan' => array('type' => 'varchar', 'length' => '50', 'not null' => FALSE),
-         'memo' => array('type' => 'varchar', 'length' => '100', 'not null' => FALSE),
-	 'extracondition' => array('type' => 'varchar', 'length' => '500', 'not null' => FALSE),
-    ),
-    'primary key' => array('pid'),
-    'indexes' => array(
-         'allow_round1' => array('allow_round1'),
-         'did' => array('did', 'uid'),
-         'gb_scode' => array('gb_scode'),
-   ),
-);
-
-  return $schema;
+	return $schema;
 }
 
 
