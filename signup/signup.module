@@ -12,101 +12,101 @@
 include_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'signup') . '/signup.inc');
 
 function signup_init() {
-  drupal_add_css(drupal_get_path('module', 'exams') .'/exams.css');
-  drupal_add_js(drupal_get_path('module', 'signup') .'/signup.js');
+	drupal_add_css(drupal_get_path('module', 'exams') .'/exams.css');
+	drupal_add_js(drupal_get_path('module', 'signup') .'/signup.js');
 }
 
 /**
  * Implementation of hook_help().
  */
 function signup_help($path, $arg) {
-  switch ($path) {
-  	case 'user/register':
-  	  $output = t('Before you signup, it is suggested you must read the registration guide.');
-  	  $output .= l(t('For demo, please click here.'), 'sites/default/files/zhaoban_demo.htm', array('attributes' => array('target' => array('_blank'))));
-  	  $output .= '<br/><br/><span class="error"><b>';
-  	  if(module_exists('onlinecharge')) {
-	  	  $output .= t('You will need to pay the fee online, please get it ready before starting signing up.').'<br/>';
-	  }
-	  $output .= t('Please make sure you have your digital photo ready, otherwise you cannot proceed.');
-	  $output .= '</b></span>';
-  	  break;
-    case 'signup/overview':
-      $output = t('Get an overview of how many students have signed up as a draft.');
-      break;
-    case 'signup/validated':
-      $output = t('Check how many students who have validated till now.');
-      break;
-    case 'signup/passround1':
-      $output = t('List all the students who have passed round 1.');
-      break;
-    case 'signup/passround3':
-      $output = t('List all the students who have passed round 3.');
-      break;
-    case 'signup/passroundg':
-      $output = t('List all the students who have passed round G.');
-      break;
-    case 'signup/passthrough':
-      $output = t('You may use this feature to preset all the students who should pass through all the exam without attending actual examinations.');
-      $output.= t('Those students will be forced to select corresponding profession, and do not need to fulfill all the exams.');
-      $output.= t('And, the most important part is, all the scores of those students will be overwritten as 100 automatically by system at all time.');
-      break;
-    case 'signup/search/%':
-      $output = t('Search students by various citera.');
-      break;
-  }
-  if (isset($output))
-  	return '<p>'.$output.'</p>';
+	switch ($path) {
+		case 'user/register':
+			$output = t('Before you signup, it is suggested you must read the registration guide.');
+			$output .= l(t('For demo, please click here.'), 'sites/default/files/zhaoban_demo.htm', array('attributes' => array('target' => array('_blank'))));
+			$output .= '<br/><br/><span class="error"><b>';
+			if(module_exists('onlinecharge')) {
+				$output .= t('You will need to pay the fee online, please get it ready before starting signing up.').'<br/>';
+			}
+			$output .= t('Please make sure you have your digital photo ready, otherwise you cannot proceed.');
+			$output .= '</b></span>';
+			break;
+		case 'signup/overview':
+			$output = t('Get an overview of how many students have signed up as a draft.');
+			break;
+		case 'signup/validated':
+			$output = t('Check how many students who have validated till now.');
+			break;
+		case 'signup/passround1':
+			$output = t('List all the students who have passed round 1.');
+			break;
+		case 'signup/passround3':
+			$output = t('List all the students who have passed round 3.');
+			break;
+		case 'signup/passroundg':
+			$output = t('List all the students who have passed round G.');
+			break;
+		case 'signup/passthrough':
+			$output = t('You may use this feature to preset all the students who should pass through all the exam without attending actual examinations.');
+			$output.= t('Those students will be forced to select corresponding profession, and do not need to fulfill all the exams.');
+			$output.= t('And, the most important part is, all the scores of those students will be overwritten as 100 automatically by system at all time.');
+			break;
+		case 'signup/search/%':
+			$output = t('Search students by various citera.');
+			break;
+	}
+	if (isset($output))
+		return '<p>'.$output.'</p>';
 }
 
 /**
  * Implementation of hook_permission
  */
 function signup_permission() {
-  return array(
-  	'preset passthrough' => array(
-  	  'title' => t('Preset passthrough students'),
-  	),
-    'view draft' => array(
-      'title' => t('View signed-up students'),
-    ),
-    'view validated' => array(
-      'title' => t('View validated students'),
-    ),
-    'view passround1' => array(
-      'title' => t('View those passed the 1st round examination'),
-    ),
-    'view passround3' => array(
-      'title' => t('View those passed the profession examination'),
-    ),
-    'view passroundg' => array(
-      'title' => t('View those is marked'),
-    ),
-    'view own draft' => array(
-      'title' => t('View owned signed-up students'),
-    ),
-    'view own validated' => array(
-      'title' => t('View owned validated students'),
-    ),
-    'view own passround1' => array(
-      'title' => t('View owned those passed the 1st round examination'),
-    ),
-    'view own passround3' => array(
-      'title' => t('View owned those passed the profession examination'),
-    ),
-    'view own passroundg' => array(
-      'title' => t('View owned those marked'),
-    ),
-    'modify students info' => array(
-      'title' => t('Modify students info'),
-    ),
-    'print user report' => array(
-      'title' => t('Print users report'),
-    ),
-    'print admission ticket' => array(
-      'title' => t('Print Admission Ticket'),
-    ),
-  );
+	return array(
+		'preset passthrough' => array(
+			'title' => t('Preset passthrough students'),
+		),
+		'view draft' => array(
+			'title' => t('View signed-up students'),
+		),
+		'view validated' => array(
+			'title' => t('View validated students'),
+		),
+		'view passround1' => array(
+			'title' => t('View those passed the 1st round examination'),
+		),
+		'view passround3' => array(
+			'title' => t('View those passed the profession examination'),
+		),
+		'view passroundg' => array(
+			'title' => t('View those is marked'),
+		),
+		'view own draft' => array(
+			'title' => t('View owned signed-up students'),
+		),
+		'view own validated' => array(
+			'title' => t('View owned validated students'),
+		),
+		'view own passround1' => array(
+			'title' => t('View owned those passed the 1st round examination'),
+		),
+		'view own passround3' => array(
+			'title' => t('View owned those passed the profession examination'),
+		),
+		'view own passroundg' => array(
+			'title' => t('View owned those marked'),
+		),
+		'modify students info' => array(
+			'title' => t('Modify students info'),
+		),
+		'print user report' => array(
+			'title' => t('Print users report'),
+		),
+		'print admission ticket' => array(
+			'title' => t('Print Admission Ticket'),
+		),
+	);
 }
 
 
@@ -114,222 +114,222 @@ function signup_permission() {
  * Implementation of hook_menu().
  */
 function signup_menu() {
-  $items['signup'] = array(
-    'title' => 'Students',
-    'description' => "Check the progress of students signup",
-    'page callback' => 'signup_blocklist',
-    'access callback' => 'signup_check_access',
-    'expanded' => TRUE,
-  );
+	$items['signup'] = array(
+		'title' => 'Students',
+		'description' => "Check the progress of students signup",
+		'page callback' => 'signup_blocklist',
+		'access callback' => 'signup_check_access',
+		'expanded' => TRUE,
+	);
 
-  $items['signup/schools_autocompletion'] = array(
-    'title' => 'School Autocompletion',
-    'page callback' => 'signup_schools_autocomplete',
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-  );
+	$items['signup/schools_autocompletion'] = array(
+		'title' => 'School Autocompletion',
+		'page callback' => 'signup_schools_autocomplete',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK,
+	);
 
-  $items['signup/search/%'] = array(
-    'title' => 'Search students',
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-    'page callback' => 'signup_search_students',
-    'page arguments' => array(2),
-    'access callback' => 'user_access',
-    'access arguments'=> array('access user profiles'),
-  );
+	$items['signup/search/%'] = array(
+		'title' => 'Search students',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+		'page callback' => 'signup_search_students',
+		'page arguments' => array(2),
+		'access callback' => 'user_access',
+		'access arguments'=> array('access user profiles'),
+	);
 
-  $items['signup/passthrough'] = array(
-    'title' => 'Preset passthrough students',
-    'description' => "Preset passthrough students",
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('signup_preset_passthrough'),
-    'access callback' => 'user_access',
-    'access arguments'=> array('preset passthrough'),
-  );
-  $items['signup/overview'] = array(
-    'title' => 'Students overview',
-    'description' => "Check the draft of students signup",
-    'page callback' => 'signup_overview_by_profession',
-    'access callback' => 'signup_access_overview',
-    'access arguments'=> array(2),
-  );
-  $items['signup/overview/profession'] = array(
-    'title' => 'By Profession',
-    'description' => "Check the draft of students signup",
-    'page callback' => 'signup_overview_by_profession',
-    'access callback' => 'signup_access_overview',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
-  $items['signup/overview/profession/%'] = array(
-    'title' => 'By Profession',
-    'description' => "Check the draft of students signup",
-    'page callback' => 'signup_overview_by_profession_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_access_overview',
-    'access arguments'=> array(2),
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/overview/province'] = array(
-    'title' => 'By Province',
-    'page callback' => 'signup_overview_by_province',
-    'type' => MENU_LOCAL_TASK,
-    'access callback' => 'user_access',
-    'access arguments'=> array('view draft'),
-  );
-  
-  $items['signup/overview/province/%'] = array(
-    'title' => 'By Profession',
-    'description' => "Check the draft of students signup",
-    'page callback' => 'signup_overview_by_province_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_access_overview',
-    'access arguments'=> array(2),
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/2ndround'] = array(
-    'title' => 'View 2nd round students',
-    'description' => "Check the students which will be enrolled into 2nd round examination",
-    'page callback' => 'signup_2nd_round_by_profession',
-    'access callback' => 'signup_2nd_overview',
-  );
-  $items['signup/2ndround/profession'] = array(
-    'title' => 'By Profession',
-    'description' => "Check the students which will be enrolled into 2nd round examination",
-    'page callback' => 'signup_2nd_round_by_profession',
-    'access callback' => 'signup_2nd_overview',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
-  $items['signup/2ndround/profession/%'] = array(
-    'title' => 'By Profession',
-    'description' => "Check individual profession",
-    'page callback' => 'signup_2nd_round_by_profession_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_2nd_overview',
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/3rdround'] = array(
-    'title' => 'View 3rd round students',
-    'description' => "Check the students which will be enrolled into 3rd round examination",
-    'page callback' => 'signup_3rd_round_by_profession',
-    'access callback' => 'signup_3rd_overview',
-  );
-  $items['signup/3rdround/profession'] = array(
-    'title' => 'By Profession',
-    'description' => "Check the students which will be enrolled into 3rd round examination",
-    'page callback' => 'signup_3rd_round_by_profession',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'access callback' => 'signup_3rd_overview',
-  );
-  $items['signup/3rdround/profession/%'] = array(
-    'title' => 'By Profession',
-    'description' => "Check individual profession",
-    'page callback' => 'signup_3rd_round_by_profession_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/3rdround/province'] = array(
-    'title' => 'By Province',
-    'description' => "Check the students which will be enrolled into 3rd round examination",
-    'page callback' => 'signup_3rd_round_by_province',
-    'type' => MENU_LOCAL_TASK,
-    'access callback' => 'signup_3rd_overview',
-  );
-  $items['signup/3rdround/province/%'] = array(
-    'title' => 'By Province',
-    'description' => "Check individual profession",
-    'page callback' => 'signup_3rd_round_by_province_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/3rdround/province/%/download'] = array(
-    'title' => 'Download database',
-    'description' => "Download standard database for this province",
-    'page callback' => 'signup_3rd_round_by_province_download',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
-  );
-  $items['signup/3rdround/province/%/report'] = array(
-    'title' => 'Print Report',
-    'description' => "Download printable report for this province",
-    'page callback' => 'signup_3rd_round_by_province_report',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
-  );
-  $items['signup/ground'] = array(
-    'title' => 'View gaokao round students',
-    'description' => "Check the students which will be enrolled into gaokao round examination",
-    'page callback' => 'signup_ground_by_profession',
-    'access callback' => 'signup_3rd_overview',
-  );
-  $items['signup/ground/profession'] = array(
-    'title' => 'By Profession',
-    'description' => "Check the students which will be enrolled into gaokao round examination",
-    'page callback' => 'signup_ground_by_profession',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'access callback' => 'signup_3rd_overview',
-  );
-  $items['signup/ground/profession/%'] = array(
-    'title' => 'By Profession',
-    'description' => "Check individual profession",
-    'page callback' => 'signup_ground_by_profession_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/ground/province'] = array(
-    'title' => 'By Province',
-    'description' => "Check the students which will be enrolled into gaokao round examination",
-    'page callback' => 'signup_ground_by_province',
-    'type' => MENU_LOCAL_TASK,
-    'access callback' => 'signup_3rd_overview',
-  );
-  $items['signup/ground/province/%'] = array(
-    'title' => 'By Province',
-    'description' => "Check individual profession",
-    'page callback' => 'signup_ground_by_province_detail',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_VISIBLE_IN_BREADCRUMB,
-  );
-  $items['signup/ground/province/%/report'] = array(
-    'title' => 'Print Report',
-    'description' => "Download printable report for this province",
-    'page callback' => 'signup_ground_by_province_report',
-    'page arguments' => array(3),
-    'access callback' => 'signup_3rd_overview',
-    'type' => MENU_CALLBACK,
-  );
-  $items['user/%user/report'] = array(
-    'title' => 'Print Signup Report',
-    'page callback' => 'signup_report',
-    'page arguments' => array(1),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
-    'access callback' => 'signup_report_perm',
-    'access arguments'=> array(1),
-  );
-  $items['user/%user/ticket'] = array(
-    'title' => 'Print Admission Ticket',
-    'page callback' => 'signup_ticket_report',
-    'page arguments' => array(1),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 11,
-    'access callback' => 'signup_ticket_report_perm',
-    'access arguments'=> array(1),
-  );
-  $items['user/%user/picture.jpg'] = array(
-    'title' => 'Fetch picture of student',
-    'page callback' => 'signup_picture',
-    'page arguments' => array(1),
-    'type' => MENU_CALLBACK,
-    'access callback' => 'signup_picture_perm',
-    'access arguments'=> array(1),
-  );  
-  return $items;
+	$items['signup/passthrough'] = array(
+		'title' => 'Preset passthrough students',
+		'description' => "Preset passthrough students",
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('signup_preset_passthrough'),
+		'access callback' => 'user_access',
+		'access arguments'=> array('preset passthrough'),
+	);
+	$items['signup/overview'] = array(
+		'title' => 'Students overview',
+		'description' => "Check the draft of students signup",
+		'page callback' => 'signup_overview_by_profession',
+		'access callback' => 'signup_access_overview',
+		'access arguments'=> array(2),
+	);
+	$items['signup/overview/profession'] = array(
+		'title' => 'By Profession',
+		'description' => "Check the draft of students signup",
+		'page callback' => 'signup_overview_by_profession',
+		'access callback' => 'signup_access_overview',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items['signup/overview/profession/%'] = array(
+		'title' => 'By Profession',
+		'description' => "Check the draft of students signup",
+		'page callback' => 'signup_overview_by_profession_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_access_overview',
+		'access arguments'=> array(2),
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/overview/province'] = array(
+		'title' => 'By Province',
+		'page callback' => 'signup_overview_by_province',
+		'type' => MENU_LOCAL_TASK,
+		'access callback' => 'user_access',
+		'access arguments'=> array('view draft'),
+	);
+
+	$items['signup/overview/province/%'] = array(
+		'title' => 'By Profession',
+		'description' => "Check the draft of students signup",
+		'page callback' => 'signup_overview_by_province_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_access_overview',
+		'access arguments'=> array(2),
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/2ndround'] = array(
+		'title' => 'View 2nd round students',
+		'description' => "Check the students which will be enrolled into 2nd round examination",
+		'page callback' => 'signup_2nd_round_by_profession',
+		'access callback' => 'signup_2nd_overview',
+	);
+	$items['signup/2ndround/profession'] = array(
+		'title' => 'By Profession',
+		'description' => "Check the students which will be enrolled into 2nd round examination",
+		'page callback' => 'signup_2nd_round_by_profession',
+		'access callback' => 'signup_2nd_overview',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items['signup/2ndround/profession/%'] = array(
+		'title' => 'By Profession',
+		'description' => "Check individual profession",
+		'page callback' => 'signup_2nd_round_by_profession_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_2nd_overview',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/3rdround'] = array(
+		'title' => 'View 3rd round students',
+		'description' => "Check the students which will be enrolled into 3rd round examination",
+		'page callback' => 'signup_3rd_round_by_profession',
+		'access callback' => 'signup_3rd_overview',
+	);
+	$items['signup/3rdround/profession'] = array(
+		'title' => 'By Profession',
+		'description' => "Check the students which will be enrolled into 3rd round examination",
+		'page callback' => 'signup_3rd_round_by_profession',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'access callback' => 'signup_3rd_overview',
+	);
+	$items['signup/3rdround/profession/%'] = array(
+		'title' => 'By Profession',
+		'description' => "Check individual profession",
+		'page callback' => 'signup_3rd_round_by_profession_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/3rdround/province'] = array(
+		'title' => 'By Province',
+		'description' => "Check the students which will be enrolled into 3rd round examination",
+		'page callback' => 'signup_3rd_round_by_province',
+		'type' => MENU_LOCAL_TASK,
+		'access callback' => 'signup_3rd_overview',
+	);
+	$items['signup/3rdround/province/%'] = array(
+		'title' => 'By Province',
+		'description' => "Check individual profession",
+		'page callback' => 'signup_3rd_round_by_province_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/3rdround/province/%/download'] = array(
+		'title' => 'Download database',
+		'description' => "Download standard database for this province",
+		'page callback' => 'signup_3rd_round_by_province_download',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_CALLBACK,
+	);
+	$items['signup/3rdround/province/%/report'] = array(
+		'title' => 'Print Report',
+		'description' => "Download printable report for this province",
+		'page callback' => 'signup_3rd_round_by_province_report',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_CALLBACK,
+	);
+	$items['signup/ground'] = array(
+		'title' => 'View gaokao round students',
+		'description' => "Check the students which will be enrolled into gaokao round examination",
+		'page callback' => 'signup_ground_by_profession',
+		'access callback' => 'signup_3rd_overview',
+	);
+	$items['signup/ground/profession'] = array(
+		'title' => 'By Profession',
+		'description' => "Check the students which will be enrolled into gaokao round examination",
+		'page callback' => 'signup_ground_by_profession',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'access callback' => 'signup_3rd_overview',
+	);
+	$items['signup/ground/profession/%'] = array(
+		'title' => 'By Profession',
+		'description' => "Check individual profession",
+		'page callback' => 'signup_ground_by_profession_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/ground/province'] = array(
+		'title' => 'By Province',
+		'description' => "Check the students which will be enrolled into gaokao round examination",
+		'page callback' => 'signup_ground_by_province',
+		'type' => MENU_LOCAL_TASK,
+		'access callback' => 'signup_3rd_overview',
+	);
+	$items['signup/ground/province/%'] = array(
+		'title' => 'By Province',
+		'description' => "Check individual profession",
+		'page callback' => 'signup_ground_by_province_detail',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
+	);
+	$items['signup/ground/province/%/report'] = array(
+		'title' => 'Print Report',
+		'description' => "Download printable report for this province",
+		'page callback' => 'signup_ground_by_province_report',
+		'page arguments' => array(3),
+		'access callback' => 'signup_3rd_overview',
+		'type' => MENU_CALLBACK,
+	);
+	$items['user/%user/report'] = array(
+		'title' => 'Print Signup Report',
+		'page callback' => 'signup_report',
+		'page arguments' => array(1),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 10,
+		'access callback' => 'signup_report_perm',
+		'access arguments'=> array(1),
+	);
+	$items['user/%user/ticket'] = array(
+		'title' => 'Print Admission Ticket',
+		'page callback' => 'signup_ticket_report',
+		'page arguments' => array(1),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 11,
+		'access callback' => 'signup_ticket_report_perm',
+		'access arguments'=> array(1),
+	);
+	$items['user/%user/picture.jpg'] = array(
+		'title' => 'Fetch picture of student',
+		'page callback' => 'signup_picture',
+		'page arguments' => array(1),
+		'type' => MENU_CALLBACK,
+		'access callback' => 'signup_picture_perm',
+		'access arguments'=> array(1),
+	);  
+	return $items;
 }
 
 function signup_access_overview($ar=NULL) {
@@ -378,34 +378,34 @@ function signup_picture_perm($user) {
  *   The output HTML.
  */
 function signup_blocklist() {
-  $item = menu_get_item();
-  $content = system_admin_menu_block($item);
+	$item = menu_get_item();
+	$content = system_admin_menu_block($item);
 
-  return theme('admin_block_content', array('content' => $content));
+	return theme('admin_block_content', array('content' => $content));
 }
 
 function genRandomString($len) 
 { 
-    $chars = array( 
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",  
-        "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",  
-        "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G",  
-        "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",  
-        "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2",  
-        "3", "4", "5", "6", "7", "8", "9" 
-    ); 
-    $charsLen = count($chars) - 1; 
- 
-    shuffle($chars);
-     
-    $output = ""; 
-    for ($i=0; $i<$len; $i++) 
-    { 
-        $output .= $chars[mt_rand(0, $charsLen)]; 
-    } 
- 
-    return $output; 
- 
+	$chars = array( 
+		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",  
+		"l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",  
+		"w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G",  
+		"H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",  
+		"S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2",  
+		"3", "4", "5", "6", "7", "8", "9" 
+	); 
+	$charsLen = count($chars) - 1; 
+
+	shuffle($chars);
+
+	$output = ""; 
+	for ($i=0; $i<$len; $i++) 
+	{ 
+		$output .= $chars[mt_rand(0, $charsLen)]; 
+	} 
+
+	return $output; 
+
 }
 
 function signup_get_random_mail_address(){
@@ -436,41 +436,41 @@ function signup_user_delete($account) {
 
 function signup_user_goto($user) {
 
-  if(!array_key_exists('5', $user->roles)) return;
+	if(!array_key_exists('5', $user->roles)) return;
 
-  $r=_signup_determine_period($user);
-  drupal_get_messages('error');
-  
+	$r=_signup_determine_period($user);
+	drupal_get_messages('error');
+	
 
-  $perm = (user_access('administer users') || $user->uid==$GLOBALS['user']->uid) && $GLOBALS['user']->uid !=1;
-  if($perm)
-  switch($r) {
-          case signup_progress_PERSONALINFORMATION:
-                  drupal_goto('user/'.$user->uid.'/edit');
-              return;
-          case signup_progress_PROFESSION:
-                  drupal_goto('user/'.$user->uid.'/edit/'.signup_user_PROFESSION);
-              return;
-          case signup_progress_EXAM:
-                  drupal_goto('user/'.$user->uid.'/edit/'.signup_user_EXAM);
-              return;
-          case signup_progress_CONTACT:
-                  drupal_goto('user/'.$user->uid.'/edit/'.signup_user_CONTACT);
-              return;
-          case signup_progress_GAOKAO:
-                  drupal_goto('user/'.$user->uid.'/edit/'.signup_user_GAOKAO);
-              return;
-          case signup_progress_PAYMENT:
-                  drupal_get_messages('status');
-                  drupal_set_message('<big>'.t('You\'ve finished signing up progress. Now you should pay the fees online.').'</big>');
-                  drupal_set_message('<big>'.t('Now you should pay the fees online.').'</big>');
-                  drupal_goto('user/'.$user->uid.'/payment');
-              return;
-          case signup_progress_FINISH:
-                  drupal_get_messages('status');
-                  drupal_set_message('<big>'.t('You\'ve finished signing up progress. Please write down your examination ID and your password, then keep them in a safe place.').'</big>');
-          	  	  if(arg(2)) drupal_goto('user/'.$user->uid);
-  }
+	$perm = (user_access('administer users') || $user->uid==$GLOBALS['user']->uid) && $GLOBALS['user']->uid !=1;
+	if($perm)
+	switch($r) {
+		case signup_progress_PERSONALINFORMATION:
+			drupal_goto('user/'.$user->uid.'/edit');
+			return;
+		case signup_progress_PROFESSION:
+			drupal_goto('user/'.$user->uid.'/edit/'.signup_user_PROFESSION);
+			return;
+		case signup_progress_EXAM:
+			drupal_goto('user/'.$user->uid.'/edit/'.signup_user_EXAM);
+			return;
+		case signup_progress_CONTACT:
+			drupal_goto('user/'.$user->uid.'/edit/'.signup_user_CONTACT);
+			return;
+		case signup_progress_GAOKAO:
+			drupal_goto('user/'.$user->uid.'/edit/'.signup_user_GAOKAO);
+			return;
+		case signup_progress_PAYMENT:
+			drupal_get_messages('status');
+			drupal_set_message('<big>'.t('You\'ve finished signing up progress. Now you should pay the fees online.').'</big>');
+			drupal_set_message('<big>'.t('Now you should pay the fees online.').'</big>');
+			drupal_goto('user/'.$user->uid.'/payment');
+			return;
+		case signup_progress_FINISH:
+			drupal_get_messages('status');
+			drupal_set_message('<big>'.t('You\'ve finished signing up progress. Please write down your examination ID and your password, then keep them in a safe place.').'</big>');
+			if(arg(2)) drupal_goto('user/'.$user->uid);
+	}
 
 }
 
@@ -533,7 +533,6 @@ function signup_form_user_register_form_submit($form, &$form_state) {
 	// Now generating the ID number of the student
 	$query=db_select('users','u')->condition('u.name', variable_get('zhaoban_current_year',date('Y')).'B%', 'LIKE');
 	$query->addExpression('MAX(name)');
-	//var_dump($query);exit();
 	$sid_prev=$query->execute()->fetchField();
 	$data['name']=sprintf(variable_get('zhaoban_current_year',date('Y')).'B%04d',substr($sid_prev,5)+1);
 	$data['contact']=false;
@@ -580,7 +579,6 @@ function signup_form_user_profile_form_alter(&$form, $form_state) {
 		default:
 			$form=signup_user_account_form($form, $form_state);
 	}
-//	var_dump($form);
 	return $form;
 }
 
@@ -615,7 +613,6 @@ function signup_user_account_form($form, $form_state) {
 	$form['account']['#collapsible']=TRUE;
 	$form['account']['#collapsed']=TRUE;
 	$form['account']['#title'] = t('Account & Password');
-	//var_dump($form['account']);
 
 	$form['account']['current_pass']['#description']=t('Enter your current password to change the password.').t('If you forgot current password, <a href="@url">please click here</a> to reset password.', array('@url'=>'/user/password'));
 	// we don't need email address for this site
@@ -628,288 +625,284 @@ function signup_user_account_form($form, $form_state) {
 	}
 	// Maybe contact is of no use here.
 	unset($form['contact']);
-	//var_dump($form);
 	// Only administrators can delete user or modify the status;
 	if ($GLOBALS['user']->uid!=1) {
 		unset($form['delete']);
 		unset($form['account']['status']);
 		$form['account']['name']['#required']=FALSE;
-		//$form['account']['name']['#value']=$form['account']['name']['#default_value'];
 		$form['account']['name']['#disabled']=TRUE;
 	}
-     
+		
 		$is_student = array_key_exists('5',$user->roles);
 		if(!user_access('modify students info') && $user->uid !== $GLOBALS['user']->uid) return;
 		// we don't want the administer do anything, but it's fine if one has such permission.
 		if($GLOBALS['user']->uid=='1') return;
 		if(!$is_student) return;
-	    //$isvalidated=db_result(db_query('SELECT s.validated FROM {students} s WHERE s.uid=\'%s\'', $user->name));
-	    $isvalidated=db_select('students', 's')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
-	    $query=db_select('students','s')->condition('s.uid',$user->name);
-	    $query->innerjoin('students_gk','sg','s.uid=sg.uid');
-	    $default_values=$query->fields('s')->fields('sg',array('province','city_district'))->execute()->fetchObject();
-	    
+			$isvalidated=db_select('students', 's')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
+			$query=db_select('students','s')->condition('s.uid',$user->name);
+			$query->innerjoin('students_gk','sg','s.uid=sg.uid');
+			$default_values=$query->fields('s')->fields('sg',array('province','city_district'))->execute()->fetchObject();
+			
 		$form['personal'] = array(
 			'#type' => 'fieldset',
 			'#title' => t('Personal information'),
 			'#description' => t('You\'ll need to provide these information when reseting password. When typing alphabet, please use upper case.'),
 			'#collapsible' => TRUE,
 		);
-     switch ($user->ucategory) {
-       case uc_OWN_STUDENT: // Our own student
-       {
-         $form['personal']['idnumber'] = array('#type' => 'textfield',
-           '#title' => t('Your Student ID'),
-           '#default_value' => $default_values->idcard_number,
-           '#maxlength' => 6,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['truename'] = array('#type' => 'textfield',
-           '#title' => t('Your Name'),
-           '#default_value' => $default_values->name,
-           '#maxlength' => 50,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['province'] = array('#type' => 'hidden',
-           '#value' => '000000');
-        }
-         break;
-       case uc_MAINLAND_STUDENT: // China mainland student
-       {
-         $form['personal']['idnumber'] = array('#type' => 'textfield',
-           '#title' => t('Your ID Card Number'),
-           '#description' => t('We\'re calculating gender and date of birth based '.
-             'on your ID card number. If you will be using military officer card to register, please input them in the format of @format.', array('@format'=>'X字第XXX号')),
-           '#default_value' => $default_values->idcard_number,
-           '#maxlength' => 18,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['truename'] = array('#type' => 'textfield',
-           '#title' => t('Your Name'),
-           '#default_value' => $default_values->name,
-           '#maxlength' => 50,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         if(isset($form_state['rebuild_info']['need_show_genders']) && $form_state['rebuild_info']['need_show_genders']==1) {
-	         $form['personal']['dateofbirth'] = array('#type' => 'date',
-	           '#title' => t('Your date of birth'),
-	           '#default_value' => array(
-	             'year' => substr($default_values->date_of_birth,0,4),
-	             'month' => 1*substr($default_values->date_of_birth,4,2),
-	             'day' => 1*substr($default_values->date_of_birth,6,2)
-	             ),
-	           '#after_build' => array('__set_year_range'),
-	           '#required' => !$isvalidated,
-	           '#disabled' => $isvalidated,
-	         );
-	         $form['personal']['gender'] = array('#type' => 'radios',
-	           '#title' => t('Your Gender'),
-	           '#default_value' => $default_values->gender,
-	           '#options' => array('1'=>t('Male'), '2'=>t('Female')),
-	           '#required' => !$isvalidated,
-	           '#disabled' => $isvalidated,
-	         );
-         }
-         $form['personal']['province'] = array('#type' => 'select',
-           '#title' => t('Province you live'),
-           '#description' => t('The place you will be attending the exam.'),
-           '#default_value' => $default_values->province,
-           '#options' => array(),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $dbo = db_select('vl_province','p')->fields('p')->condition('p.ucategory',$user->ucategory)->execute();
-         foreach ($dbo as $result)
-         {
-           $r = array($result->pid => $result->name);
-           $form['personal']['province']['#options'] += $r;
-         }
-         $form['personal']['nationality'] = array('#type' => 'select',
-           '#title' => t('Your nationality'),
-           '#default_value' => $default_values->nationality,
-           '#options' => array(),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $dbo = db_select('vl_nationality', 'n')->fields('n')->execute();
-         foreach($dbo as $result)
-         {
-           $r = array($result->nid => $result->name);
-           if ($result->nid != 98)
-             $form['personal']['nationality']['#options'] += $r;
-         }
-         $form['personal']['political'] = array('#type' => 'select',
-           '#title' => t('Your Political feature'),
-           '#default_value' => $default_values->politics_feature,
-           '#options' => array(),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $dbo = db_select('vl_politics_features', 'p')->fields('p')->execute();
-         foreach($dbo as $result)
-         {
-           $r = array($result->pid => $result->name);
-             $form['personal']['political']['#options'] += $r;
-         }
-         break;
-       }
-         break;
-       case uc_HKTW_STUDENT:
-       { 
-         $form['personal']['idnumber'] = array('#type' => 'textfield',
-           '#title' => t('Your ID Card Number'),
-           '#default_value' => $default_values->idcard_number,
-           '#maxlength' => 18,
-           '#required' => TRUE);
-         $form['personal']['truename'] = array('#type' => 'textfield',
-           '#title' => t('Your Name'),
-           '#default_value' => $default_values->name,
-           '#maxlength' => 50,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['dateofbirth'] = array('#type' => 'date',
-           '#title' => t('Your date of birth'),
-           '#default_value' => array(
-             'year' => substr($default_values->date_of_birth,0,4),
-             'month' => 1*substr($default_values->date_of_birth,4,2),
-             'day' => 1*substr($default_values->date_of_birth,6,2)
-             ),
-           '#after_build' => array('__set_year_range'),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['gender'] = array('#type' => 'radios',
-           '#title' => t('Your Gender'),
-           '#default_value' => $default_values->gender,
-           '#options' => array('1'=>t('Male'), '2'=>t('Female')),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['province'] = array('#type' => 'select',
-           '#title' => t('Place you live'),
-           '#default_value' => $default_values->province,
-           '#options' => array(),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         //$dbo = db_query('SELECT * from {vl_province} p where p.ucategory=%s',$user->ucategory);
-         $dbo = db_select('vl_province', 'p')->fields('p')->condition('p.ucategory',$user->ucategory)->execute();
-         foreach ($dbo as $result)
-         {
-           $r = array($result->pid => $result->name);
-           $form['personal']['province']['#options'] += $r;
-         }
-         $form['personal']['nationality'] = array('#type' => 'select',
-           '#title' => t('Your nationality'),
-           '#default_value' => $default_values->nationality,
-           '#options' => array(),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $dbo = db_select('vl_nationality','n')->fields('n')->execute();
-         foreach ($dbo as $result)
-         {
-           $r = array($result->nid => $result->name);
-           if ($result->nid != 98)
-             $form['personal']['nationality']['#options'] += $r;
-         }
-       }
-         break;
-       case uc_OVERSEA_STUDENT:
-       {
-         $form['personal']['country'] = array('#type' => 'select',
-           '#title' => t('The country you resists'),
-           '#default_value' => $default_values->city_district,
-           '#options' => array(),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $dbo = db_select('vl_city_district','c')->fields('c')->condition('c.pid','800000')->execute();
-         foreach ($dbo as $result)
-         {
-           $r = array($result->cid => $result->name);
-           $form['personal']['country']['#options'] = $form['personal']['country']['#options'] + $r;
-         }
-         $form['personal']['idnumber'] = array('#type' => 'textfield',
-           '#title' => t('Your Passport Number'),
-           '#default_value' => $default_values->idcard_number,
-           '#maxlength' => 18,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['truename'] = array('#type' => 'textfield',
-           '#title' => t('Your Chinese Name'),
-           '#default_value' => $default_values->name,
-           '#maxlength' => 50,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['origname'] = array('#type' => 'textfield',
-           '#title' => t('Your Name on your passport'),
-           '#default_value' => $default_values->foreign_name,
-           '#maxlength' => 50,
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['dateofbirth'] = array('#type' => 'date',
-           '#title' => t('Your date of birth'),
-           '#default_value' => array(
-             'year' => substr($default_values->date_of_birth,0,4),
-             'month' => 1*substr($default_values->date_of_birth,4,2),
-             'day' => 1*substr($default_values->date_of_birth,6,2)
-             ),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['gender'] = array('#type' => 'radios',
-           '#title' => t('Your Gender'),
-           '#default_value' => $default_values->gender,
-           '#options' => array('1'=>t('Male'), '2'=>t('Female')),
-           '#required' => !$isvalidated,
-           '#disabled' => $isvalidated,
-         );
-         $form['personal']['nationality'] = array('#type' => 'hidden',
-           '#value' => '98');
-         $form['personal']['province'] = array('#type' => 'hidden',
-           '#value' => '800000');
+		switch ($user->ucategory) {
+			case uc_OWN_STUDENT: // Our own student
+			{
+				$form['personal']['idnumber'] = array('#type' => 'textfield',
+					'#title' => t('Your Student ID'),
+					'#default_value' => $default_values->idcard_number,
+					'#maxlength' => 6,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['truename'] = array('#type' => 'textfield',
+					'#title' => t('Your Name'),
+					'#default_value' => $default_values->name,
+					'#maxlength' => 50,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['province'] = array('#type' => 'hidden',
+					'#value' => '000000');
+				}
+				break;
+			case uc_MAINLAND_STUDENT: // China mainland student
+			{
+				$form['personal']['idnumber'] = array('#type' => 'textfield',
+					'#title' => t('Your ID Card Number'),
+					'#description' => t('We\'re calculating gender and date of birth based '.
+						'on your ID card number. If you will be using military officer card to register, please input them in the format of @format.', array('@format'=>'X字第XXX号')),
+					'#default_value' => $default_values->idcard_number,
+					'#maxlength' => 18,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['truename'] = array('#type' => 'textfield',
+					'#title' => t('Your Name'),
+					'#default_value' => $default_values->name,
+					'#maxlength' => 50,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				if(isset($form_state['rebuild_info']['need_show_genders']) && $form_state['rebuild_info']['need_show_genders']==1) {
+					$form['personal']['dateofbirth'] = array('#type' => 'date',
+						'#title' => t('Your date of birth'),
+						'#default_value' => array(
+							'year' => substr($default_values->date_of_birth,0,4),
+							'month' => 1*substr($default_values->date_of_birth,4,2),
+							'day' => 1*substr($default_values->date_of_birth,6,2)
+							),
+						'#after_build' => array('__set_year_range'),
+						'#required' => !$isvalidated,
+						'#disabled' => $isvalidated,
+					);
+					$form['personal']['gender'] = array('#type' => 'radios',
+						'#title' => t('Your Gender'),
+						'#default_value' => $default_values->gender,
+						'#options' => array('1'=>t('Male'), '2'=>t('Female')),
+						'#required' => !$isvalidated,
+						'#disabled' => $isvalidated,
+					);
+				}
+				$form['personal']['province'] = array('#type' => 'select',
+					'#title' => t('Province you live'),
+					'#description' => t('The place you will be attending the exam.'),
+					'#default_value' => $default_values->province,
+					'#options' => array(),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$dbo = db_select('vl_province','p')->fields('p')->condition('p.ucategory',$user->ucategory)->execute();
+				foreach ($dbo as $result)
+				{
+					$r = array($result->pid => $result->name);
+					$form['personal']['province']['#options'] += $r;
+				}
+				$form['personal']['nationality'] = array('#type' => 'select',
+					'#title' => t('Your nationality'),
+					'#default_value' => $default_values->nationality,
+					'#options' => array(),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$dbo = db_select('vl_nationality', 'n')->fields('n')->execute();
+				foreach($dbo as $result)
+				{
+					$r = array($result->nid => $result->name);
+					if ($result->nid != 98)
+						$form['personal']['nationality']['#options'] += $r;
+				}
+				$form['personal']['political'] = array('#type' => 'select',
+					'#title' => t('Your Political feature'),
+					'#default_value' => $default_values->politics_feature,
+					'#options' => array(),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$dbo = db_select('vl_politics_features', 'p')->fields('p')->execute();
+				foreach($dbo as $result)
+				{
+					$r = array($result->pid => $result->name);
+						$form['personal']['political']['#options'] += $r;
+				}
+				break;
+			}
+				break;
+			case uc_HKTW_STUDENT:
+			{ 
+				$form['personal']['idnumber'] = array('#type' => 'textfield',
+					'#title' => t('Your ID Card Number'),
+					'#default_value' => $default_values->idcard_number,
+					'#maxlength' => 18,
+					'#required' => TRUE);
+				$form['personal']['truename'] = array('#type' => 'textfield',
+					'#title' => t('Your Name'),
+					'#default_value' => $default_values->name,
+					'#maxlength' => 50,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['dateofbirth'] = array('#type' => 'date',
+					'#title' => t('Your date of birth'),
+					'#default_value' => array(
+						'year' => substr($default_values->date_of_birth,0,4),
+						'month' => 1*substr($default_values->date_of_birth,4,2),
+						'day' => 1*substr($default_values->date_of_birth,6,2)
+						),
+					'#after_build' => array('__set_year_range'),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['gender'] = array('#type' => 'radios',
+					'#title' => t('Your Gender'),
+					'#default_value' => $default_values->gender,
+					'#options' => array('1'=>t('Male'), '2'=>t('Female')),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['province'] = array('#type' => 'select',
+					'#title' => t('Place you live'),
+					'#default_value' => $default_values->province,
+					'#options' => array(),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$dbo = db_select('vl_province', 'p')->fields('p')->condition('p.ucategory',$user->ucategory)->execute();
+				foreach ($dbo as $result)
+				{
+					$r = array($result->pid => $result->name);
+					$form['personal']['province']['#options'] += $r;
+				}
+				$form['personal']['nationality'] = array('#type' => 'select',
+					'#title' => t('Your nationality'),
+					'#default_value' => $default_values->nationality,
+					'#options' => array(),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$dbo = db_select('vl_nationality','n')->fields('n')->execute();
+				foreach ($dbo as $result)
+				{
+					$r = array($result->nid => $result->name);
+					if ($result->nid != 98)
+						$form['personal']['nationality']['#options'] += $r;
+				}
+			}
+				break;
+			case uc_OVERSEA_STUDENT:
+			{
+				$form['personal']['country'] = array('#type' => 'select',
+					'#title' => t('The country you resists'),
+					'#default_value' => $default_values->city_district,
+					'#options' => array(),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$dbo = db_select('vl_city_district','c')->fields('c')->condition('c.pid','800000')->execute();
+				foreach ($dbo as $result)
+				{
+					$r = array($result->cid => $result->name);
+					$form['personal']['country']['#options'] = $form['personal']['country']['#options'] + $r;
+				}
+				$form['personal']['idnumber'] = array('#type' => 'textfield',
+					'#title' => t('Your Passport Number'),
+					'#default_value' => $default_values->idcard_number,
+					'#maxlength' => 18,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['truename'] = array('#type' => 'textfield',
+					'#title' => t('Your Chinese Name'),
+					'#default_value' => $default_values->name,
+					'#maxlength' => 50,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['origname'] = array('#type' => 'textfield',
+					'#title' => t('Your Name on your passport'),
+					'#default_value' => $default_values->foreign_name,
+					'#maxlength' => 50,
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['dateofbirth'] = array('#type' => 'date',
+					'#title' => t('Your date of birth'),
+					'#default_value' => array(
+						'year' => substr($default_values->date_of_birth,0,4),
+						'month' => 1*substr($default_values->date_of_birth,4,2),
+						'day' => 1*substr($default_values->date_of_birth,6,2)
+						),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['gender'] = array('#type' => 'radios',
+					'#title' => t('Your Gender'),
+					'#default_value' => $default_values->gender,
+					'#options' => array('1'=>t('Male'), '2'=>t('Female')),
+					'#required' => !$isvalidated,
+					'#disabled' => $isvalidated,
+				);
+				$form['personal']['nationality'] = array('#type' => 'hidden',
+					'#value' => '98');
+				$form['personal']['province'] = array('#type' => 'hidden',
+					'#value' => '800000');
 		}
-         break;
-     }
-     if(!empty($default_values->picture)) {
-     	 $form['personal']['current_photo'] = array(
-     	 	 '#type' => 'item',
-     	 	 '#title' => t('Current Picture'),
-     	 	 '#markup' => '<img src="data:image/jpeg;base64,'.$default_values->picture.'" style="padding-right: 10px"/>'
-     	 );
-     	 if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
-     	 	 $form['personal']['current_photo']['#markup'] = sprintf('<img src="/user/%s/picture.jpg" style="padding-right: 10px"/>', $user->uid);
-     	 }
-     }
-     $form['personal']['photo'] = array(
-     	 '#type' => 'managed_file',
-     	 '#title' => empty($default_values->picture)?t('Photo'):t('Change Photo'),
-     	 '#required' => TRUE,
-     	 '#required' => empty($default_values->picture),
-     	 '#disabled' => $isvalidated,
-     	 '#upload_validators' => array('file_validate_extensions' => array('jpg png jpeg'), 'file_validate_image_resolution' => array('200x200', '150x150')),
-     	 '#description' => t('Only image files are allowed to be uploaded.'),
-     );
-     if(!empty($default_values->picture)) {
-     	 $form['personal']['photo']['#description'] .= t('If you want to change the picture, please upload it here. Otherwise, just leave it blank.');
-     }
-     $form['#validate'][]='signup_user_account_form_validate';
-     $form['#submit']=array('signup_user_account_form_save');
-	 return $form;
+				break;
+		}
+		if(!empty($default_values->picture)) {
+			$form['personal']['current_photo'] = array(
+				'#type' => 'item',
+				'#title' => t('Current Picture'),
+				'#markup' => '<img src="data:image/jpeg;base64,'.$default_values->picture.'" style="padding-right: 10px"/>'
+			);
+			if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
+				$form['personal']['current_photo']['#markup'] = sprintf('<img src="/user/%s/picture.jpg" style="padding-right: 10px"/>', $user->uid);
+			}
+		}
+		$form['personal']['photo'] = array(
+			'#type' => 'managed_file',
+			'#title' => empty($default_values->picture)?t('Photo'):t('Change Photo'),
+			'#required' => TRUE,
+			'#required' => empty($default_values->picture),
+			'#disabled' => $isvalidated,
+			'#upload_validators' => array('file_validate_extensions' => array('jpg png jpeg'), 'file_validate_image_resolution' => array('200x200', '150x150')),
+			'#description' => t('Only image files are allowed to be uploaded.'),
+		);
+		if(!empty($default_values->picture)) {
+			$form['personal']['photo']['#description'] .= t('If you want to change the picture, please upload it here. Otherwise, just leave it blank.');
+		}
+		$form['#validate'][]='signup_user_account_form_validate';
+		$form['#submit']=array('signup_user_account_form_save');
+	return $form;
 }
 
 function __set_year_range($form_element, $form_values) {
-    $form_element['year']['#options'] = drupal_map_assoc(range(1950, format_date(time(), 'custom', 'Y')-10));
-    return $form_element;
+	$form_element['year']['#options'] = drupal_map_assoc(range(1950, format_date(time(), 'custom', 'Y')-10));
+	return $form_element;
 }
 
 function signup_user_account_form_validate($form, $form_state) {
@@ -923,19 +916,19 @@ function signup_user_account_form_validate($form, $form_state) {
 		case uc_OWN_STUDENT:
 			if ($edit['idnumber']) {
 				$r=db_select('students','s')->fields('s')->condition('s.idcard_number',$edit['idnumber'])->condition('s.uid', $user->name, '<>')->countQuery()->execute()->fetchField();
-			  	if ($r) {
-			    	form_set_error('idnumber', t('The student ID has already been registerd.').' '.
-			  			t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
-			  		break;
-			  	}
+					if ($r) {
+						form_set_error('idnumber', t('The student ID has already been registerd.').' '.
+							t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
+						break;
+					}
 			}
 			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
 				db_set_active('xjinfo');
 				$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->condition('sfyxj','是')->countQuery()->execute()->fetchField();
 				db_set_active('default');
 			} else $r=1;
-	  	  	if (isset($edit['idnumber']) && $r != 1)
-	  	  	    form_set_error('idnumber', t('The Student ID you\'ve entered is not valid.'));
+					if (isset($edit['idnumber']) && $r != 1)
+							form_set_error('idnumber', t('The Student ID you\'ve entered is not valid.'));
 			break;
 		case uc_MAINLAND_STUDENT:
 			if ($edit['idnumber']) {
@@ -945,7 +938,7 @@ function signup_user_account_form_validate($form, $form_state) {
 						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
 					break;
 				}
-  	    	}
+					}
 			if (!preg_match('/字第[0-9]+号/', $edit['idnumber']) && !is_idcardn_validate($edit['idnumber']))
 				form_set_error('idnumber', t('The ID Card number you\'ve entered is not valid.'));
 			
@@ -985,7 +978,7 @@ function signup_user_account_form_validate($form, $form_state) {
 			if ($edit['idnumber']) {
 				$r=db_select('students','s')->fields('s')->condition('s.idcard_number',$edit['idnumber'])->condition('s.uid', $user->name, '<>')->countQuery()->execute()->fetchField();
 				if ($r) {
-  	  				form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
+					form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
 						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
 					break;
 				}
@@ -1032,27 +1025,25 @@ function signup_user_account_form_save($form, &$form_state) {
 				))->execute();
 			break;
 		case uc_MAINLAND_STUDENT:
-  	    	if (preg_match('/字第[0-9]+号/', $edit['idnumber']) && !isset($edit['gender'])) {
-  	    		$form_state['rebuild']=true;
-  	    		$form_state['rebuild_info']['need_show_genders']=1;
-  	    		drupal_get_messages('status');
-  	    		drupal_set_message(t('It seems that you are registering as a military officer, please fill extra info here.'), 'warning');
-  	    		return;
-  	    	}
-  	    	if(!preg_match('/字第[0-9]+号/', $edit['idnumber'])) {
-  	    		$edit['gender']=pim_genderfromidnumber($edit['idnumber']);
-  	    		$edit['dobtosave']=pim_dobfromidnumber($edit['idnumber']);
-  	    	}
-			db_update('students')
-				->condition('uid',$user->name)
-				->fields(array(
-					'idcard_number' => strtoupper($edit['idnumber']),
-					'name' => trim($edit['truename']),
-					'gender' => $edit['gender'],
-					'date_of_birth' => $edit['dobtosave'],
-					'nationality' => $edit['nationality'],
-					'politics_feature' => $edit['political'],
-				))->execute();
+			if (preg_match('/字第[0-9]+号/', $edit['idnumber']) && !isset($edit['gender'])) {
+				$form_state['rebuild']=true;
+				$form_state['rebuild_info']['need_show_genders']=1;
+				drupal_get_messages('status');
+				drupal_set_message(t('It seems that you are registering as a military officer, please fill extra info here.'), 'warning');
+				return;
+			}
+			if(!preg_match('/字第[0-9]+号/', $edit['idnumber'])) {
+				$edit['gender']=pim_genderfromidnumber($edit['idnumber']);
+				$edit['dobtosave']=pim_dobfromidnumber($edit['idnumber']);
+			}
+			db_update('students')->condition('uid',$user->name)->fields(array(
+				'idcard_number' => strtoupper($edit['idnumber']),
+				'name' => trim($edit['truename']),
+				'gender' => $edit['gender'],
+				'date_of_birth' => $edit['dobtosave'],
+				'nationality' => $edit['nationality'],
+				'politics_feature' => $edit['political'],
+			))->execute();
 			// Fetch original province
 			$orig_province=db_select('students_gk','sg')
 				->condition('sg.uid',$user->name)
@@ -1073,11 +1064,9 @@ function signup_user_account_form_save($form, &$form_state) {
 			$test=$query->execute()->fetchField();
 			// which means examplace will be affected
 			if($test > 0) {
-				db_update('students')
-					->condition('uid',$user->name)
-					->fields(array(
-						'examplace' => '',
-					))->execute();
+				db_update('students')->condition('uid',$user->name)->fields(array(
+					'examplace' => '',
+				))->execute();
 				drupal_set_message(t('Your changes on your personal information affected your exam place selection. Please review it.'), 'warning');
 			}
 			db_update('students_gk')
@@ -1087,11 +1076,9 @@ function signup_user_account_form_save($form, &$form_state) {
 				))->execute();
 			$city=db_select('students_gk', 'sg')->fields('sg',array('city_district'))->condition('uid', $user->name)->execute()->fetchField();
 			if(substr($city,0,2)!==substr($edit['province'],0,2))
-				db_update('students_gk')
-					->condition('uid',$user->name)
-					->fields(array(
-						'city_district' => $edit['province'],
-					))->execute();
+				db_update('students_gk')->condition('uid',$user->name)->fields(array(
+					'city_district' => $edit['province'],
+				))->execute();
 			break;
 		case uc_HKTW_STUDENT:
 			db_update('students')
@@ -1273,8 +1260,8 @@ function signup_form_user_pass_validate($form, &$form_state) {
 			->condition('s.name', $form_state['values']['name']);
 		$result=$query->execute()->fetchField();
 		if(!$result) {
-		      form_set_error('name', t('Sorry, the Name and the IDCard number do not meet our records.'));
-		      return;
+					form_set_error('name', t('Sorry, the Name and the IDCard number do not meet our records.'));
+					return;
 		}
 	}
 	
@@ -1296,8 +1283,6 @@ function signup_form_user_pass_submit($form, &$form_state) {
 	$uid=$query->execute()->fetchField();
 	$account = user_load($query->execute()->fetchField());
 	$newpass = user_password(6);
-	//var_dump($account);var_dump($newpass);
-	
 
 	user_save($account, array('pass'=>$newpass));
 	
@@ -1305,9 +1290,9 @@ function signup_form_user_pass_submit($form, &$form_state) {
 		->condition('identifier',$uid.'-%','LIKE')
 		->execute();
 	//exit;
-  
+	
 	drupal_set_message(t('Based on your request, we\'ve reset <span class="error">!name</span>\'s password. Your new password is <span class="error"><code>!pass</code></span>. '.
-    	'Please write it down and keep it in a safe place. Or, you can change it right now.', array('!name' => $account->name, '!pass' => $newpass)));
+		'Please write it down and keep it in a safe place. Or, you can change it right now.', array('!name' => $account->name, '!pass' => $newpass)));
 
 	// We need to fill up more information after login
 	$data['uid']=user_authenticate($account->name, $newpass);
@@ -1317,43 +1302,43 @@ function signup_form_user_pass_submit($form, &$form_state) {
 }
 
 function signup_user_categories() {
-  return array(
-    array(
-      'name' => signup_user_PROFESSION,
-      'title' => t('Sign up Professions'),
-      'weight' => 10,
-    ),
-    array(
-      'name' => signup_user_EXAM,
-      'title' => t('Examinations'),
-      'weight' => 11,
-    ),
-    array(
-      'name' => signup_user_CONTACT,
-      'title' => t('Contact Detail'),
-      'weight' => 12,
-    ),
-    array(
-      'name' => signup_user_GAOKAO,
-      'title' => t('Gaokao'),
-      'weight' => 13,
-    ),
-  );	
-  return $data;
+	return array(
+		array(
+			'name' => signup_user_PROFESSION,
+			'title' => t('Sign up Professions'),
+			'weight' => 10,
+		),
+		array(
+			'name' => signup_user_EXAM,
+			'title' => t('Examinations'),
+			'weight' => 11,
+		),
+		array(
+			'name' => signup_user_CONTACT,
+			'title' => t('Contact Detail'),
+			'weight' => 12,
+		),
+		array(
+			'name' => signup_user_GAOKAO,
+			'title' => t('Gaokao'),
+			'weight' => 13,
+		),
+	);	
+	return $data;
 }
 
 function signup_menu_alter(&$callbacks) {
-  $callbacks['user/%user_category/edit/'.signup_user_PROFESSION]['access callback'] = '_signup_user_tab_access';
-  $callbacks['user/%user_category/edit/'.signup_user_PROFESSION]['access arguments'] = array(1, signup_user_PROFESSION);
+	$callbacks['user/%user_category/edit/'.signup_user_PROFESSION]['access callback'] = '_signup_user_tab_access';
+	$callbacks['user/%user_category/edit/'.signup_user_PROFESSION]['access arguments'] = array(1, signup_user_PROFESSION);
 
-  $callbacks['user/%user_category/edit/'.signup_user_EXAM]['access callback'] = '_signup_user_tab_access';
-  $callbacks['user/%user_category/edit/'.signup_user_EXAM]['access arguments'] = array(1, signup_user_EXAM);
+	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['access callback'] = '_signup_user_tab_access';
+	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['access arguments'] = array(1, signup_user_EXAM);
 
-  $callbacks['user/%user_category/edit/'.signup_user_CONTACT]['access callback'] = '_signup_user_tab_access';
-  $callbacks['user/%user_category/edit/'.signup_user_CONTACT]['access arguments'] = array(1, signup_user_CONTACT);
+	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['access callback'] = '_signup_user_tab_access';
+	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['access arguments'] = array(1, signup_user_CONTACT);
 
-  $callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['access callback'] = '_signup_user_tab_access';
-  $callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['access arguments'] = array(1, signup_user_GAOKAO);
+	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['access callback'] = '_signup_user_tab_access';
+	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['access arguments'] = array(1, signup_user_GAOKAO);
 }
 
 function _signup_user_tab_access($user=NULL, $sec=NULL) {
@@ -1368,13 +1353,13 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 				->fields('s',array('idcard_number', 'name'))
 				->condition('s.uid',$user->name)
 				->execute()->fetchObject();
-       		if(!($result->idcard_number) || !($result->name)) return FALSE;
-        		else return TRUE;
-        case 'exam':
-        	$result = db_select('students','s')
-        		->fields('s',array('profession_major','examplace'))
-        		->condition('s.uid',$user->name)
-        		->execute()->fetchObject();
+					if(!($result->idcard_number) || !($result->name)) return FALSE;
+						else return TRUE;
+				case 'exam':
+					$result = db_select('students','s')
+						->fields('s',array('profession_major','examplace'))
+						->condition('s.uid',$user->name)
+						->execute()->fetchObject();
 			if($result->profession_major == '0' || $result->examplace == '') return FALSE;
 			else return TRUE;
 		case 'contact':
@@ -1395,9 +1380,9 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 				->fields('sc',array('contact_phone'))
 				->condition('sc.uid',$user->name)
 				->execute()->fetchField();
-        	if(!$result) return FALSE;
-        	else if(_signup_user_tab_access($user, 'contact')) return TRUE;
-        	else return FALSE;
+					if(!$result) return FALSE;
+					else if(_signup_user_tab_access($user, 'contact')) return TRUE;
+					else return FALSE;
 		default: return FALSE;
 	}
 	return TRUE;
@@ -1405,7 +1390,7 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 
 function signup_user_view($user, $view_mode, $langcode) {
 
-  if(!array_key_exists('5', $user->roles)) return;
+	if(!array_key_exists('5', $user->roles)) return;
 
 	// Personal information section
 	$result = db_select('students','s')->fields('s')->condition('s.uid', $user->name)->execute()->fetchObject();
@@ -1475,7 +1460,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 			'#weight' => '2',
 		);
 
-    }
+		}
 	// Professions
 	$query = db_select('vl_professions', 'p');
 	$query->innerJoin('vl_department', 'd', 'p.did = d.did');
@@ -1509,31 +1494,30 @@ function signup_user_view($user, $view_mode, $langcode) {
 	);
 	
 
-  // Examinations
-  $ex_section = t('Examinations');
-  $query = db_select('students_going','sg');
-  $query->innerJoin('vl_exam','e', 'sg.eid=e.eid');
-  $query = $query->fields('e',array('eid','ename','elevel'))->fields('sg',array('opus'))->condition('sg.uid',$user->name)->orderBy('sg.eid');
-  $rdbo = $query->execute();
-  foreach ($rdbo as $r) {
-          $item = array('title' => $r->ename.$r->elevel, 'class'=>'exam', 'value' => '');
-          if($r->opus) {
-                $org_opus = unserialize($r->opus);
-                if(isset($org_opus['eadditional']) ) {
-                	if($org_opus['eadditional'] <> '')
-                		$item['value'] .= t($org_opus['eadditional']).": ";
-                	unset($org_opus['eadditional']);
-                }
-                $item['value'] .= implode($org_opus, ' / ');
-          }
+	// Examinations
+	$ex_section = t('Examinations');
+	$query = db_select('students_going','sg');
+	$query->innerJoin('vl_exam','e', 'sg.eid=e.eid');
+	$query = $query->fields('e',array('eid','ename','elevel'))->fields('sg',array('opus'))->condition('sg.uid',$user->name)->orderBy('sg.eid');
+	$rdbo = $query->execute();
+	foreach ($rdbo as $r) {
+		$item = array('title' => $r->ename.$r->elevel, 'class'=>'exam', 'value' => '');
+		if($r->opus) {
+			$org_opus = unserialize($r->opus);
+			if(isset($org_opus['eadditional']) ) {
+				if($org_opus['eadditional'] <> '')
+					$item['value'] .= t($org_opus['eadditional']).": ";
+				unset($org_opus['eadditional']);
+			}
+			$item['value'] .= implode($org_opus, ' / ');
+		}
 	$user->content['pr'][] = array(
 		'#type' => 'user_profile_item',
 		'#title' => $r->ename.$r->elevel,
 		'#markup' => isset($item['value'])?$item['value']:'',
 		'#weight' => $r->eid,
 	);
-  }
-
+	}
 }
 
 function signup_user_professions_form($form, $form_state) {
@@ -1622,11 +1606,7 @@ function signup_user_professions_form($form, $form_state) {
 		'#multiple' => FALSE,
 		'#attributes' => array('onChange'=>"profs=form.professionlist.value.split(','); form.pid.length=0; ".
 			"for(i=0,p=0;i<profs.length;i++) { if (profs[i].substring(0,2) == this.options[this.selectedIndex].value) form.pid.options[p++] = new Option(profs[i].substring(4), profs[i].substring(0,4));}".
-			"jQuery('#edit-pid').change();"./*
-			"if(jQuery('#edit-did').val() == 'D4') ".
-				"jQuery('#edit-descnote').show(); ".
-			"else ".
-				"jQuery('#edit-descnote').hide(); ".*/
+			"jQuery('#edit-pid').change();".
 			'return true;'),
 		'#default_value' => isset($form_state['values']['did']) ? $form_state['values']['did'] : $default_values['did_1'],
 		'#disabled' => ($user->isvalidated) || $form_state['rebuild_info']['need_rebuild'],
@@ -1642,19 +1622,10 @@ function signup_user_professions_form($form, $form_state) {
 		'#suffix' => '</div>',
 		'#options' => $professions,
 		'#default_value' => isset($form_state['values']['pid']) ? $form_state['values']['pid'] : $default_values['pid_1'],
-		/*
-		'#attributes' => array('onChange'=>"".
-			"if(jQuery('#edit-pid').val() == 'D716' || jQuery('#edit-pid').val() == 'D717' || jQuery('#edit-pid').val() == 'D603' || jQuery('#edit-pid').val() == 'D604') ".
-				"jQuery('.form-item-secondary-profession').show(); ".
-			"else ".
-				"jQuery('.form-item-secondary-profession').hide(); ".
-			""),*/
 		'#disabled' => ($user->isvalidated) || $form_state['rebuild_info']['need_rebuild'],
 		'#weight' => 2,
 	);
 	
-	//$pid=isset($form_state['values']['pid'])?$form_state['values']['pid']:$default_values['pid_1'];
-	//var_dump($places);
 	unset($form['actions']['submit']);
 	$form['save'] = array(
 		'#type' => 'submit',
@@ -1670,7 +1641,6 @@ function signup_user_professions_form($form, $form_state) {
 			'#weight'=> 3,
 		);
 		$places=_signup_user_professions_examplace_alter($form_state['values']['pid'], $user->name);
-		//var_dump(array_values($places));
 		if(count($places) ==1) {
 			$cityids=array_keys($places);
 			$citynames=array_values($places);
@@ -1737,7 +1707,6 @@ function signup_user_professions_form($form, $form_state) {
 	} else {
 		$form['save']['#submit'] = array('_signup_user_professions_fake_save');
 	}
-	//var_dump($form);
 	
 	drupal_add_js(
 		'jQuery(document).ready(function(){'.
@@ -1757,7 +1726,7 @@ function signup_user_professions_form($form, $form_state) {
 	$form['#validate'][]='signup_user_professions_form_validate';
 	$form['#submit'][]='signup_user_professions_form_save';
 	
-    return $form;
+		return $form;
 }
 
 function _signup_professions_department_onchange(&$form, $form_state) {
@@ -1770,7 +1739,6 @@ function _signup_professions_department_onchange(&$form, $form_state) {
 		$form['pframe']['pid']['#default_value']=$r->pid;
 	else
 		$form['pframe']['pid']['#default_value']=NULL;
-	//var_dump($form_state['values']['did']);
 	return $form['pframe']['pid'];
 }
 
@@ -1779,11 +1747,9 @@ function _signup_professions_profession_onchange($form, $form_state) {
 }
 
 function _signup_user_professions_profession_alter($dep='') {
-	//var_dump($dep);
 	$dbo = db_select('vl_professions','p')->fields('p')->condition('p.enabled',1)->orderBy('p.pid')->execute();
 	$professions=array();
 	foreach($dbo as $r) {
-		//$professions[$r->did]=array();
 		if(!isset($professions[$r->did])) $professions[$r->did]=array();
 		$professions[$r->did] += array($r->pid => $r->pname);
 	}
@@ -1833,12 +1799,9 @@ function _signup_user_professions_fake_save($form, &$form_state) {
 	$form_state['rebuild']=TRUE;
 }
 function signup_user_professions_form_save($form, $form_state) {
-	//$user=$form['#user'];
 	$user=$form['#user'];
 	$edit=$form_state['values'];
-	//var_dump($form_state['values']['examplace']); exit;
 	$profession_major=$edit['pid'];
-	//var_dump(arg(1));exit;
 	
 	$r=db_select('students','s')->fields('s')->condition('s.uid',$user->name)->execute()->fetchObject();
 	if($r->validated) return;
@@ -1870,8 +1833,8 @@ function signup_user_professions_form_save($form, $form_state) {
 	foreach($exams_major as $eid=>$eweight) {
 		// Compute sofa to so and fa
 		if(substr($eid,0,2)=='32') {
-		  $exams_student[] = preg_replace('/32/','30',$eid);
-		  $exams_student[] = preg_replace('/32/','31',$eid);
+			$exams_student[] = preg_replace('/32/','30',$eid);
+			$exams_student[] = preg_replace('/32/','31',$eid);
 		}
 		else $exams_student[] = $eid;
 	}
@@ -1887,7 +1850,6 @@ function signup_user_professions_form_save($form, $form_state) {
 				if(substr($eid,0,1)<>'3')
 					$exams_student[] = $eid;
 			}
-			//$pname=db_select('vl_profession','p')->fields('p.pname')
 		}
 			
 	// FIXME: HACKAGE END
@@ -1946,33 +1908,33 @@ function signup_user_professions_form_save($form, $form_state) {
 	
 	// We should delete all the exams for current students at first.
 	if(count($exams_student_existing))
-	  foreach($exams_student_existing as $ex) {
-	  	db_delete('students_going')->condition('uid',$user->name)->condition('eid',$ex)->execute();
-	  }
+		foreach($exams_student_existing as $ex) {
+			db_delete('students_going')->condition('uid',$user->name)->condition('eid',$ex)->execute();
+		}
 	
 	// Then, insert the exams we calculated here.
 	if(count($exams_student)) {
-	  sort($exams_student);
-	  foreach($exams_student as $ex) {
-	  	db_insert('students_going')
-	  		->fields(array(
-	  			'uid' => $user->name,
-	  			'eid' => $ex,
-	  		))->execute();
-	  }
+		sort($exams_student);
+		foreach($exams_student as $ex) {
+			db_insert('students_going')
+				->fields(array(
+					'uid' => $user->name,
+					'eid' => $ex,
+				))->execute();
+		}
 	}
 	signup_user_goto($user);
 	return;
 }
 
 function signup_user_examinations_form($form, $form_state) {
-    $user=$form['#user'];
+		$user=$form['#user'];
 	$r = _signup_determine_period($user);
 
 	if($r==0)
-	  drupal_goto('user/'.$user->uid.'/edit');
+		drupal_goto('user/'.$user->uid.'/edit');
 	else if($r==1)
-	  drupal_goto('user/'.$user->uid.'/edit/profession');
+		drupal_goto('user/'.$user->uid.'/edit/profession');
 
 	// Check if the student is marked as passthrough.
 	$query=db_select('students','s')->condition('s.uid',$user->name);
@@ -2062,7 +2024,7 @@ function signup_user_examinations_form_save($form, $form_state) {
 	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
 	if($isvalidated) return;
 
-  	$opus_to_save = array();
+		$opus_to_save = array();
 
 	$edit=$form_state['values'];
 	foreach($edit as $fid => $fvalue) {
@@ -2086,8 +2048,8 @@ function signup_user_examinations_form_save($form, $form_state) {
 			->condition('uid', $user->name)
 			->condition('eid', $eid)
 			->execute();
-  	  }
-  	  
+			}
+			
 	signup_user_goto($user);
 }
 
@@ -2311,10 +2273,10 @@ function signup_user_contact_form_save($form, $form_state) {
 			'recipient_roundg' => isset($edit['recipient_roundg'])?$edit['recipient_roundg']:'',
 			'phone_roundg' => isset($edit['phone_roundg'])?$edit['phone_roundg']:'',
 			'address_of_home' => serialize(array(
-		  		'address_school'=>isset($edit['address_school'])?$edit['address_school']:'',
-		  		'zip_school'=>isset($edit['zip_school'])?$edit['zip_school']:'',
-		  		'recipient_school'=>isset($edit['recipient_school'])?$edit['recipient_school']:'',
-		  		)),
+					'address_school'=>isset($edit['address_school'])?$edit['address_school']:'',
+					'zip_school'=>isset($edit['zip_school'])?$edit['zip_school']:'',
+					'recipient_school'=>isset($edit['recipient_school'])?$edit['recipient_school']:'',
+					)),
 			'terminus_of_train' => isset($edit['terminus_of_train'])?$edit['terminus_of_train']:'',
 			'personnel_record_at' => isset($edit['personnel_record_at'])?$edit['personnel_record_at']:'',
 			'needroom' => isset($edit['needroom'])?$edit['needroom']:'0',
@@ -2361,7 +2323,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#description' => $ucategory == 1? t('It should be a 14-digit number, beginning with @year.',array('@year'=>substr(variable_get('zhaoban_current_year',date('Y')),-2))).t('You can leave it blank safely.') : '',
 		'#maxlength' => 14,
 		'#default_value' => $default_values['sid'],
-		//'#value' => $default_values['sid'],
 		'#required' => $is_gk_enabled,
 		'#disabled' => ($default_values['validated']==1)?true:false,
 	);
@@ -2395,7 +2356,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#type' => 'textfield',
 		'#title' => t('Chinese'),
 		'#default_value' => $default_values['score_chinese'],
-		//'#value' => $default_values['score_chinese'],
 		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#required' => TRUE,
 	);
@@ -2403,7 +2363,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#type' => 'textfield',
 		'#title' => t('Foreign language'),
 		'#default_value' => $default_values['score_languages'],
-		//'#value' => $default_values['score_languages'],
 		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#required' => TRUE,
 	);
@@ -2412,7 +2371,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#title' => t('Math'),
 		'#description' => t('The score of Mathematics has been counted in since 2006.'),
 		'#default_value' => $default_values['score_math'],
-		//'#value' => $default_values['score_math'],
 		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#required' => TRUE,
 	);
@@ -2420,7 +2378,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#type' => 'textfield',
 		'#title' => t('Synthesis subject'),
 		'#default_value' => $default_values['score_synthesis'],
-		//'#value' => $default_values['score_synthesis'],
 		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#description' => t('If you are from Shandong province, please add your testing score into synthesis subject.'),
 		'#required' => TRUE,
@@ -2451,7 +2408,6 @@ function signup_user_gaokao_form_save($form, $form_state) {
 	$user=$form['#user'];
 	$edit=$form_state['values'];
 	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
-	//if($isvalidated) return;
 	
 	db_update('students_gk')
 		->fields(array(
@@ -2503,40 +2459,39 @@ function signup_user_gaokao_form_validate($form, $form_state) {
 }
 
 function signup_user_login_block($form) {
-  //$form['attributes'] = array('style'=>'align: center');
-  $form['#action'] = url($_GET['q'], array('query' => drupal_get_destination()));
-  $form['#validate'] = user_login_default_validators();
-  $form['#id'] = 'user-login-form';
-  $form['#submit'][] = 'user_login_submit';
-  $form['name'] = array('#type' => 'textfield',
-    '#title' => t('Username/ID Number'),
-    '#maxlength' => USERNAME_MAX_LENGTH,
-    '#size' => 15,
-    '#required' => TRUE,
-    '#attributes' => array('placeholder'=>variable_get('zhaoban_current_year',date('Y')).'BXXXX'),
-  );
-  $form['pass'] = array('#type' => 'password',
-    '#title' => t('Password'),
-    '#maxlength' => 60,
-    '#size' => 15,
-    '#required' => TRUE,
-  );
-  $form['actions'] = array('#type' => 'actions');
-  $form['actions']['submit'] = array('#type' => 'submit',
-    '#value' => t('Log in'),
-  );
-  $items = array();
-  if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)) {
-    $items[] = l(t('Begin signup'), 'user/register');
-  }
-  $items[] = l(t('Request new password'), 'user/password');
-  $form['links'] = array('#markup' => theme('item_list', array('items' => $items)));
+	$form['#action'] = url($_GET['q'], array('query' => drupal_get_destination()));
+	$form['#validate'] = user_login_default_validators();
+	$form['#id'] = 'user-login-form';
+	$form['#submit'][] = 'user_login_submit';
+	$form['name'] = array('#type' => 'textfield',
+		'#title' => t('Username/ID Number'),
+		'#maxlength' => USERNAME_MAX_LENGTH,
+		'#size' => 15,
+		'#required' => TRUE,
+		'#attributes' => array('placeholder'=>variable_get('zhaoban_current_year',date('Y')).'BXXXX'),
+	);
+	$form['pass'] = array('#type' => 'password',
+		'#title' => t('Password'),
+		'#maxlength' => 60,
+		'#size' => 15,
+		'#required' => TRUE,
+	);
+	$form['actions'] = array('#type' => 'actions');
+	$form['actions']['submit'] = array('#type' => 'submit',
+		'#value' => t('Log in'),
+	);
+	$items = array();
+	if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)) {
+		$items[] = l(t('Begin signup'), 'user/register');
+	}
+	$items[] = l(t('Request new password'), 'user/password');
+	$form['links'] = array('#markup' => theme('item_list', array('items' => $items)));
 	drupal_add_js(
 		'jQuery(document).ready(function(){'.
 			'deal_input_palceholder();});',
 		'inline'
 	);
-  return $form;
+	return $form;
 }
 
 /**
@@ -2602,7 +2557,7 @@ function signup_block_view($delta = '') {
 			else
 				return $block;
 			break;
-  		}
+	}
 }
 
 function signup_block_content_PROGRESS() {
@@ -2839,44 +2794,19 @@ function signup_overview_by_profession() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
+				// Determine whether you are plain department
+				if(user_access('view own draft') && !user_access('view draft'))
+						if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
 			'<nobr>'.l($r->pname, 'signup/overview/profession/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-			  )
+				'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
+				)
 			).'</nobr>',
 			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			);
 		}
 	}
-	/*
-	$tablesort = tablesort_sql($header);
-	$sql=sprintf(
-		"SELECT p.pid, p.uid, p.pname, p.pnamememo, count(*) AS num FROM {students} s INNER JOIN {vl_professions} p ".
-			"ON s.profession_major = p.pid WHERE s.idcard_number <> ''".$valins.$sql_department_insert.
-			"GROUP BY s.profession_major".
-			"%s", $tablesort);
-	$rdbo = db_query($sql);
-	
-	while(($r = db_fetch_object($rdbo))) {
-		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
-			'<nobr>'.l($r->pname.$r->pnamememo, 'signup/overview/profession/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-			  )
-			).'</nobr>',
-			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
-		}
-	}
-	*/
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-	
 	$output .= '</div>';
 	
 	setcookie('examplace', NULL, 0, '/');
@@ -2904,58 +2834,50 @@ function signup_overview_by_profession_detail($prof=NULL) {
 	$query=$query->fields('d',array('dname'));
 	$r=$query->execute()->fetchObject();
 	$profession_major = t('!dname!pname', array(
-  	  	  '!dname' => $r->dname,
-  	  	  '!pname' => $r->pname,
-  	));
+					'!dname' => $r->dname,
+					'!pname' => $r->pname,
+		));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-	/*
-	$breadcrumb = array();
-	$breadcrumb[]=l(t('Home'), '<front>');
-	$breadcrumb[]=l(t('Students'), 'signup');
-	$breadcrumb[]=l(t('Students overview'), 'signup/overview');
-	$breadcrumb[]=l(t('By Profession'), 'signup/overview/profession');
-  	drupal_set_breadcrumb($breadcrumb); */
 
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
 		$valins="1";
 
-  if($prof)
-  	$sql_department_insert = "p.pid='".$prof."'";
-  else
-  	$sql_department_insert = '1';
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
-  $options=array('000000'=>t('All students'));
-  $options+=array((string)($r->cid)=>$r->name);
+	if($prof)
+		$sql_department_insert = "p.pid='".$prof."'";
+	else
+		$sql_department_insert = '1';
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
+	$options=array('000000'=>t('All students'));
+	$options+=array((string)($r->cid)=>$r->name);
 
-  $query=db_select('vl_profession_place','p')->condition('p.pid',$prof);
-  $query->innerJoin('vl_city_district','cd','p.examplace=cd.cid');
-  $query=$query->fields('cd',array('cid','name'))->orderBy('cd.cid');
-  $rdbo=$query->execute();
-  foreach($rdbo as $r) {
-  	  $a=(string)($r->cid);
-  	  $options += array((string)$r->cid=>$r->name);
-  }
-  $options=array_unique($options);
-  if(count($rdbo)) {
-  	  $placeselect = array(
-  	  	  '#id' => 'placeselect',
-  	  	  '#type' => 'select',
-  	  	  '#title' => t('Exam Place'),
-  	  	  '#options' => $options,
-  	  	  '#prefix' => '<div class="inline-element-div">',
-  	  	  '#attributes' => array('onChange' => ''.
-  	  	  	'jQuery.cookie("examplace", jQuery("#placeselect").val(), 0, "/");'.
-  	  	  	'window.location.reload();'.
-  	  	  ''),
-  	  	  //'#default_value' => (int)$_COOKIE['examplace'],
-  	  	  '#suffix' => '</div>',
-  	  );
-  	  if(isset($_COOKIE['examplace']))
+	$query=db_select('vl_profession_place','p')->condition('p.pid',$prof);
+	$query->innerJoin('vl_city_district','cd','p.examplace=cd.cid');
+	$query=$query->fields('cd',array('cid','name'))->orderBy('cd.cid');
+	$rdbo=$query->execute();
+	foreach($rdbo as $r) {
+			$a=(string)($r->cid);
+			$options += array((string)$r->cid=>$r->name);
+	}
+	$options=array_unique($options);
+	if(count($rdbo)) {
+			$placeselect = array(
+					'#id' => 'placeselect',
+					'#type' => 'select',
+					'#title' => t('Exam Place'),
+					'#options' => $options,
+					'#prefix' => '<div class="inline-element-div">',
+					'#attributes' => array('onChange' => ''.
+						'jQuery.cookie("examplace", jQuery("#placeselect").val(), 0, "/");'.
+						'window.location.reload();'.
+					''),
+					'#suffix' => '</div>',
+			);
+			if(isset($_COOKIE['examplace']))
 		drupal_add_js(
 			'jQuery(document).ready(function(){'.
 				'jQuery("#placeselect").val('.$_COOKIE['examplace'].');'.
@@ -2963,80 +2885,78 @@ function signup_overview_by_profession_detail($prof=NULL) {
 				'',
 			'inline'
 		);
-	  if(count(array_keys($options))>2)
-  	  	$output .= drupal_render($placeselect);
-  }
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  	array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
-  );
-  
-  //$tablesort = tablesort_sql($header);
-  //var_dump($cookie_examplace);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->where($sql_department_insert)->where($valins)->where($cookie_examplace)
+		if(count(array_keys($options))>2)
+				$output .= drupal_render($placeselect);
+	}
+	$rows = array();
+	$header = array(
+		array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Province'), 'field'=>'gk.province'),
+		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
+	);
+	
+	//$tablesort = tablesort_sql($header);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+					->fields('gk')
+					->where($sql_department_insert)->where($valins)->where($cookie_examplace)
 			->extend('TableSort')->orderByHeader($header)
 			->extend('PagerDefault')->limit(20);
-  //var_dump($query->__toString());
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($profession_major, 'signup/overview/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $profession_major)
-		  ))
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+			switch($r->ucategory) {
+					case uc_OWN_STUDENT:
+							$province = t('Our own student');
+							$per = t('Our own student');
+							$plink = '000000';
+							break;
+					case uc_MAINLAND_STUDENT:
+					case uc_HKTW_STUDENT:
+							$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+							$per = $r->personnel_record_at;
+							if(!$per) $per=t('N/A');
+							$plink = $r->province;
+							break;
+					case uc_OVERSEA_STUDENT:
+							$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+							$per = t('N/A');
+							$plink = $r->province;
+							break;
+			}
+			
+			
+			$rows[] = array(
+				'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
+				'<nobr>'.$r->name.'</nobr>',
+				$r->gender == 1 ? t('Male'): t('Female'),
+				l($profession_major, 'signup/overview/profession/'.$r->profession_major, array(
+			'title' => t(
+				'Click to view the details of @prof', array(
+				'@prof' => $profession_major)
+			))
 		),
-  	  	(user_access('view draft'))?l($province, 'signup/overview/province/'.$plink):($province),
-  	  	$per,
-  	  );
-  }
-  
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable students.')));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+				(user_access('view draft'))?l($province, 'signup/overview/province/'.$plink):($province),
+				$per,
+			);
+	}
+	
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable students.')));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_overview_by_province() {
@@ -3077,28 +2997,28 @@ function signup_overview_by_province() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
+			// Determine whether you are plain department
+			if(user_access('view own draft') && !user_access('view draft'))
+			if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
 			'<nobr>'.l($r->name, 'signup/overview/province/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
-			  )
+				'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
+				)
 			).'</nobr>',
 			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			);
 		} else if($r->ucategory==='0') {
-	       $rows[] = array(
-	       	   l(t('Our own student'), 'signup/overview/province/000000', array(
-	       	     'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
-	       	   )),
-			   sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-	       );
+			$rows[] = array(
+				l(t('Our own student'), 'signup/overview/province/000000', array(
+					'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
+					)),
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+			);
 		}
 
 	}
 	
-  	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 
 	return $output;
 	
@@ -3110,7 +3030,7 @@ function signup_overview_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
-  
+	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
@@ -3118,83 +3038,79 @@ function signup_overview_by_province_detail($prov=NULL) {
 	
 	$output = '';
 	
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  	array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
-  );
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$rows = array();
+	$header = array(
+		array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Province'), 'field'=>'gk.province'),
+		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
+	);
 
-  if($prov=='000000')
+	if($prov=='000000')
 	$provcondition='s.ucategory = 0';
-  else
+	else
 	$provcondition="gk.province='".$prov."'";
-  
-  //$tablesort = tablesort_sql($header);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->fields('p',array('pname'))
-  	  		->where($provcondition)->where($valins)
-			->extend('TableSort')->orderByHeader($header)
-			->extend('PagerDefault')->limit(20);
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($r->pname, 'signup/overview/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $r->pname)
-		  ))
-		),
-  	  	(user_access('view draft'))?l($province, 'signup/overview/province/'.$plink):($province),
-  	  	$per,
-  	  );
-  }
-  
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+	
+	//$tablesort = tablesort_sql($header);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+		->fields('gk')
+		->fields('p',array('pname'))
+		->where($provcondition)->where($valins)
+		->extend('TableSort')->orderByHeader($header)
+		->extend('PagerDefault')->limit(20);
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+		$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+		switch($r->ucategory) {
+			case uc_OWN_STUDENT:
+				$province = t('Our own student');
+				$per = t('Our own student');
+				$plink = '000000';
+				break;
+			case uc_MAINLAND_STUDENT:
+			case uc_HKTW_STUDENT:
+				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$per = $r->personnel_record_at;
+				if(!$per) $per=t('N/A');
+				$plink = $r->province;
+				break;
+			case uc_OVERSEA_STUDENT:
+				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$per = t('N/A');
+				$plink = $r->province;
+				break;
+		}
+
+		$rows[] = array(
+			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
+			'<nobr>'.$r->name.'</nobr>',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			l($r->pname, 'signup/overview/profession/'.$r->profession_major, array(
+				'title' => t('Click to view the details of @prof', array('@prof' => $r->pname)))
+			),
+			(user_access('view draft'))?l($province, 'signup/overview/province/'.$plink):($province),
+			$per,
+		);
+	}
+	
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_2nd_round_by_profession() {
@@ -3233,16 +3149,16 @@ function signup_2nd_round_by_profession() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
+			// Determine whether you are plain department
+			if(user_access('view own draft') && !user_access('view draft'))
+				if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
 			'<nobr>'.l($r->pname, 'signup/2ndround/profession/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-			  )
-			).'</nobr>',
+				'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
+				)
+				).'</nobr>',
 			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			);
 		}
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
@@ -3260,98 +3176,95 @@ function signup_2nd_round_by_profession_detail($prof=NULL) {
 	$query=$query->fields('d',array('dname'));
 	$r=$query->execute()->fetchObject();
 	$profession_major = t('!dname!pname', array(
-  	  	  '!dname' => $r->dname,
-  	  	  '!pname' => $r->pname,
-  	));
+					'!dname' => $r->dname,
+					'!pname' => $r->pname,
+		));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-  
+	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round1_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
 		$valins="1";
 
-  if($prof)
-  	$sql_department_insert = "p.pid='".$prof."'";
-  else
-  	$sql_department_insert = '1';
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
-  $options=array('000000'=>t('All students'));
-  $options+=array((string)($r->cid)=>$r->name);
+	if($prof)
+		$sql_department_insert = "p.pid='".$prof."'";
+	else
+		$sql_department_insert = '1';
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
+	$options=array('000000'=>t('All students'));
+	$options+=array((string)($r->cid)=>$r->name);
 
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  	array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
-  );
-  
-  //$tablesort = tablesort_sql($header);
-  //var_dump($cookie_examplace);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->where($sql_department_insert)->where($valins)->condition('s.pass_round1_major','0','<>')
-			->extend('TableSort')->orderByHeader($header)
-			->extend('PagerDefault')->limit(20);
-  //var_dump($query->__toString());
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($profession_major, 'signup/2ndround/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $profession_major)
-		  ))
-		),
-  	  	$province,
-  	  	$per,
-  	  );
-  }
-  
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+	$rows = array();
+	$header = array(
+		array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Province'), 'field'=>'gk.province'),
+		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
+	);
+	
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+		->fields('gk')
+		->where($sql_department_insert)->where($valins)->condition('s.pass_round1_major','0','<>')
+		->extend('TableSort')->orderByHeader($header)
+		->extend('PagerDefault')->limit(20);
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+		$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+		switch($r->ucategory) {
+			case uc_OWN_STUDENT:
+				$province = t('Our own student');
+				$per = t('Our own student');
+				$plink = '000000';
+				break;
+			case uc_MAINLAND_STUDENT:
+			case uc_HKTW_STUDENT:
+				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$per = $r->personnel_record_at;
+				if(!$per) $per=t('N/A');
+				$plink = $r->province;
+				break;
+			case uc_OVERSEA_STUDENT:
+				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$per = t('N/A');
+				$plink = $r->province;
+				break;
+		}
+		
+		
+		$rows[] = array(
+			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
+			'<nobr>'.$r->name.'</nobr>',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			l($profession_major, 'signup/2ndround/profession/'.$r->profession_major, array(
+				'title' => t(
+					'Click to view the details of @prof', array(
+					'@prof' => $profession_major)
+				))
+			),
+			$province,
+			$per,
+		);
+	}
+	
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_3rd_round_by_profession() {
@@ -3394,16 +3307,13 @@ function signup_3rd_round_by_profession() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
-			'<nobr>'.l($r->pname, 'signup/3rdround/profession/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-			  )
-			).'</nobr>',
-			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			// Determine whether you are plain department
+			if(user_access('view own draft') && !user_access('view draft'))
+				if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
+				'<nobr>'.l($r->pname, 'signup/3rdround/profession/'.$r->pid, array('title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),)).'</nobr>',
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+			);
 		}
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
@@ -3421,100 +3331,94 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
 	$query=$query->fields('d',array('dname'));
 	$r=$query->execute()->fetchObject();
 	$profession_major = t('!dname!pname', array(
-  	  	  '!dname' => $r->dname,
-  	  	  '!pname' => $r->pname,
-  	));
+		'!dname' => $r->dname,
+		'!pname' => $r->pname,
+	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-  
+	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round3_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
 		$valins="1";
 
-  if($prof)
-  	$sql_department_insert = "p.pid='".$prof."'";
-  else
-  	$sql_department_insert = '1';
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
-  $options=array('000000'=>t('All students'));
-  $options+=array((string)($r->cid)=>$r->name);
+	if($prof)
+		$sql_department_insert = "p.pid='".$prof."'";
+	else
+		$sql_department_insert = '1';
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
+	$options=array('000000'=>t('All students'));
+	$options+=array((string)($r->cid)=>$r->name);
 
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Status'), 'field'=>'s.pass_round3_major', 'sort'=>'desc'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  );
-  
-  //$tablesort = tablesort_sql($header);
-  //var_dump($cookie_examplace);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->innerJoin('students_total_score','ts','ts.uid=s.uid');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->fields('ts',array('outrank'))
-  	  		->where($sql_department_insert)->where($valins)->condition('s.pass_round3_major','0','<>')
-			->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
-			->extend('PagerDefault')->limit(20);
-  //var_dump($query->__toString());
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($profession_major, 'signup/3rdround/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $profession_major)
-		  ))
-		),
-		$r->pass_round3_major==1?t('To be determined').'/'.$r->outrank:t('Determined'),
-  	  	(user_access('signup_3rd_overview'))?l($province, 'signup/3rdround/province/'.$plink):($province),
-  	  );
-  }
-  
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+	$rows = array();
+	$header = array(
+		array('data' =>t('Student ID'), 'field'=>'s.uid'),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Status'), 'field'=>'s.pass_round3_major', 'sort'=>'desc'),
+		array('data' =>t('Province'), 'field'=>'gk.province'),
+	);
+	
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+		->fields('gk')
+		->fields('ts',array('outrank'))
+		->where($sql_department_insert)->where($valins)->condition('s.pass_round3_major','0','<>')
+		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
+		->extend('PagerDefault')->limit(20);
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+		switch($r->ucategory) {
+			case uc_OWN_STUDENT:
+				$province = t('Our own student');
+				$per = t('Our own student');
+				$plink = '000000';
+				break;
+			case uc_MAINLAND_STUDENT:
+			case uc_HKTW_STUDENT:
+				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$per = $r->personnel_record_at;
+				if(!$per) $per=t('N/A');
+				$plink = $r->province;
+				break;
+			case uc_OVERSEA_STUDENT:
+				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$per = t('N/A');
+				$plink = $r->province;
+				break;
+		}
+		
+		
+		$rows[] = array(
+			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
+			'<nobr>'.$r->name.'</nobr>',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			l($profession_major, 'signup/3rdround/profession/'.$r->profession_major, array(
+				'title' => t('Click to view the details of @prof', array('@prof' => $profession_major)))
+			),
+			$r->pass_round3_major==1?t('To be determined').'/'.$r->outrank:t('Determined'),
+			(user_access('signup_3rd_overview'))?l($province, 'signup/3rdround/province/'.$plink):($province),
+		);
+	}
+	
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_3rd_round_by_province() {
@@ -3556,30 +3460,30 @@ function signup_3rd_round_by_province() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
-			'<nobr>'.l('<img src="/'.drupal_get_path('module','signup').'/download.png">', 'signup/3rdround/province/'.$r->pid.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province')))).' '.
-			   l('<img src="/'.drupal_get_path('module','signup').'/printer.png">', 'signup/3rdround/province/'.$r->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province')))).' '.
-			   l($r->name, 'signup/3rdround/province/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
-			  )
-			).'</nobr>',
-			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			// Determine whether you are plain department
+			if(user_access('view own draft') && !user_access('view draft'))
+				if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
+				'<nobr>'.l('<img src="/'.drupal_get_path('module','signup').'/download.png">', 'signup/3rdround/province/'.$r->pid.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province')))).' '.
+				l('<img src="/'.drupal_get_path('module','signup').'/printer.png">', 'signup/3rdround/province/'.$r->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province')))).' '.
+				l($r->name, 'signup/3rdround/province/'.$r->pid, array(
+					'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
+					)
+				).'</nobr>',
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+			);
 		} else if($r->ucategory==='0') {
-	       $rows[] = array(
-	       	   l(t('Our own student'), 'signup/3rdround/province/000000', array(
-	       	     'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
-	       	   )),
-			   sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-	       );
+			$rows[] = array(
+				l(t('Our own student'), 'signup/3rdround/province/000000', array(
+					'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
+				)),
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+			);
 		}
 
 	}
 	
-  	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 
 	return $output;
 	
@@ -3591,7 +3495,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
-  
+	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
@@ -3599,88 +3503,85 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 	
 	$output = '';
 	
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $rows = array();
-  $header = array(
-  	array('data' =>t('IDCard number'), 'field'=>'s.idcard_number', 'sort'=>'asc'),
-  	array('data' =>t('Student ID number'), 'field'=>'gk.sid'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Status'), 'field'=>'s.pass_round3_major'),
-  );
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$rows = array();
+	$header = array(
+		array('data' =>t('IDCard number'), 'field'=>'s.idcard_number', 'sort'=>'asc'),
+		array('data' =>t('Student ID number'), 'field'=>'gk.sid'),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Status'), 'field'=>'s.pass_round3_major'),
+	);
 
-  if($prov=='000000')
+	if($prov=='000000')
 	$provcondition='s.ucategory = 0';
-  else
+	else
 	$provcondition="gk.province='".$prov."'";
-  
-  //$tablesort = tablesort_sql($header);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->fields('p',array('pname'))
-  	  		->where($provcondition)->where($valins)->condition('s.pass_round3_major','0','<>')
-			->extend('TableSort')->orderByHeader($header)
-			->extend('PagerDefault')->limit(40);
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.$r->idcard_number.'</nobr>',
-  	  	'<nobr>'.$r->sid.'</nobr>',
-  	  	'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($r->pname, 'signup/3rdround/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $r->pname)
-		  ))
-		),
-		$r->pass_round3_major==1?t('To be determined'):t('Determined'),
-  	  );
-  }
-  if($r->ucategory) {
-	  $output .= l('<img src="/'.drupal_get_path('module','signup').'/download.png" style="vertical-align: bottom">'.t('Download database'), 'signup/3rdround/province/'.$prov.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province'))));
-	  $output .= '&nbsp;';
-	  $output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/3rdround/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
-	  $output .= '<p/>';
-  }
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+	
+	//$tablesort = tablesort_sql($header);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+		->fields('gk')
+		->fields('p',array('pname'))
+		->where($provcondition)->where($valins)->condition('s.pass_round3_major','0','<>')
+		->extend('TableSort')->orderByHeader($header)
+		->extend('PagerDefault')->limit(40);
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+		switch($r->ucategory) {
+			case uc_OWN_STUDENT:
+				$province = t('Our own student');
+				$per = t('Our own student');
+				$plink = '000000';
+				break;
+			case uc_MAINLAND_STUDENT:
+			case uc_HKTW_STUDENT:
+				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$per = $r->personnel_record_at;
+				if(!$per) $per=t('N/A');
+				$plink = $r->province;
+				break;
+			case uc_OVERSEA_STUDENT:
+				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$per = t('N/A');
+				$plink = $r->province;
+				break;
+		}
+			
+			
+		$rows[] = array(
+			'<nobr>'.$r->idcard_number.'</nobr>',
+			'<nobr>'.$r->sid.'</nobr>',
+			'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			l($r->pname, 'signup/3rdround/profession/'.$r->profession_major, array(
+				'title' => t('Click to view the details of @prof', array('@prof' => $r->pname)))
+			),
+			$r->pass_round3_major==1?t('To be determined'):t('Determined'),
+		);
+	}
+	if($r->ucategory) {
+		$output .= l('<img src="/'.drupal_get_path('module','signup').'/download.png" style="vertical-align: bottom">'.t('Download database'), 'signup/3rdround/province/'.$prov.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province'))));
+		$output .= '&nbsp;';
+		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/3rdround/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
+		$output .= '<p/>';
+	}
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_3rd_round_by_province_download($prov) {
@@ -3690,23 +3591,23 @@ function signup_3rd_round_by_province_download($prov) {
 	$provname=$r->simplified_name;
 	
 	$def = array(
-	  array("KSH",		"C",	14),
-	  array("XM",		"C",	24),
-	  array("XBDM",		"C",	1),
-	  array("SFZH",		"C",	18),
-	  array("BYXXMC",	"C",	20),
-	  array("YXDM",		"C",	5),
-	  array("YXMC",		"C",	40),
-	  array("CCDM",		"C",	1),
-	  array("ZYDM",		"C",	6),
-	  array("ZYMC",		"C",	30),
-	  array("STKKM",	"C",	30),
-	  array("STKCSF",	"N",	7,3),
-	  array("YXKSKM",	"C",	30),
-	  array("YXSKCSF",	"N",	7,3),
-	  array("YXZYMC",	"N",	4,0),
-	  array("YXKSDD",	"C",	30),
-	  array("BZ",		"C",	60),
+		array("KSH",		"C",	14),
+		array("XM",		"C",	24),
+		array("XBDM",		"C",	1),
+		array("SFZH",		"C",	18),
+		array("BYXXMC",	"C",	20),
+		array("YXDM",		"C",	5),
+		array("YXMC",		"C",	40),
+		array("CCDM",		"C",	1),
+		array("ZYDM",		"C",	6),
+		array("ZYMC",		"C",	30),
+		array("STKKM",	"C",	30),
+		array("STKCSF",	"N",	7,3),
+		array("YXKSKM",	"C",	30),
+		array("YXSKCSF",	"N",	7,3),
+		array("YXZYMC",	"N",	4,0),
+		array("YXKSDD",	"C",	30),
+		array("BZ",		"C",	60),
 	);
 
 	// creation
@@ -3714,7 +3615,7 @@ function signup_3rd_round_by_province_download($prov) {
 	unlink($fname);
 	$fhandle=dbase_create($fname, $def);
 	if (!$fhandle) {
-	  return NULL;
+		return NULL;
 	}
 	$query=db_select('students','s')->condition('s.pass_round3_major','0','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -3734,7 +3635,6 @@ function signup_3rd_round_by_province_download($prov) {
 	
 	// If there is no any record, output 404 error.
 	if($query->countQuery()->execute()->fetchField()==0) {
-		//var_dump($query->countQuery()->execute()->fetchField());
 		return MENU_NOT_FOUND;
 	}
 		
@@ -3811,7 +3711,6 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	
 	// If there is no any record, output 404 error.
 	if($query->countQuery()->execute()->fetchField()==0) {
-		//var_dump($query->countQuery()->execute()->fetchField());
 		return MENU_NOT_FOUND;
 	}
 	
@@ -3823,48 +3722,46 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 
 	// Extend the TCPDF class to create custom Header and Footer
 	class MYPDF extends TCPDF {
+		//Page header
+		public function Header() {
+			$this->setHeaderMargin(30);
+			$this->SetX(10);
+			$this->SetY(8);
+			// Set font
+			$this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
+			// Title
+			$this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
+			$this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
+			$this->SetX(1);
+			$this->SetY(18);
+			$this->Cell(10, 2, '序号',0, false, 'C');
+			$this->Cell(40, 2, '身份证号码',0, false, 'C');
+			$this->Cell(30, 2, '考生号',0, false, 'C');
+			$this->Cell(20, 2, '姓名',0, false, 'C');
+			$this->Cell(5, 2, '性别',0, false, 'C');
+			$this->Cell(60, 2, '所在学校',0, false, 'C');
+			$this->Cell(13, 2, '专业代码',0, false, 'C');
+			$this->Cell(33, 2, '专业名称',0, false, 'C');
+			$this->Cell(22, 2, '专业方向',0, false, 'C');
+			$this->Cell(12, 2, '术科成绩',0, false, 'C');
+			$this->Cell(10, 2, '排名',0, false, 'C');
+			$this->Cell(20, 2, '户口所在地',0, false, 'C');
+			$this->Line(5,24,292,24,array('width'=>0.5));
+		}
 
-	    //Page header
-	    public function Header() {
-	    	$this->setHeaderMargin(30);
-	    	$this->SetX(10);
-	    	$this->SetY(8);
-	        // Set font
-	        $this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
-	        // Title
-	        $this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	        $this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
-	    	$this->SetX(1);
-	    	$this->SetY(18);
-	        $this->Cell(10, 2, '序号',0, false, 'C');
-	        $this->Cell(40, 2, '身份证号码',0, false, 'C');
-	        $this->Cell(30, 2, '考生号',0, false, 'C');
-	        $this->Cell(20, 2, '姓名',0, false, 'C');
-	        $this->Cell(5, 2, '性别',0, false, 'C');
-	        $this->Cell(60, 2, '所在学校',0, false, 'C');
-	        $this->Cell(13, 2, '专业代码',0, false, 'C');
-	        $this->Cell(33, 2, '专业名称',0, false, 'C');
-	        //$this->Cell(, 2, '计划代码',1, false, 'C');
-	        $this->Cell(22, 2, '专业方向',0, false, 'C');
-	        $this->Cell(12, 2, '术科成绩',0, false, 'C');
-	        $this->Cell(10, 2, '排名',0, false, 'C');
-	        $this->Cell(20, 2, '户口所在地',0, false, 'C');
-	        $this->Line(5,24,292,24,array('width'=>0.5));
-	    }
-
-	    // Page footer
-	    public function Footer() {
-	        // Position at 15 mm from bottom
-	        $this->SetY(-13);
-	        $this->SetX(5);
-	        $this->Line(5,198,292,198,array('width'=>0.5));
-	        // Set font
-	        // Page number
-	        $this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
-	        $this->Cell(30, 12, date('Y年n月j日'));
-	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其平均序，非成绩。', 0, false, 'C');
-	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
-	    }
+		// Page footer
+		public function Footer() {
+			// Position at 15 mm from bottom
+			$this->SetY(-13);
+			$this->SetX(5);
+			$this->Line(5,198,292,198,array('width'=>0.5));
+			// Set font
+			// Page number
+			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
+			$this->Cell(30, 12, date('Y年n月j日'));
+			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其平均序，非成绩。', 0, false, 'C');
+			$this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
+		}
 	}
 	// create new PDF document
 	$pdf = new MYPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
@@ -3921,8 +3818,6 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
 		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
 		$pdf->Cell(12,2,$r->total_score<=0?('['.abs(round($r->total_score,2)).']'):number_format($r->total_score,2));
-		//$pdf->Cell(12,2,'100.00');
-		//$pdf->Cell(10,2,$r->years, 0, false, 'C');
 		$pdf->Cell(10,2,$r->rank, 0, false, 'C');
 		$pdf->Cell(20,2,$r->name_simp);
 		$pdf->LN();
@@ -3970,16 +3865,16 @@ function signup_ground_by_profession() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
+			// Determine whether you are plain department
+			if(user_access('view own draft') && !user_access('view draft'))
+					if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
 			'<nobr>'.l($r->pname, 'signup/ground/profession/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-			  )
+				'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
+				)
 			).'</nobr>',
 			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			);
 		}
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
@@ -3996,98 +3891,92 @@ function signup_ground_by_profession_detail($prof=NULL) {
 	$query=$query->fields('d',array('dname'));
 	$r=$query->execute()->fetchObject();
 	$profession_major = t('!dname!pname', array(
-  	  	  '!dname' => $r->dname,
-  	  	  '!pname' => $r->pname,
-  	));
+		'!dname' => $r->dname,
+		'!pname' => $r->pname,
+	));
 
 	drupal_set_title(t('By Profession').' - '.$r->pname);
-  
+	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_roundg_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
 		$valins="1";
 
-  if($prof)
-  	$sql_department_insert = "p.pid='".$prof."'";
-  else
-  	$sql_department_insert = '1';
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
-  $options=array('000000'=>t('All students'));
-  $options+=array((string)($r->cid)=>$r->name);
+	if($prof)
+		$sql_department_insert = "p.pid='".$prof."'";
+	else
+		$sql_department_insert = '1';
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
+	$options=array('000000'=>t('All students'));
+	$options+=array((string)($r->cid)=>$r->name);
 
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID'), 'field'=>'s.uid'),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  	array('data' =>t('Province'), 'field'=>'gk.province'),
-  );
-  
-  //$tablesort = tablesort_sql($header);
-  //var_dump($cookie_examplace);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->innerJoin('students_total_score','ts','ts.uid=s.uid');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->fields('ts',array('outrank'))
-  	  		->where($sql_department_insert)->where($valins)->condition('s.pass_roundg_major','0','<>')
-			->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
-			->extend('PagerDefault')->limit(20);
-  //var_dump($query->__toString());
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
-  	  	'<nobr>'.$r->name.'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	l($profession_major, 'signup/ground/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $profession_major)
-		  ))
-		),
-  	  	(user_access('signup_3rd_overview'))?l($province, 'signup/ground/province/'.$plink):($province),
-  	  );
-  }
-  
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+	$rows = array();
+	$header = array(
+		array('data' =>t('Student ID'), 'field'=>'s.uid'),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Province'), 'field'=>'gk.province'),
+	);
+	
+	//$tablesort = tablesort_sql($header);
+	//var_dump($cookie_examplace);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+		->fields('gk')
+		->fields('ts',array('outrank'))
+		->where($sql_department_insert)->where($valins)->condition('s.pass_roundg_major','0','<>')
+		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
+		->extend('PagerDefault')->limit(20);
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+		switch($r->ucategory) {
+			case uc_OWN_STUDENT:
+				$province = t('Our own student');
+				$per = t('Our own student');
+				$plink = '000000';
+				break;
+			case uc_MAINLAND_STUDENT:
+			case uc_HKTW_STUDENT:
+				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$per = $r->personnel_record_at;
+				if(!$per) $per=t('N/A');
+				$plink = $r->province;
+				break;
+			case uc_OVERSEA_STUDENT:
+				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$per = t('N/A');
+				$plink = $r->province;
+				break;
+		}
+		
+		
+		$rows[] = array(
+			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
+			'<nobr>'.$r->name.'</nobr>',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			l($profession_major, 'signup/ground/profession/'.$r->profession_major, array('title' => t('Click to view the details of @prof', array('@prof' => $profession_major)))),
+			(user_access('signup_3rd_overview'))?l($province, 'signup/ground/province/'.$plink):($province),
+		);
+	}
+	
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_ground_by_province() {
@@ -4129,30 +4018,29 @@ function signup_ground_by_province() {
 	
 	foreach($rdbo as $r) {
 		if($r->pid) {
-	       // Determine whether you are plain department
-	       if(user_access('view own draft') && !user_access('view draft'))
-	       	   if($GLOBALS['user']->name !== $r->uid) continue;
-		   $rows[] = array(
-			'<nobr>'.
-			   l('<img src="/'.drupal_get_path('module','signup').'/printer.png">', 'signup/ground/province/'.$r->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province')))).' '.
-			   l($r->name, 'signup/ground/province/'.$r->pid, array(
-			  'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
-			  )
-			).'</nobr>',
-			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-		   );
+			// Determine whether you are plain department
+			if(user_access('view own draft') && !user_access('view draft'))
+				if($GLOBALS['user']->name !== $r->uid) continue;
+			$rows[] = array(
+				'<nobr>'.
+				l('<img src="/'.drupal_get_path('module','signup').'/printer.png">', 'signup/ground/province/'.$r->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province')))).' '.
+				l($r->name, 'signup/ground/province/'.$r->pid, array(
+					'title' => t('Click to view the details of @prov province', array('@prov'=>$r->name)),
+					)
+					).'</nobr>',
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+			);
 		} else if($r->ucategory==='0') {
-	       $rows[] = array(
-	       	   l(t('Our own student'), 'signup/ground/province/000000', array(
-	       	     'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
-	       	   )),
-			   sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
-	       );
+			$rows[] = array(
+				l(t('Our own student'), 'signup/ground/province/000000', array(
+					'title' => t('Click to view the details of students from @province', array('@province'=>t('Our own student'))),
+				)),
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+			);
 		}
-
 	}
 	
-  	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 
 	return $output;
 	
@@ -4164,7 +4052,7 @@ function signup_ground_by_province_detail($prov=NULL) {
 	$r=$query->execute()->fetchObject();
 
 	drupal_set_title(t('By Province').' - '.$r->name);
-  
+	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
 	else 
@@ -4172,86 +4060,84 @@ function signup_ground_by_province_detail($prov=NULL) {
 	
 	$output = '';
 	
-  $output = '<div id="baoming_user_list" class="baoming_view_section node">';
-  
-  $rows = array();
-  $header = array(
-  	array('data' =>t('Student ID number'), 'field'=>'gk.sid', 'sort'=>'asc'),
-  	array('data' =>t('IDCard number')),
-  	array('data' =>t('Real Name')),
-  	array('data' =>t('Gender'), 'field'=>'s.gender'),
-  	array('data' =>t('Guobiao Profession'), 'field'=>'gb_scode'),
-  	array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-  );
+	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+	
+	$rows = array();
+	$header = array(
+		array('data' =>t('Student ID number'), 'field'=>'gk.sid', 'sort'=>'asc'),
+		array('data' =>t('IDCard number')),
+		array('data' =>t('Real Name')),
+		array('data' =>t('Gender'), 'field'=>'s.gender'),
+		array('data' =>t('Guobiao Profession'), 'field'=>'gb_scode'),
+		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+	);
 
-  if($prov=='000000')
+	if($prov=='000000')
 	$provcondition='s.ucategory = 0';
-  else
+	else
 	$provcondition="gk.province='".$prov."'";
-  
-  //$tablesort = tablesort_sql($header);
-  $query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
-  $query->leftJoin('students_gk','gk','s.uid=gk.uid');
-  $query->leftJoin('students_contact','c','s.uid=c.uid');
-  $query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-  $query->innerJoin('users','u','s.uid=u.name');
-  $query->addExpression('u.uid', 'sys_uid');
-  $query = $query->fields('c', array('personnel_record_at'))
-  	  		->fields('gk')
-  	  		->fields('p',array('gb_pid','gb_pname','gb_scode','pname'))
-  	  		->where($provcondition)->where($valins)->condition('s.pass_roundg_major','0','<>')
+	
+	//$tablesort = tablesort_sql($header);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
+	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
+	$query->leftJoin('students_contact','c','s.uid=c.uid');
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->addExpression('u.uid', 'sys_uid');
+	$query = $query->fields('c', array('personnel_record_at'))
+					->fields('gk')
+					->fields('p',array('gb_pid','gb_pname','gb_scode','pname'))
+					->where($provcondition)->where($valins)->condition('s.pass_roundg_major','0','<>')
 			->extend('TableSort')->orderByHeader($header)->orderBy('gk.sid')
 			->extend('PagerDefault')->limit(40);
-  $rdbo=$query->execute();
-  if(count($rdbo)==0) {
-  	  $rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-  }
-  else
-  foreach($rdbo as $r) {
-  	  switch($r->ucategory) {
-  	  	  case uc_OWN_STUDENT:
-  	  	  	  $province = t('Our own student');
-  	  	  	  $per = t('Our own student');
-  	  	  	  $plink = '000000';
-  	  	  	  break;
-  	  	  case uc_MAINLAND_STUDENT:
-  	  	  case uc_HKTW_STUDENT:
-  	  	  	  $province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
-  	  	  	  $per = $r->personnel_record_at;
-  	  	  	  if(!$per) $per=t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  	  case uc_OVERSEA_STUDENT:
-  	  	  	  $province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
-  	  	  	  $per = t('N/A');
-  	  	  	  $plink = $r->province;
-  	  	  	  break;
-  	  }
-  	  
-  	  
-  	  $rows[] = array(
-  	  	'<nobr>'.$r->sid.'</nobr>',
-  	  	'<nobr>'.$r->idcard_number.'</nobr>',
-  	  	'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
-  	  	$r->gender == 1 ? t('Male'): t('Female'),
-  	  	$r->gb_pname.'('.$r->gb_scode.')',
-  	  	l($r->pname, 'signup/ground/profession/'.$r->profession_major, array(
-		  'title' => t(
-		    'Click to view the details of @prof', array(
-		    '@prof' => $r->pname)
-		  ))
-		),
-  	  );
-  }
-  if($r->ucategory) {
-	  $output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/ground/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
-	  $output .= '<p/>';
-  }
-  $output .= theme('table', array('header'=>$header, 'rows'=>$rows));
-  $output .= theme('pager');
-  $output .= "</div>";
-  
-  return $output;
+	$rdbo=$query->execute();
+	if(count($rdbo)==0) {
+			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	}
+	else
+	foreach($rdbo as $r) {
+		switch($r->ucategory) {
+			case uc_OWN_STUDENT:
+				$province = t('Our own student');
+				$per = t('Our own student');
+				$plink = '000000';
+				break;
+			case uc_MAINLAND_STUDENT:
+			case uc_HKTW_STUDENT:
+				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$per = $r->personnel_record_at;
+				if(!$per) $per=t('N/A');
+				$plink = $r->province;
+				break;
+			case uc_OVERSEA_STUDENT:
+				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$per = t('N/A');
+				$plink = $r->province;
+				break;
+		}
+		$rows[] = array(
+			'<nobr>'.$r->sid.'</nobr>',
+			'<nobr>'.$r->idcard_number.'</nobr>',
+			'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
+			$r->gender == 1 ? t('Male'): t('Female'),
+			$r->gb_pname.'('.$r->gb_scode.')',
+			l($r->pname, 'signup/ground/profession/'.$r->profession_major, array(
+				'title' => t(
+					'Click to view the details of @prof', array(
+					'@prof' => $r->pname)
+				))
+			),
+		);
+	}
+	if($r->ucategory) {
+		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/ground/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
+		$output .= '<p/>';
+	}
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('pager');
+	$output .= "</div>";
+	
+	return $output;
 }
 
 function signup_ground_by_province_report($prov=NULL) {
@@ -4259,7 +4145,6 @@ function signup_ground_by_province_report($prov=NULL) {
 	if(!isset($r) || !($r->name))
 		drupal_access_denied();
 	$provname=$r->name;
-	//var_dump($provname); exit;
 	
 	$query=db_select('students','s')->condition('s.pass_roundg_major','0','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -4281,11 +4166,9 @@ function signup_ground_by_province_report($prov=NULL) {
 	
 	// If there is no any record, output 404 error.
 	if($query->countQuery()->execute()->fetchField()==0) {
-		//var_dump($query->countQuery()->execute()->fetchField());
 		return MENU_NOT_FOUND;
 	}
 	
-	//var_dump($account);
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
@@ -4293,46 +4176,45 @@ function signup_ground_by_province_report($prov=NULL) {
 
 	// Extend the TCPDF class to create custom Header and Footer
 	class MYPDF extends TCPDF {
+		//Page header
+		public function Header() {
+			$this->setHeaderMargin(30);
+			$this->SetX(10);
+			$this->SetY(8);
+			// Set font
+			$this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
+			// Title
+			$this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
+			$this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
+			$this->SetX(1);
+			$this->SetY(18);
+			$this->Cell(10, 2, '序号',0, false, 'C');
+			$this->Cell(30, 2, '考生号',0, false, 'C');
+			$this->Cell(40, 2, '身份证号码',0, false, 'C');
+			$this->Cell(20, 2, '姓名',0, false, 'C');
+			$this->Cell(5, 2, '性别',0, false, 'C');
+			$this->Cell(60, 2, '所在学校',0, false, 'C');
+			$this->Cell(13, 2, '专业代码',0, false, 'C');
+			$this->Cell(33, 2, '专业名称',0, false, 'C');
+			$this->Cell(22, 2, '专业方向',0, false, 'C');
+			$this->Cell(25, 2, '文考总分',0, false, 'C');
+			$this->Cell(12, 2, '术科成绩',0, false, 'C');
+			$this->Line(5,24,292,24,array('width'=>0.5));
+		}
 
-	    //Page header
-	    public function Header() {
-	    	$this->setHeaderMargin(30);
-	    	$this->SetX(10);
-	    	$this->SetY(8);
-	        // Set font
-	        $this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
-	        // Title
-	        $this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	        $this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
-	    	$this->SetX(1);
-	    	$this->SetY(18);
-	        $this->Cell(10, 2, '序号',0, false, 'C');
-	        $this->Cell(30, 2, '考生号',0, false, 'C');
-	        $this->Cell(40, 2, '身份证号码',0, false, 'C');
-	        $this->Cell(20, 2, '姓名',0, false, 'C');
-	        $this->Cell(5, 2, '性别',0, false, 'C');
-	        $this->Cell(60, 2, '所在学校',0, false, 'C');
-	        $this->Cell(13, 2, '专业代码',0, false, 'C');
-	        $this->Cell(33, 2, '专业名称',0, false, 'C');
-	        $this->Cell(22, 2, '专业方向',0, false, 'C');
-	        $this->Cell(25, 2, '文考总分',0, false, 'C');
-	        $this->Cell(12, 2, '术科成绩',0, false, 'C');
-	        $this->Line(5,24,292,24,array('width'=>0.5));
-	    }
-
-	    // Page footer
-	    public function Footer() {
-	        // Position at 15 mm from bottom
-	        $this->SetY(-13);
-	        $this->SetX(5);
-	        $this->Line(5,198,292,198,array('width'=>0.5));
-	        // Set font
-	        // Page number
-	        $this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
-	        $this->Cell(30, 12, date('Y年n月j日'));
-	        $this->Cell(220,12, '院校名称:10045中央音乐学院    注:高考成绩未标明者为文科。校考成绩带括号者为其平均序，非成绩。', 0, false, 'C');
-	        $this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
-	    }
+		// Page footer
+		public function Footer() {
+			// Position at 15 mm from bottom
+			$this->SetY(-13);
+			$this->SetX(5);
+			$this->Line(5,198,292,198,array('width'=>0.5));
+			// Set font
+			// Page number
+			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
+			$this->Cell(30, 12, date('Y年n月j日'));
+			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:高考成绩未标明者为文科。校考成绩带括号者为其平均序，非成绩。', 0, false, 'C');
+			$this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
+		}
 	}
 	// create new PDF document
 	$pdf = new MYPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
@@ -4433,11 +4315,11 @@ function signup_preset_passthrough() {
 		'#description' => t('There are !num students marked as passthrough now.',array('!num'=>count($options))),
 	);
 	$form['students']=array(
-	    '#type' => 'tableselect',
-	    '#header' => $header,
-	    '#options' => $options,
-	    '#attributes' => array('class'=>array('assign_students')),
-	    '#empty' => t('No suitable students.'),
+		'#type' => 'tableselect',
+		'#header' => $header,
+		'#options' => $options,
+		'#attributes' => array('class'=>array('assign_students')),
+		'#empty' => t('No suitable students.'),
 	);
 	
 	$form['add']=array(
@@ -4906,16 +4788,15 @@ function signup_ticket_report($user) {
 }
 
 function signup_schools_autocomplete($string) {
-  $matches = array();
-  if ($string) {
-  	$result = db_select('vl_schools','s')->fields('s',array('sname'))->condition('s.sname', db_like($string) . '%', 'LIKE')->range(0, 10)->execute();
-    //$result = db_query_range("SELECT sname FROM {vl_schools} WHERE sname LIKE LOWER('%s%%')", $string, 0, 10);
-    foreach ($result as $school) {
-      $matches[$school->sname] = check_plain($school->sname);
-    }
-  }
+	$matches = array();
+	if ($string) {
+		$result = db_select('vl_schools','s')->fields('s',array('sname'))->condition('s.sname', db_like($string) . '%', 'LIKE')->range(0, 10)->execute();
+		foreach ($result as $school) {
+			$matches[$school->sname] = check_plain($school->sname);
+		}
+	}
 
-  drupal_json_output($matches);
+	drupal_json_output($matches);
 }
 
 function signup_cron() {

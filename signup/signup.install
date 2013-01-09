@@ -8,125 +8,130 @@
  * Implementation of hook_install().
  */
 function signup_install() {
-  // set currentyear of exams
-  if(variable_get('zhaoban_current_year', 'XXXX')=='XXXX')
-  	  variable_set('zhaoban_current_year', date('Y')+1);
+	// set currentyear of exams
+	if(variable_get('zhaoban_current_year', 'XXXX')=='XXXX')
+		variable_set('zhaoban_current_year', date('Y')+1);
 }
 
 /**
  * Implementation of hook_schema().
  */
 function signup_schema() {
-$schema['students'] = array(
-	'description' => t('This table stores the basic information of the student.'),
-    'fields' => array(
-         'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
-         'ucategory' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '4'),
-         'idcard_number' => array('type' => 'varchar', 'length' => '18', 'not null' => FALSE),
-         'gender' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '4'),
-         'date_of_birth' => array('type' => 'varchar', 'length' => '8', 'not null' => FALSE),
-         'nationality' => array('type' => 'varchar', 'length' => '2', 'not null' => FALSE),
-         'politics_feature' => array('type' => 'varchar', 'length' => '2', 'not null' => FALSE),
-         'name' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE, 'default'=>''),
-         'foreign_name' => array('type' => 'varchar', 'length' => '50', 'not null' => FALSE),
-         'profession_major' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE, 'default' => '0'),
-	 'examplace' => array('type' => 'varchar', 'length' => '6','not null' => TRUE,'default' => ''),
-         'chosen_professor' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
-         'validated' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
-         'pass_round1_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
-         'pass_round3_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
-         'pass_roundg_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
-         'picture' => array('type' => 'text', 'size' => 'big', 'not null' => FALSE),
-         'randnum' => array('type' => 'float', 'size' => 'big', 'not null' => FALSE)),
-    'primary key' => array('uid'),
-    'indexes' => array(
-         'name' => array('name'),
-         'pass_round1_major' => array('pass_round1_major'),
-         'pass_round3_major' => array('pass_round3_major'),
-         'pass_roundg_major' => array('pass_roundg_major'),
-         'profession_major' => array('profession_major'),
-         'ucategory' => array('ucategory'),
-         'validated' => array('validated')),
-);
+	$schema['students'] = array(
+		'description' => t('This table stores the basic information of the student.'),
+		'fields' => array(
+			'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
+			'ucategory' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '4'),
+			'idcard_number' => array('type' => 'varchar', 'length' => '18', 'not null' => FALSE),
+			'gender' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 1, 'disp-width' => '4'),
+			'date_of_birth' => array('type' => 'varchar', 'length' => '8', 'not null' => FALSE),
+			'nationality' => array('type' => 'varchar', 'length' => '2', 'not null' => FALSE),
+			'politics_feature' => array('type' => 'varchar', 'length' => '2', 'not null' => FALSE),
+			'name' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE, 'default'=>''),
+			'foreign_name' => array('type' => 'varchar', 'length' => '50', 'not null' => FALSE),
+			'profession_major' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE, 'default' => '0'),
+			'examplace' => array('type' => 'varchar', 'length' => '6','not null' => TRUE,'default' => ''),
+			'chosen_professor' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
+			'validated' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
+			'pass_round1_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
+			'pass_round3_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
+			'pass_roundg_major' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
+			'picture' => array('type' => 'text', 'size' => 'big', 'not null' => FALSE),
+			'randnum' => array('type' => 'float', 'size' => 'big', 'not null' => FALSE)
+		),
+		'primary key' => array('uid'),
+		'indexes' => array(
+			'name' => array('name'),
+			'pass_round1_major' => array('pass_round1_major'),
+			'pass_round3_major' => array('pass_round3_major'),
+			'pass_roundg_major' => array('pass_roundg_major'),
+			'profession_major' => array('profession_major'),
+			'ucategory' => array('ucategory'),
+			'validated' => array('validated')
+		),
+	);
 
-$schema['students_gk'] = array(
-    'fields' => array(
-         'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
-         'sid' => array('type' => 'varchar', 'length' => '14', 'not null' => FALSE),
-         'province' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE, 'default' => ''),
-         'city_district' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE, 'default' => ''),
-         'is_math_subjects' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
-         'score_chinese' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
-         'score_languages' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
-         'score_math' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
-         'score_synthesis' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
-         'score_total' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '2'),
-         'memory' => array('type' => 'varchar', 'length' => '30', 'not null' => FALSE),
-         'validated' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4')),
-    'primary key' => array('uid'),
-    'indexes' => array(
-         'city_district' => array('city_district'),
-         'province' => array('province'),
-         'score_total' => array('score_total'),
-         'validated' => array('validated')),
-);
+	$schema['students_gk'] = array(
+		'fields' => array(
+				'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
+				'sid' => array('type' => 'varchar', 'length' => '14', 'not null' => FALSE),
+				'province' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE, 'default' => ''),
+				'city_district' => array('type' => 'varchar', 'length' => '6', 'not null' => TRUE, 'default' => ''),
+				'is_math_subjects' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4'),
+				'score_chinese' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
+				'score_languages' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
+				'score_math' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
+				'score_synthesis' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
+				'score_total' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '2'),
+				'memory' => array('type' => 'varchar', 'length' => '30', 'not null' => FALSE),
+				'validated' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4')
+		),
+		'primary key' => array('uid'),
+		'indexes' => array(
+			'city_district' => array('city_district'),
+			'province' => array('province'),
+			'score_total' => array('score_total'),
+			'validated' => array('validated')
+		),
+	);
 
-$schema['students_contact'] = array(
-	'description' => t('This table stores the contact information of the student.'),
-    'fields' => array(
-         'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
-         'mobile_phone' => array('type' => 'varchar', 'length' => '11', 'not null' => FALSE),
-         'receive_sms' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1'),
-         'contact_phone' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE),
-         'address_round3' => array('type' => 'varchar', 'length' => '200', 'not null' => TRUE),
-         'zip_round3' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-         'recipient_round3' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-         'address_roundg' => array('type' => 'varchar', 'length' => '200', 'not null' => TRUE),
-         'zip_roundg' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-         'recipient_roundg' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-         'phone_roundg' => array('type' => 'varchar', 'length' => '40', 'not null' => TRUE),
-         'emscode_roundg' => array('type' => 'varchar', 'length' => '13', 'not null' => FALSE),
-         'personnel_record_at' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
-         'address_of_home' => array('type' => 'varchar', 'length' => '500', 'not null' => TRUE),
-         'terminus_of_train' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
-	 'needroom' => array('type' => 'int', 'size' => 'tiny','not null' => TRUE,'default' => 0),
-    ),
-    'primary key' => array('uid'),
-    'indexes' => array(
-         'contact_phone' => array('contact_phone'),
-         'receive_sms' => array('receive_sms')),
-);
+	$schema['students_contact'] = array(
+		'description' => t('This table stores the contact information of the student.'),
+		'fields' => array(
+			'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
+			'mobile_phone' => array('type' => 'varchar', 'length' => '11', 'not null' => FALSE),
+			'receive_sms' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1'),
+			'contact_phone' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE),
+			'address_round3' => array('type' => 'varchar', 'length' => '200', 'not null' => TRUE),
+			'zip_round3' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'recipient_round3' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'address_roundg' => array('type' => 'varchar', 'length' => '200', 'not null' => TRUE),
+			'zip_roundg' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'recipient_roundg' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'phone_roundg' => array('type' => 'varchar', 'length' => '40', 'not null' => TRUE),
+			'emscode_roundg' => array('type' => 'varchar', 'length' => '13', 'not null' => FALSE),
+			'personnel_record_at' => array('type' => 'varchar', 'length' => '50', 'not null' => TRUE),
+			'address_of_home' => array('type' => 'varchar', 'length' => '500', 'not null' => TRUE),
+			'terminus_of_train' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE),
+			'needroom' => array('type' => 'int', 'size' => 'tiny','not null' => TRUE,'default' => 0),
+		),
+		'primary key' => array('uid'),
+		'indexes' => array(
+			'contact_phone' => array('contact_phone'),
+			'receive_sms' => array('receive_sms')
+		),
+	);
 
-$schema['students_going'] = array(
-	'description' => t('This table contains the individual student-to-exam relationship'),
-    'fields' => array(
-         'transid' => array('type' => 'serial', 'not null' => TRUE, 'disp-width' => '11'),
-         'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
-         'eid' => array('type' => 'varchar', 'length' => '3', 'not null' => TRUE),
-         'opus' => array('type' => 'varchar', 'length' => '5000', 'not null' => FALSE),
-         'gid' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
-         'gorder' => array('type' => 'int', 'not null' => FALSE, 'disp-width' => '3'),
-         'accesscode' => array('type' => 'varchar', 'length' => '16','not null' => FALSE),
-         'status' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE),
-         'answers' => array('type' => 'varchar', 'length' => '30', 'not null' => FALSE),
-    ),
-    'primary key' => array('transid'),
-    'indexes' => array(
-         'eid' => array('eid'),
-         'gid' => array('gid'),
-         'gorder' => array('gorder'),
-         'uid' => array('uid')),
-);
-$schema['students_passthrough'] = array(
-  'fields' => array(
-    'idcard_number' => array('type' => 'varchar','length' => '18','not null' => TRUE),
-    'pid' => array('type' => 'varchar','length' => '4','not null' => TRUE),
-  ),
-  'primary key' => array('idcard_number'),
-);
+	$schema['students_going'] = array(
+		'description' => t('This table contains the individual student-to-exam relationship'),
+		'fields' => array(
+			'transid' => array('type' => 'serial', 'not null' => TRUE, 'disp-width' => '11'),
+			'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
+			'eid' => array('type' => 'varchar', 'length' => '3', 'not null' => TRUE),
+			'opus' => array('type' => 'varchar', 'length' => '5000', 'not null' => FALSE),
+			'gid' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
+			'gorder' => array('type' => 'int', 'not null' => FALSE, 'disp-width' => '3'),
+			'accesscode' => array('type' => 'varchar', 'length' => '16','not null' => FALSE),
+			'status' => array('type' => 'int', 'size' => 'tiny', 'not null' => FALSE),
+			'answers' => array('type' => 'varchar', 'length' => '30', 'not null' => FALSE),
+		),
+		'primary key' => array('transid'),
+		'indexes' => array(
+			'eid' => array('eid'),
+			'gid' => array('gid'),
+			'gorder' => array('gorder'),
+			'uid' => array('uid')
+		),
+	);
+	$schema['students_passthrough'] = array(
+		'fields' => array(
+			'idcard_number' => array('type' => 'varchar','length' => '18','not null' => TRUE),
+			'pid' => array('type' => 'varchar','length' => '4','not null' => TRUE),
+		),
+		'primary key' => array('idcard_number'),
+	);
 
-
-  return $schema;
+	return $schema;
 }
 
 
