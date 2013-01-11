@@ -1047,7 +1047,7 @@ function onlinecharge_cron() {
 			continue;
 		}
 		// hook_querystatus returns array of transaction number, settledate, etc., if succeeded, or FALSE when failed.
-		if(!module_hook($r->gateway, 'querystatus')) return;
+		if(!module_hook($r->gateway, 'querystatus')) continue;
 		$t=module_invoke($r->gateway, 'querystatus', $r->orderno, $r->ordertime);
 		if(is_array($t)) {
 			db_update('orders')->condition('orderno',$r->orderno)->fields(array(
