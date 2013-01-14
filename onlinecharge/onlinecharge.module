@@ -625,6 +625,9 @@ function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
 	if($pre_orderno) {
 		onlinecharge_user_logout();
 		$_COOKIE['Drupal_visitor_orders_orderno']=$pre_orderno;
+		unset($_COOKIE['Drupal_visitor_orders_orderdate']);
+		unset($_COOKIE['Drupal_visitor_orders_gateway']);
+		unset($_COOKIE['Drupal_visitor_orders_status']);
 	}
 	$form=array();
 	$form['conditions']=array(
