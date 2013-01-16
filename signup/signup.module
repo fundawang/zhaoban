@@ -4801,7 +4801,7 @@ function signup_schools_autocomplete($string) {
 
 function signup_cron() {
 	// Force set those passthrough students's status
-	$result = db_select('students_passthrough','s')->fields('s')->execute();
+	$result = db_select('students_passthrough','s')->fields('s')->condition('s.validated',1)->execute();
 	foreach ($result as $r) {
 		db_update('students')
 			->fields(array(

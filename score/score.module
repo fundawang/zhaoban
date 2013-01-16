@@ -2495,7 +2495,7 @@ function score_cron() {
 	}
 	
 	// Force set those passthrough students's score
-	$query=db_select('students','s')->fields('s',array('uid'));
+	$query=db_select('students','s')->fields('s',array('uid'))->condition('s.validated',1);
 	$query->innerJoin('students_passthrough','sp','s.idcard_number=sp.idcard_number');
 	$result = $query->execute();
 	foreach ($result as $r) {
