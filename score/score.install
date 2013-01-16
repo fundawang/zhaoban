@@ -26,7 +26,8 @@ function score_schema() {
 		'fields' => array(
 			'uid' => array('type' => 'varchar', 'length' => '9', 'not null' => TRUE),
 			'total_score' => array('type' => 'varchar', 'length' => '20', 'not null' => FALSE),
-			'rank' => array('type' => 'varchar', 'length' => '3', 'not null' => FALSE)
+			'rank' => array('type' => 'varchar', 'length' => '3', 'not null' => FALSE),
+			'outrank' => array('type' => 'int', 'not null'=> FALSE),
 		),
 		'primary key' => array('uid'),
 	);
