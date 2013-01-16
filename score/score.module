@@ -1709,9 +1709,12 @@ function score_mark_3rd_round_list() {
 	return $output;
 }
 
-function score_mark_3rd_round_check() {
-	global $user;
-	return $user->uid==3 || $user->uid==1;
+function score_mark_3rd_round_check($pid=NULL) {
+	$query=db_select('students','s')->condition('pass_round1_major',0,'>')->fields('s');
+	if($pid)
+		$query->condition('s.profession_major',$pid);
+	$r=$query->countQuery()->execute()->fetchField();
+	return user_access('mark 3rd round students') && $r && $user->uid==3 || $user->uid==1;
 }
 
 function score_mark_3rd_round($form, $form_state, $prof) {
