@@ -2894,12 +2894,10 @@ function signup_overview_by_profession_detail($prof=NULL) {
 		array('data' =>t('Student ID'), 'field'=>'s.uid', 'sort'=>'desc'),
 		array('data' =>t('Real Name')),
 		array('data' =>t('Gender'), 'field'=>'s.gender'),
-		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
 		array('data' =>t('Province'), 'field'=>'gk.province'),
 		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
 	);
 	
-	//$tablesort = tablesort_sql($header);
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
@@ -2942,12 +2940,6 @@ function signup_overview_by_profession_detail($prof=NULL) {
 				'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
 				'<nobr>'.$r->name.'</nobr>',
 				$r->gender == 1 ? t('Male'): t('Female'),
-				l($profession_major, 'signup/overview/profession/'.$r->profession_major, array(
-			'title' => t(
-				'Click to view the details of @prof', array(
-				'@prof' => $profession_major)
-			))
-		),
 				(user_access('view draft'))?l($province, 'signup/overview/province/'.$plink):($province),
 				$per,
 			);
@@ -3047,7 +3039,6 @@ function signup_overview_by_province_detail($prov=NULL) {
 		array('data' =>t('Real Name')),
 		array('data' =>t('Gender'), 'field'=>'s.gender'),
 		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
-		array('data' =>t('Province'), 'field'=>'gk.province'),
 		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
 	);
 
@@ -3102,7 +3093,6 @@ function signup_overview_by_province_detail($prov=NULL) {
 			l($r->pname, 'signup/overview/profession/'.$r->profession_major, array(
 				'title' => t('Click to view the details of @prof', array('@prof' => $r->pname)))
 			),
-			(user_access('view draft'))?l($province, 'signup/overview/province/'.$plink):($province),
 			$per,
 		);
 	}
