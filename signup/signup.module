@@ -4374,8 +4374,11 @@ function signup_preset_passthrough_validate($form, &$form_state) {
 	}
 	
 	$new_idnumber=strtoupper(trim($form_state['values']['idcardnumber']));
-	if(!is_idcardn_validate($new_idnumber))
-		form_set_errror('idcardnumber',t('The ID Card number you\'ve entered is not valid.'));
+	
+	if(!is_idcardn_validate($new_idnumber)) {
+		form_set_error('idcardnumber',t('The ID Card number you\'ve entered is not valid.'));
+		return;
+	}
 	$new_prof=$form_state['values']['profession'];
 	// Check if the corresponding idnumber has been used.
 	if(db_select('students_passthrough','s')->fields('s')->condition('s.idcard_number',$new_idnumber)->countQuery()->execute()->fetchField()>0) {
