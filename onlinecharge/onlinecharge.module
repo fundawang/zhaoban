@@ -341,6 +341,14 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	}
 	
 	$form=array();
+	$form['screenwidth']=array(
+		'#type' => 'hidden',
+		'#id' => 'screenwidth',
+		'#default_value'=>'0',
+		'#attached' => array(
+			'js' => array(drupal_get_path('module', 'onlinecharge') . '/onlinecharge.js'),
+		)
+	);
 	$form['round1']=array(
 		'#type' => 'fieldset',
 		'#title' => t('1st round charging'),
@@ -523,6 +531,7 @@ function onlinecharge_user_orders_submit($form, $form_state) {
 		'amount' => $r->amount,
 		'ordertime' => $time,
 		'ordertitle' => $r->uid.$r->name.' '.$r->ordertitle,
+		'screenwidth' => $form_state['values']['screenwidth'],
 	);
 	$output=module_invoke($form_state['values']['gateway'], 'submit_form_submit', $form, $_form_state);
 	echo($output);

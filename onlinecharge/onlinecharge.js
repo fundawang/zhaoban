@@ -47,3 +47,9 @@ Drupal.behaviors.setfailListener = {
 	}
 };
 })(jQuery);
+
+(function($) {
+	$(document).ready(function() {
+		jQuery("#onlinecharge-user-orders input[type=hidden][name=screenwidth]").val(window.screen.width);
+	});
+}(jQuery));
