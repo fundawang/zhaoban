@@ -2635,9 +2635,7 @@ function signup_block_content_PROGRESS() {
 	if(module_exists('onlinecharge')) {
 		$total_orders=db_select('orders','o')->condition('o.uid',$GLOBALS['user']->uid)->fields('o')->countQuery()->execute()->fetchField();
 		$unfinished_orders=db_select('orders','o')->condition('o.uid',$GLOBALS['user']->uid)->condition('status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
-		if(arg(0)=='user'&&arg(2)=='payment')
-			$status[4]='warning';
-		else if($unfinished_orders > 0 || $total_orders == 0)
+		if($unfinished_orders > 0 || $total_orders == 0)
 			$status[4]='error';
 		else $status[4]='ok';
 		$result['content'] .= sprintf('<img src="/misc/watchdog-%s.png" align="middle">&nbsp;&nbsp;', $status[4]);
