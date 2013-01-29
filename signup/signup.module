@@ -32,6 +32,7 @@ function signup_help($path, $arg) {
 			$output .= '</b></span>';
 			break;
 		case 'signup/overview':
+		case 'signup/overview/province':
 			$output = t('Get an overview of how many students have signed up as a draft.');
 			break;
 		case 'signup/validated':
@@ -2779,6 +2780,10 @@ function signup_overview_by_profession() {
 		array('data'=>t('Profession'), 'field'=>'pid', 'sort'=>'asc'),
 		array('data'=>t('Number of students (%)'), 'field'=>'num'),
 	);
+	
+	if(user_access('view validated') && module_exists('onlinecharge')) {
+		$output .= '<p>'.drupal_render(drupal_get_form('signup_overview_set_validated')).'</p>';
+	}
 
 	$query = db_select('students','s')->condition('s.idcard_number','','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major = p.pid');
@@ -2951,6 +2956,7 @@ function signup_overview_by_profession_detail($prof=NULL) {
 }
 
 function signup_overview_by_province() {
+	$output = '<div id="baoming_user_stat" class="baoming_view_section node">';
 
 	$prof=arg(3);
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
@@ -2966,7 +2972,12 @@ function signup_overview_by_province() {
 		->where($valins)
 		->countQuery()->execute()->fetchField();
 	
-	$output = '<p>'.t('There are @number valid students who have signed up.', array('@number'=>$total_students)).'</p>';
+	$output .= '<p>'.t('There are @number valid students who have signed up.', array('@number'=>$total_students)).'</p>';
+
+	if(user_access('view validated') && module_exists('onlinecharge')) {
+		$output .= '<p>'.drupal_render(drupal_get_form('signup_overview_set_validated')).'</p>';
+	}
+
 	$header = array(
 		array('data'=>t('Province'), 'field'=>'pname'),
 		array('data'=>t('Number of students'), 'field'=>'num', 'sort'=>'desc'),
@@ -3010,6 +3021,8 @@ function signup_overview_by_province() {
 	}
 	
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	
+	$output .= '</div>';
 
 	return $output;
 	
@@ -3100,6 +3113,37 @@ function signup_overview_by_province_detail($prov=NULL) {
 	$output .= "</div>";
 	
 	return $output;
+}
+
+function signup_overview_set_validated() {
+	$form=array();
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Set all paid students as validated'),
+	);
+	return $form;
+}
+
+function signup_overview_set_validated_submit($form, $form_state) {
+	if(module_exists('onlinecharge')) {
+		$students=db_select('users','u')->where('u.name={students}.uid')->fields('u',array('uid'));
+		$students->innerJoin('orders','o','u.uid=o.uid');
+		$students->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
+		
+		$students->condition('sc.period',1)->condition('o.status',100);
+		$query=db_update('students')->fields(array('validated' => 1))->exists($students);
+		$result=$query->execute();
+		
+		if($result) {
+			drupal_set_message(t('!num students have been marked as validated.', array('!num'=>$result)));
+			watchdog('onlinecharge',
+				'!user set !num students as validated.', array(
+					'!user'=>$GLOBALS['user']->name,
+					'!num'=>$result,
+				WATCHDOG_INFO
+			));
+		}
+	}
 }
 
 function signup_2nd_round_by_profession() {
