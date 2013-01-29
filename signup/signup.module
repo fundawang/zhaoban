@@ -3116,12 +3116,23 @@ function signup_overview_by_province_detail($prov=NULL) {
 }
 
 function signup_overview_set_validated() {
-	$form=array();
-	$form['submit'] = array(
-		'#type' => 'submit',
-		'#value' => t('Set all paid students as validated'),
-	);
-	return $form;
+	if(module_exists('onlinecharge')) {
+		$form=array();
+		$form['submit'] = array(
+			'#type' => 'submit',
+			'#value' => t('Set all paid students as validated'),
+		);
+		$query=db_select('students','s');
+		$query->innerJoin('users','u','u.name=s.uid');
+		$query->innerJoin('orders','o','u.uid=o.uid');
+		$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
+		$query->condition('sc.period',1)->condition('o.status',100)->condition('s.validated',0)->fields('s');
+		$count=$query->countQuery()->execute()->fetchField();
+		if($count)
+			return $form;
+		else return NULL;
+	} else
+		return NULL;
 }
 
 function signup_overview_set_validated_submit($form, $form_state) {
