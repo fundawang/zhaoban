@@ -478,9 +478,12 @@ function signup_user_goto($user) {
 
 function signup_form_user_login_alter(&$form, &$form_state) {
 	$form['name']['#attributes']['placeholder']=variable_get('zhaoban_current_year',date('Y')).'BXXXX';
+	$form['#attached']['js'][] = drupal_get_path('module', 'signup') . '/jQuery.dPassword.js';
 	drupal_add_js(
 		'jQuery(document).ready(function(){'.
-			'deal_input_palceholder();});',
+			'deal_input_palceholder();'.
+			'jQuery("input:password").dPassword();'.
+		'});',
 		'inline'
 	);
 }
@@ -2464,6 +2467,9 @@ function signup_user_login_block($form) {
 	$form['#action'] = url($_GET['q'], array('query' => drupal_get_destination()));
 	$form['#validate'] = user_login_default_validators();
 	$form['#id'] = 'user-login-form';
+	$form['#attached'] = array(
+		'js' => array(drupal_get_path('module', 'signup') . '/jQuery.dPassword.js'),
+	);
 	$form['#submit'][] = 'user_login_submit';
 	$form['name'] = array('#type' => 'textfield',
 		'#title' => t('Username/ID Number'),
@@ -2490,7 +2496,9 @@ function signup_user_login_block($form) {
 	$form['links'] = array('#markup' => theme('item_list', array('items' => $items)));
 	drupal_add_js(
 		'jQuery(document).ready(function(){'.
-			'deal_input_palceholder();});',
+			'deal_input_palceholder();'.
+			'jQuery("input:password").dPassword();'.
+		'});',
 		'inline'
 	);
 	return $form;
