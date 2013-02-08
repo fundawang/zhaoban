@@ -4683,7 +4683,7 @@ function signup_report($account) {
 function signup_ticket_report_perm($user) {
 	$isvalidated=db_select('students', 's')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
 	if(!$isvalidated) return FALSE;
-	if(user_access('view draft') && user_access('print admission ticket', $user)) return TRUE;
+	if(user_access('view draft')) return TRUE;
 	if(user_access('print admission ticket', $user) && $user->uid==$GLOBALS['user']->uid) return TRUE;
 	return FALSE;
 }
@@ -4770,39 +4770,33 @@ function signup_ticket_report($user) {
 	$pdf->SetLineWidth(0.1);
 	$pdf->Line(150,10,150,205);
 	
+	unset($student);
+	
 	$pdf->SetFontSize(20);
-	$pdf->Text(200,15,'考试科目及曲目');
+	$pdf->Text(200,15,'考试科目及安排');
 	
 	$pdf->SetXY(155,27);
 	$pdf->SetFontSize(11);
 	$pdf->SetDrawColor(255,255,255);
 	$pdf->SetLineWidth(0.5);
 	$pdf->Cell(55,6,'科目',1,0,'C',$fill=TRUE);
-	$pdf->Cell(83,6,'曲目',1,0,'C',$fill=TRUE);
-	$query->innerJoin('students_going','sg','sg.uid=s.uid');
+	$pdf->Cell(83,6,'安排',1,0,'C',$fill=TRUE);
+	$query=db_select('students_going','sg')->condition('sg.uid',$user->name);
 	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
-	$query->fields('e',array('ename','elevel'))->fields('sg',array('eid','opus'))->orderBy('sg.eid');
-	$exams=$query->execute();
+	$query->leftJoin('vl_going','g','sg.gid=g.gid');
+	$query->leftJoin('vl_room','r','g.place = r.rid');
+	$query->addExpression('r.rname','rname');
+	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
+	$query->addExpression('w.rname','wname');
+	$query->fields('e',array('ename','elevel','etype'))->fields('sg',array('eid','gorder'))->fields('g',array('time'));
+	$query->orderBy('sg.eid');
+	$result=$query->execute();
 	$pdf->setXY(155,35);
-	foreach($exams as $r) {
+	foreach($result as $r) {
 		$opus=unserialize($r->opus);
 		$pdf->setX(155);
 		$pdf->Cell(55,7,$r->ename.($r->elevel?$r->elevel:''));
 		$i=0;
-		//var_dump($opus);
-		foreach($opus as $enum => $evalue) {
-			$pdf->setX(210);
-			if($enum=='eadditional') {
-				if($evalue!=='')
-					$t='主试乐器: '.t($evalue);
-				else
-					$t='主试乐器: 钢琴';
-			}
-			else
-				$t=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue;
-			$pdf->Cell(90, 7, $t, 0,1,'L',false);
-		}
-		if(count($opus)>1) $pdf->setY($pdf->getY()-6);
 		$pdf->Ln();
 		$pdf->SetDrawColor(216,216,216);
 		$pdf->SetLineStyle(array('dash' => '1,2'));
@@ -4811,10 +4805,9 @@ function signup_ticket_report($user) {
 	}
 	
 	$pdf->SetFontSize(20);
-	$pdf->Text(183,157,'以上曲目考试时不得更改');
-	$pdf->Text(193,165,'请考生自备2B铅笔');
+	$pdf->Text(193,185,'请考生自备2B铅笔');
 	$pdf->SetFontSize(12);
-	$pdf->Text(195,195,'http://zhaoban.ccom.edu.cn');
+	$pdf->Text(180,195,'请用A4纸横向打印，黑白稿、复印件皆有效');
 
 	$pdf->SetProtection(array('copy','modify','extract','assemble'));
 	$pdf->Output($student->uid.'ticket.pdf', 'I');
@@ -4914,17 +4907,26 @@ function signup_search_students($citera) {
 	
 	// If multiple result found, then list them
 	if($r->rowCount()>1) {
-		$output.='<div><h3>'.t("Search by student name:").'</h3><ul>';
+		$count=0;
+		$output .='<div><h3>'.t("Search by student name:").'</h3>';
+		if($r->rowCount()>10)
+			$output .= '<p>'.t('@num students have been found, but we only list the first ten records. Please consider using more strict search citera.', array('@num'=>$r->rowCount())).'</p>';
+		$output .= '<ul>';
 		foreach($r as $u) {
 			$count++;
 			$linktext=str_ireplace($citera,'<b>'.$citera.'</b>', $u->sname);
 			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
 			$output .='<dd>'.sprintf("%s / %s / %s", $u->name, $u->pname, $u->prname);
-			if(isset($u->contact_phone))
-				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s / %s', drupal_get_path('module', 'signup'), $u->contact_phone, $u->phone_roundg);
+			if(isset($u->contact_phone)) {
+				if($u->contact_phone == $u->phone_roundg)
+					$phonenum = $u->contact_phone;
+				else $phonenum = sprintf("%s / %s", $u->contact_phone, $u->phone_roundg);
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s', drupal_get_path('module', 'signup'), $phonenum);
+			}
 			$output .='</dd>';
 			$output .='</dl></li>';
+			if($count>=10) break;
 		}
 		$output .='</ul>';
 		$output .='</div>';
