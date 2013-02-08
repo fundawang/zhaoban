@@ -4854,7 +4854,7 @@ function signup_search_students($citera) {
 	$query->innerJoin('vl_province','pr','sg.province=pr.pid');
 	$query->addExpression('pr.name','prname');
 	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
-	$query->fields('sc',array('contact_phone','phone_roundg'));
+	$query->addExpression('IF(sc.contact_phone=sc.phone_roundg, sc.contact_phone, CONCAT(sc.contact_phone,\' / \',sc.phone_roundg))','phone');
 	$r=$query->execute();
 
 	// If only one target is found then direct to it right now.
@@ -4874,8 +4874,9 @@ function signup_search_students($citera) {
 			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
 			$output .='<dd>'.sprintf("%s / %s / %s", $u->sname, $u->pname, $u->prname);
-			if(isset($u->contact_phone))
-				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s / %s', drupal_get_path('module', 'signup'), $u->contact_phone, $u->phone_roundg);
+			if(isset($u->phone)) {
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s', drupal_get_path('module', 'signup'), $u->phone);
+			}
 			$output .='</dd>';
 			$output .='</dl></li>';
 		}
@@ -4894,7 +4895,7 @@ function signup_search_students($citera) {
 	$query->addExpression('pr.name','prname');
 	$query->condition('s.name','%'.$citera.'%', 'LIKE');
 	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
-	$query->fields('sc',array('contact_phone','phone_roundg'));
+	$query->addExpression('IF(sc.contact_phone=sc.phone_roundg, sc.contact_phone, CONCAT(sc.contact_phone,\' / \',sc.phone_roundg))','phone');
 	$r=$query->execute();
 
 	// If only one target is found then direct to it right now.
@@ -4918,11 +4919,8 @@ function signup_search_students($citera) {
 			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
 			$output .='<dd>'.sprintf("%s / %s / %s", $u->name, $u->pname, $u->prname);
-			if(isset($u->contact_phone)) {
-				if($u->contact_phone == $u->phone_roundg)
-					$phonenum = $u->contact_phone;
-				else $phonenum = sprintf("%s / %s", $u->contact_phone, $u->phone_roundg);
-				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s', drupal_get_path('module', 'signup'), $phonenum);
+			if(isset($u->phone)) {
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s', drupal_get_path('module', 'signup'), $u->phone);
 			}
 			$output .='</dd>';
 			$output .='</dl></li>';
@@ -4957,7 +4955,7 @@ function signup_search_students($citera) {
 	$query->fields('p',array('pname'));
 	$query->addExpression('pr.name','prname');
 	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
-	$query->fields('sc',array('contact_phone','phone_roundg'));
+	$query->addExpression('IF(sc.contact_phone=sc.phone_roundg, sc.contact_phone, CONCAT(sc.contact_phone,\' / \',sc.phone_roundg))','phone');
 	$query=$query->condition('sg.sid','%'.$citera, 'LIKE')->isNotNull('sg.sid')->fields('sg',array('sid'));
 	$r=$query->execute();
 
@@ -4978,8 +4976,9 @@ function signup_search_students($citera) {
 			$output .='<li><dl>';
 			$output .='<dt>'.l($linktext, 'user/'.$u->uid, array('html'=>TRUE)).'</dt>';
 			$output .='<dd>'.sprintf("%s / %s / %s / %s", $u->name, $u->sname, $u->pname, $u->prname);
-			if(isset($u->contact_phone))
-				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s / %s', drupal_get_path('module', 'signup'), $u->contact_phone, $u->phone_roundg);
+			if(isset($u->phone)) {
+				$output .= sprintf('<br/><img src="/%s/telephone.png" align="bottom"/>%s', drupal_get_path('module', 'signup'), $u->phone);
+			}
 			$output .='</dd>';
 			$output .='</dl></li>';
 		}
