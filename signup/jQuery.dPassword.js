@@ -296,7 +296,7 @@
 		cloakingCharacter: (navigator.platform == "MacIntel") ? '\u2022' : '\u25CF',		 
 		onChange: null,
 		onStateChange: null,
-		showIcon: true,
+		showIcon: false,
 		switchToPasswordType: !jQuery.browser.msie,		
 		/*
 		 * Default styles and behaviours for lock icon, see showIcon option.
