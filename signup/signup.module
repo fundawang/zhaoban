@@ -478,14 +478,6 @@ function signup_user_goto($user) {
 
 function signup_form_user_login_alter(&$form, &$form_state) {
 	$form['name']['#attributes']['placeholder']=variable_get('zhaoban_current_year',date('Y')).'BXXXX';
-	$form['#attached']['js'][] = drupal_get_path('module', 'signup') . '/jQuery.dPassword.js';
-	drupal_add_js(
-		'jQuery(document).ready(function(){'.
-			'deal_input_palceholder();'.
-			'jQuery("input:password").dPassword();'.
-		'});',
-		'inline'
-	);
 }
 
 function signup_form_user_register_form_alter(&$form, &$form_state) {
@@ -565,13 +557,6 @@ function signup_form_user_register_form_submit($form, &$form_state) {
 }
 
 function signup_form_user_profile_form_alter(&$form, $form_state) {
-	$form['#attached']['js'][] = drupal_get_path('module', 'signup') . '/jQuery.dPassword.js';
-	drupal_add_js(
-		'jQuery(document).ready(function(){'.
-			'jQuery("input:password").dPassword();'.
-		'});',
-		'inline'
-	);
 	$form['account']['current_pass']['#description']=t('Enter your current password to change the password.').t('If you forgot current password, <a href="@url">please click here</a> to reset password.', array('@url'=>'/user/password'));
 	if(isset($form['account']['mail']) && $form['#user']->uid <> 1)
 		$form['account']['mail']['#type']='hidden';
@@ -1210,11 +1195,6 @@ function signup_form_user_pass_alter(&$form, &$form_state) {
 				'input[name="condselect"]' => array('value' =>'1'),
 			)
 		),
-	);
-	drupal_add_js(
-		'jQuery(document).ready(function(){'.
-			'deal_input_palceholder();});',
-		'inline'
 	);
 	$form['name'] = array(
 		'#type' => 'textfield',
@@ -2474,9 +2454,6 @@ function signup_user_login_block($form) {
 	$form['#action'] = url($_GET['q'], array('query' => drupal_get_destination()));
 	$form['#validate'] = user_login_default_validators();
 	$form['#id'] = 'user-login-form';
-	$form['#attached'] = array(
-		'js' => array(drupal_get_path('module', 'signup') . '/jQuery.dPassword.js'),
-	);
 	$form['#submit'][] = 'user_login_submit';
 	$form['name'] = array('#type' => 'textfield',
 		'#title' => t('Username/ID Number'),
@@ -2501,13 +2478,6 @@ function signup_user_login_block($form) {
 	}
 	$items[] = l(t('Request new password'), 'user/password');
 	$form['links'] = array('#markup' => theme('item_list', array('items' => $items)));
-	drupal_add_js(
-		'jQuery(document).ready(function(){'.
-			'deal_input_palceholder();'.
-			'jQuery("input:password").dPassword();'.
-		'});',
-		'inline'
-	);
 	return $form;
 }
 

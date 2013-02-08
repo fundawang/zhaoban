@@ -16,6 +16,26 @@ function essential_help($path, $arg) {
   return;
 }
 
+function essential_init() {
+	drupal_add_js(drupal_get_path('module', 'essential') .'/jquery.placeholder.js');
+	drupal_add_js(
+		'jQuery(document).ready(function(){'.
+			'jQuery(":input[placeholder]").placeholder();'.
+		'});',
+		'inline'
+	);
+
+	drupal_add_js(drupal_get_path('module', 'essential') .'/jQuery.dPassword.js');
+	if(!empty($_SERVER['HTTP_USER_AGENT']) && !preg_match('/Mobile/', $_SERVER['HTTP_USER_AGENT']))
+	drupal_add_js(
+		'jQuery(document).ready(function(){'.
+			'jQuery("input:password").dPassword();'.
+		'});',
+		'inline'
+	);
+}
+
+
 /**
  * Implementation of hook_menu().
  */
