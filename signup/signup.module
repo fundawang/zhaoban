@@ -4867,7 +4867,10 @@ function signup_search_students($citera) {
 	
 	// If multiple result found, then list them
 	if($r->rowCount()>1) {
-		$output.='<div><h3>'.t("Search by student id:").'</h3><ul>';
+		$output.='<div><h3>'.t("Search by student id:").'</h3>';
+		if($r->rowCount()>10)
+			$output .= '<p>'.t('@num students have been found, but we only list the first ten records. Please consider using more strict search citera.', array('@num'=>$r->rowCount())).'</p>';
+		$output .='<ul>';
 		foreach($r as $u) {
 			$count++;
 			$linktext=str_ireplace($citera, '<b>'.$citera.'</b>', $u->name);
@@ -4879,6 +4882,7 @@ function signup_search_students($citera) {
 			}
 			$output .='</dd>';
 			$output .='</dl></li>';
+			if($count>=10) break;
 		}
 		$output .='</ul>';
 		$output .='</div>';
