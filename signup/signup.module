@@ -4788,8 +4788,9 @@ function signup_ticket_report($user) {
 	$query->addExpression('r.rname','rname');
 	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
 	$query->addExpression('w.rname','wname');
+	$query->addExpression("IFNULL(g.time, '9999999999999999')",'citera');
 	$query->fields('e',array('ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time'));
-	$query->orderBy('sg.eid');
+	$query->orderBy('citera')->orderBy('sg.eid');
 	$result=$query->execute();
 	$pdf->setXY(155,35);
 	foreach($result as $r) {
