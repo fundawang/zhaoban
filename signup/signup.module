@@ -4788,13 +4788,11 @@ function signup_ticket_report($user) {
 	$query->addExpression('r.rname','rname');
 	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
 	$query->addExpression('w.rname','wname');
-	$query->fields('e',array('ename','elevel','etype'))->fields('sg',array('eid','gid','gorder'))->fields('g',array('time'));
+	$query->fields('e',array('ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time'));
 	$query->orderBy('sg.eid');
 	$result=$query->execute();
 	$pdf->setXY(155,35);
 	foreach($result as $r) {
-		//var_dump($r);
-		$opus=unserialize($r->opus);
 		$pdf->setX(155);
 		$pdf->Cell(55,7,$r->ename.($r->elevel?$r->elevel:''));
 		$date=intval(substr($r->time,4,2)).t('Month').intval(substr($r->time,6,2)).t('Day');
@@ -4827,7 +4825,7 @@ function signup_ticket_report($user) {
 	$pdf->Text(180,195,'请用A4纸横向打印，黑白稿、复印件皆有效');
 
 	$pdf->SetProtection(array('copy','modify','extract','assemble'));
-	$pdf->Output($student->uid.'ticket.pdf', 'I');
+	$pdf->Output($r->uid.'_ticket.pdf', 'I');
 }
 
 function signup_schools_autocomplete($string) {
