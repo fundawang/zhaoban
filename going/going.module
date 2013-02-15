@@ -1076,8 +1076,8 @@ function going_print_score_report($gid=NULL)
 		$pdf->SetFillColor(216,216,216);
 		$pdf->Cell(10,2,$r->gorder, 0, false, 'C',true);
 		$pdf->SetFillColor(255,255,255);
-		$pdf->Cell(30,2,substr($r->uid,0,6).'XX'.substr($r->uid,8,1), 0, false, 'C',true);
-		$pdf->Cell(25,2,mb_substr($r->name,0,1,'UTF-8').'XX', 0, false, 'C',true);
+		$pdf->Cell(30,2,substr($r->uid,0,6).'**'.substr($r->uid,8,1), 0, false, 'C',true);
+		$pdf->Cell(25,2,mb_substr($r->name,0,1,'UTF-8').'**', 0, false, 'C',true);
 		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
 		//$pdf->Cell(40,2,'/', 0, false, 'C',true);
 
