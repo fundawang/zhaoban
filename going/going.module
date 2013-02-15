@@ -128,10 +128,11 @@ function going_menu_assign_modify($gid)
 function going_print_orderlist_perm($gid=NULL)
 {
 	if($gid) {
-		$query=db_select('students_going','sg')->condition('sg.gid',$gid);
+		$query=db_select('students_going','sg')->condition('sg.gid',$gid)->fields('sg');
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-		$query->condition('p.uid',$GLOBALS['user']->name)->fields('s');
+		if(!user_access('administer going'))
+			$query->condition('p.uid',$GLOBALS['user']->name);
 		$r=$query->countQuery()->execute()->fetchField();
 	} else $r=1;
 	return going_menu_perm() && user_access('print order list') && $r;
@@ -668,7 +669,7 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 		$subquery=$subquery->condition('g1.time',$going->time)->condition('g1.gid',$gid,'<>');
 		
 		$query->notExists($subquery);
-		$query=$query->extend('TableSort')->orderByHeader($header)->orderRandom()->range(0,70);
+		$query=$query->extend('TableSort')->orderByHeader($header)->orderRandom();//->range(0,70);
 		
 		$rdbo=$query->execute();
 		foreach($rdbo as $r) {
@@ -1014,7 +1015,7 @@ function going_print_score_report($gid=NULL)
 	        $this->Cell(30, 2, '准考证号',0, false, 'C');
 	        $this->Cell(25, 2, '姓名',0, false, 'C');
 	        $this->Cell(30, 2, '专业',0, false, 'C');
-	        $this->Cell(35, 2, '成绩 / 排名',0, false, 'C');
+	        $this->Cell(35, 2, '成绩',0, false, 'C');
 	        $this->Cell(52, 2, '备注',0, false, 'C');
 	        $this->Line(6,32,200,32);
 	    }
@@ -1075,10 +1076,10 @@ function going_print_score_report($gid=NULL)
 		$pdf->SetFillColor(216,216,216);
 		$pdf->Cell(10,2,$r->gorder, 0, false, 'C',true);
 		$pdf->SetFillColor(255,255,255);
-		$pdf->Cell(30,2,$r->uid, 0, false, 'C',true);
-		$pdf->Cell(25,2,$r->name, 0, false, 'C',true);
+		$pdf->Cell(30,2,substr($r->uid,0,6).'XX'.substr($r->uid,8,1), 0, false, 'C',true);
+		$pdf->Cell(25,2,mb_substr($r->name,0,1,'UTF-8').'XX', 0, false, 'C',true);
 		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
-		$pdf->Cell(40,2,'/', 0, false, 'C',true);
+		//$pdf->Cell(40,2,'/', 0, false, 'C',true);
 
 		$exams =unserialize($r->opus);
 		
@@ -1092,7 +1093,7 @@ function going_print_score_report($gid=NULL)
 					$t='主试乐器: 钢琴';
 			}
 			else
-				$t='('.(substr($enum,4)).')'.$evalue;
+				$t=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue;
 			$pdf->SetX(140);
 			$pdf->MultiCell(60, 2, $t, 0, 'L',true);
 		}
