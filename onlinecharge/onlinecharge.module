@@ -304,8 +304,8 @@ function onlinecharge_user_access($user) {
 	if($user->uid==1) return FALSE;
 	$t=_signup_determine_period($user);
 	if($t==signup_progress_PAYMENT || $t==signup_progress_FINISH) {
-		if($user->uid==$GLOBALS['user']->uid) return user_access('use online charging', $user);
-		else return user_access('use online charging', $user) && user_access('administer users');
+		if($user->uid==$GLOBALS['user']->uid) return TRUE;
+		else return user_access('administer users');
 	}
 	else return FALSE;
 }
@@ -396,7 +396,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 			'#type' => 'hidden',
 			'#value' => $r->status,
 		);
-		$should_show_pay=TRUE;
+		$should_show_pay=user_access('use online charging', $user);
 		$k=db_select('students','s')->condition('s.validated',1)->condition('s.uid',$user->name)->fields('s')->countQuery()->execute()->fetchField();
 		if($k!=0) { // If it is validated
 			if($r->period==1) // Then disable pay 1st round fee.
