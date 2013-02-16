@@ -4738,8 +4738,14 @@ function signup_ticket_report($user) {
 	$pdf->Text(23,15,'中央音乐学院本科招生');
 	$pdf->Text(22,29,variable_get('zhaoban_current_year',date('Y')).'年专业考试准考证');
 	$pdf->LN();
-	if($student->picture)
-		$pdf->Image('@'.base64_decode($student->picture), 55, 45, 45, 60);
+	if($student->picture) {
+		$imgstring=base64_decode($student->picture);
+		$imgobj=imagecreatefromstring($imgstring);
+		$printwidth=imagesx($imgobj)/imagesy($imgobj)*55;
+		imagedestroy($imgobj);
+		$pdf->Image('@'.$imgstring, 95-$printwidth, 45, $printwidth, 55);
+		unset($imgstring);
+	}
 	
 	$pdf->SetFontSize(14);
 	$pdf->Text(54,117,'准考证号');
