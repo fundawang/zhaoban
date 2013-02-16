@@ -29,6 +29,7 @@ function essential_init() {
 	if(!empty($_SERVER['HTTP_USER_AGENT']) && !preg_match('/Mobile/', $_SERVER['HTTP_USER_AGENT']))
 	drupal_add_js(
 		'jQuery(document).ready(function(){'.
+			'if(jQuery("input:password").length>0)'.
 			'jQuery("input:password").dPassword();'.
 		'});',
 		'inline'
