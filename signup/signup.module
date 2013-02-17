@@ -3103,17 +3103,31 @@ function signup_overview_by_province_detail($prov=NULL) {
 function signup_overview_set_validated() {
 	if(module_exists('onlinecharge')) {
 		$form=array();
-		$form['submit'] = array(
-			'#type' => 'submit',
-			'#value' => t('Set all paid students as validated'),
-		);
 		$query=db_select('students','s');
 		$query->innerJoin('users','u','u.name=s.uid');
 		$query->innerJoin('orders','o','u.uid=o.uid');
 		$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
 		$query->condition('sc.period',1)->condition('o.status',100)->condition('s.validated',0)->fields('s');
 		$count=$query->countQuery()->execute()->fetchField();
-		if($count)
+		if($count) {
+			$form['setvalidate'] = array(
+				'#type' => 'submit',
+				'#name' => 'setvalidate',
+				'#value' => t('Set all paid students as validated'),
+			);
+		}
+		$query=db_select('students','s')->condition('validated',0);
+		$query->innerJoin('users','u','u.name=s.uid');
+		$query->condition('u.status',1)->fields('s');
+		$count=$query->countQuery()->execute()->fetchField();
+		if($count) {
+			$form['setinactive'] = array(
+				'#type' => 'submit',
+				'#name' => 'setinactive',
+				'#value' => t('Set all unconfirmed students as inactive'),
+			);
+		}
+		if(count($form))
 			return $form;
 		else return NULL;
 	} else
@@ -3122,22 +3136,39 @@ function signup_overview_set_validated() {
 
 function signup_overview_set_validated_submit($form, $form_state) {
 	if(module_exists('onlinecharge')) {
-		$students=db_select('users','u')->where('u.name={students}.uid')->fields('u',array('uid'));
-		$students->innerJoin('orders','o','u.uid=o.uid');
-		$students->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
+		if($form_state['clicked_button']['#name']=='setvalidate') {
+			$students=db_select('users','u')->where('u.name={students}.uid')->fields('u',array('uid'));
+			$students->innerJoin('orders','o','u.uid=o.uid');
+			$students->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
+			$students->condition('sc.period',1)->condition('o.status',100);
+			$query=db_update('students')->fields(array('validated' => 1))->exists($students);
+			$result=$query->execute();
+			
+			if($result) {
+				drupal_set_message(t('!num students have been marked as validated.', array('!num'=>$result)));
+				watchdog('onlinecharge',
+					'!user set !num students as validated.', array(
+						'!user'=>$GLOBALS['user']->name,
+						'!num'=>$result,
+					WATCHDOG_INFO
+				));
+			}
+		}
 		
-		$students->condition('sc.period',1)->condition('o.status',100);
-		$query=db_update('students')->fields(array('validated' => 1))->exists($students);
-		$result=$query->execute();
-		
-		if($result) {
-			drupal_set_message(t('!num students have been marked as validated.', array('!num'=>$result)));
-			watchdog('onlinecharge',
-				'!user set !num students as validated.', array(
-					'!user'=>$GLOBALS['user']->name,
-					'!num'=>$result,
-				WATCHDOG_INFO
-			));
+		if($form_state['clicked_button']['#name']=='setinactive') {
+			$students=db_select('students','s')->where('{users}.name=s.uid')->condition('s.validated',0)->fields('s',array('uid'));
+			$query=db_update('users')->fields(array('status'=>0))->exists($students);
+			//var_dump($query->__toString()); exit;
+			$result=$query->execute();
+			if($result) {
+				drupal_set_message(t('!num students have been marked as inactive.', array('!num'=>$result)));
+				watchdog('onlinecharge',
+					'!user set !num students as inactive.', array(
+						'!user'=>$GLOBALS['user']->name,
+						'!num'=>$result,
+					WATCHDOG_INFO
+				));
+			}
 		}
 	}
 }
@@ -4762,7 +4793,7 @@ function signup_ticket_report($user) {
 	$pdf->Text(76,153,$student->pname);
 
 	$pdf->Text(47,183,'中央音乐学院招生委员会办公室');
-	$pdf->Text(40,189,'此证需配合有效身份证件使用方为有效');
+	$pdf->Text(40,189,'此证需配合有效身份证件原件方为有效');
 	$pdf->Text(46,195,'打印时间：'.date('Y年n月j日G:i'));
 
 	$barcode=new TCPDFBarcode($student->uid,'C128B');
