@@ -4811,7 +4811,9 @@ function signup_ticket_report($user) {
 			$pdf->Ln();
 			$pdf->setX(210);
 			if($r->etype=='2')
-				$pdf->Cell(65,7, sprintf("你是本考场第%d名参加考试的考生。",$r->gorder));
+				if($r->eid=='146') ; // HACK FOR INTERVIEW OF ARTS MANAGEMENT
+				else
+					$pdf->Cell(65,7, sprintf("你是本考场第%d名参加考试的考生。",$r->gorder));
 			else
 				$pdf->Cell(65,7, sprintf("你在本考场的座位号是%d。",$r->gorder));
 		}
