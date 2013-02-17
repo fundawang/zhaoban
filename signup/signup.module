@@ -4813,7 +4813,7 @@ function signup_ticket_report($user) {
 			if($r->etype=='2')
 				if($r->eid=='146') ; // HACK FOR INTERVIEW OF ARTS MANAGEMENT
 				else
-					$pdf->Cell(65,7, sprintf("你是本考场第%d名参加考试的考生。",$r->gorder));
+					$pdf->Cell(65,7, sprintf("你是本考场总第%d名参加考试的考生。",$r->gorder));
 			else
 				$pdf->Cell(65,7, sprintf("你在本考场的座位号是%d。",$r->gorder));
 		}
@@ -4826,10 +4826,11 @@ function signup_ticket_report($user) {
 	}
 	$pdf->Ln();
 	$pdf->setX(155);
-	$pdf->MultiCell(140,7,'提示：考生打印准考证后，考试安排若有变动，我院将于指定地点公布，恕不另行通知考生。考生亦可随时关注我院招生网站。');
+	$pdf->MultiCell(140,7,'提示：<br/>①考生打印准考证后，考试安排若有变动，我院将于指定地点公布，恕不另行通知考生。考生亦可随时关注我院招生网站。<br/>'.
+		'②部分表演专业考试单个考场安排了多种乐器的考生，考试次序为包含所有乐器考生的总次序，请考生务必提前候考，以免贻误考试。', 0, 'J', false, 1, '', '', true, 0, true);
 	
 	$pdf->SetFontSize(20);
-	$pdf->Text(193,185,'请考生自备2B铅笔');
+	$pdf->Text(170,185,'请考生自备2B铅笔与黑色签字笔');
 	$pdf->SetFontSize(12);
 	$pdf->Text(180,195,'请用A4纸横向打印，黑白稿、复印件皆有效');
 
