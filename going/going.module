@@ -932,7 +932,6 @@ function going_print_orderlist($gid=NULL)
 		$pdf->setXY(160,15);
 		if($going->waiting_room)
 			$placename='候:'.db_select('vl_room','r')->fields('r',array('rname'))->condition('rid',$going->waiting_room)->execute()->fetchField();
-		//db_result(db_query('SELECT rname FROM {vl_room} WHERE rid=\'%s\'', $going->waiting_room));
 		else
 			$placename=$going->rname;
 		$pdf->Cell(41,16,$placename,0,0,'R');
