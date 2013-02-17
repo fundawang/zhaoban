@@ -103,6 +103,13 @@ function going_menu() {
 		'type' => MENU_CALLBACK,
 	);
 
+	$items['myschedule'] = array(
+		'title' => 'My Schedule',
+		'description' => "List my examine schedule",
+		'page callback' => 'going_mygoing',
+		'access callback' => 'going_mygoing_check',
+	);
+
 	return $items;
 }
 
@@ -255,6 +262,9 @@ function going_permission() {
 		),
 		'print order list' => array(
 			'title' => t('Print order list'),
+		),
+		'check my going' => array(
+			'title' => t('Check my going'),
 		),
 	);
 }
@@ -1102,4 +1112,63 @@ function going_print_score_report($gid=NULL)
 	
 	$pdf->Output('score_report.pdf', 'I');
 	
+}
+
+function going_mygoing_check() {
+	$r=db_select('students_going','sg')->condition('sg.uid',$GLOBALS['user']->name)->isNotNull('sg.gid')->fields('sg')->countQuery()->execute()->fetchField();
+	return user_access('check my going') && $r>0;
+}
+
+function going_mygoing() {
+	$uid=$GLOBALS['user']->name;
+
+	$query=db_select('students','s')->fields('s')->condition('s.uid',$uid);
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('vl_department','d','p.did=d.did');
+	$query->fields('p',array('pname'))->fields('d',array('dname'));
+	$student=$query->execute()->fetchObject();
+	$output  = '<p>';
+	$output .= t('Dear student @uid @name, you\'ve selected @dep @prof profession this year.',
+		array(
+			'@uid' =>$student->uid,
+			'@name'=>$student->name,
+			'@dep' =>$student->dname,
+			'@prof'=>$student->pname,
+		)
+	);
+	$output .= t('Your current examine schedule are here:');
+	$output .= '</p>';
+	
+	$query=db_select('students_going','sg')->condition('sg.uid',$uid);
+	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
+	$query->leftJoin('vl_going','g','sg.gid=g.gid');
+	$query->leftJoin('vl_room','r','g.place = r.rid');
+	$query->addExpression('r.rname','rname');
+	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
+	$query->addExpression('w.rname','wname');
+	$query->addExpression("IFNULL(g.time, '9999999999999999')",'citera');
+	$query->fields('e',array('eid','ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time'));
+	$query->orderBy('citera')->orderBy('sg.eid');
+	$result=$query->execute();
+	
+	$header=array(
+		t('Exam Name'),
+		t('Place'),
+		t('Waiting room'),
+		t('Time'),
+		t('Going Order')
+	);
+	$rows=array();
+	foreach($result as $r) {
+		$rows[]=array(
+			$r->ename.($r->elevel?$r->elevel:''),
+			$r->rname?$r->rname:t('To be arranged'),
+			$r->wname?$r->wname:'',
+			_going_datetime_to_string($r->time),
+			($r->gorder&&$r->eid<>'146')?$r->gorder:'',
+		);
+	}
+	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
+	
+	return $output;
 }
