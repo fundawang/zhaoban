@@ -515,6 +515,15 @@ function going_going_edit_submit($form, &$form_state) {
 				WATCHDOG_INFO,
 				l(t('View'), 'definations/going/edit/'.arg(3))
 			);
+			if(module_exists('onlinetests')) {
+				$etype=db_select('vl_exam','e')->fields('e',array('etype'))->condition('e.eid',$form_state['values']['exam1'])->execute()->fetchField();
+				if($etype==3)
+					db_update('vl_going')
+						->condition('gid', arg(3))
+						->fields(array(
+							'status' => 1,
+						))->execute();
+			}
 			$form_state['redirect']='definations/going';
 	}
 }

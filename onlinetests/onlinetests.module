@@ -97,7 +97,7 @@ function onlinetests_menu() {
 		'page arguments' => array(3),
 		'access callback' => 'onlinetests_onlinetests_quest_perm',
 		'access arguments' => array(3),
-		'type' => MENU_CALLBACK,
+		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
 	$items['myonlinetests'] = array(
 		'title' => 'My Online tests',
@@ -272,30 +272,30 @@ function onlinetests_onlinetests_list() {
 					$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
 					$rows[count($rows)-1][]='<nobr>'.l(t('Start'), "definations/onlinetests/op/$r->gid").'</nobr>';
 					break;
-		  	  	  case ONLINETEST_STATUS_ONGOING:
+		  	  	case ONLINETEST_STATUS_ONGOING:
 					$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
 					$rows[count($rows)-1][]='<nobr>'.l(t('End'), "definations/onlinetests/op/$r->gid").'</nobr>';
 					break;
-		  	  	  case ONLINETEST_STATUS_ENDED:
+		  	  	case ONLINETEST_STATUS_ENDED:
 					$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
 					$rows[count($rows)-1][]='<nobr>'.l(t('Begin review'), "definations/onlinetests/op/$r->gid").'</nobr>';
 					break;
-		  	  	  case ONLINETEST_STATUS_INTERVIEWING:
+		  	  	case ONLINETEST_STATUS_INTERVIEWING:
 					$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
 					$rows[count($rows)-1][]='<nobr>'.l(t('Stop review'), "definations/onlinetests/op/$r->gid").'</nobr>';
 					break;
-		  	  	  case ONLINETEST_STATUS_FINISHED:
+		  	  	case ONLINETEST_STATUS_FINISHED:
 					$rows[count($rows)-1][]=array(
 						'data'=>'<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>',
 						'colspan'=>'2',
 					);
 					break;
-		  	  }
-	    } else {
-	    	  $rows[count($rows)-1][]=array(
-	    	  	  'data'=>'<nobr/>','colspan'=>2,
-	    	  );
-	    }
+				default:
+					$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
+					$rows[count($rows)-1][]='';
+					break;
+			}
+		}
 	}
 
 	if(count($rows)==0)
@@ -332,7 +332,7 @@ function onlinetests_onlinetests_list_perm($gid=NULL) {
 function onlinetests_modify_quest($form, $form_state, $gid) {
 	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
 
-	$is_passed = ($going->status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
+	$is_passed = (isset($going->status) && $going->status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
 	if($is_passed)
 		drupal_set_title(t('View paper').' - '.$going->gname);
 	else
