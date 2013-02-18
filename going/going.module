@@ -1116,7 +1116,7 @@ function going_print_score_report($gid=NULL)
 
 function going_mygoing_check() {
 	if($GLOBALS['user']->uid==0) return FALSE;
-	$r=db_select('students_going','sg')->condition('sg.uid',$GLOBALS['user']->name))->isNotNull('sg.gid')->fields('sg')->countQuery()->execute()->fetchField();
+	$r=db_select('students_going','sg')->condition('sg.uid',$GLOBALS['user']->name)->isNotNull('sg.gid')->fields('sg')->countQuery()->execute()->fetchField();
 	return user_access('check my going') && $r>0;
 }
 
