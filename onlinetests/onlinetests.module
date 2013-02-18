@@ -915,7 +915,7 @@ function onlinetests_quest_report($gid=NULL) {
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;① 使用自己的准考证号和密码登录 '.$GLOBALS['base_url'].' 网站。如遗忘密码可在网站自行重设密码。<br/>';
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;② 登录后选择【我的在线考试】功能。<br/>';
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;③ 根据网站提示输入本试题中提供的试题访问代码，可查看试题及下载有关材料。<br/>';
-		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;④ 答题结束，将有关答案文件上传至该网站，确定无误后点击网站上的【交卷结束考试】按钮，并在监考员处签名。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;④ 答题结束，将有关答案文件上传至该网站，确定无误后点击网站上的【交卷结束考试】按钮，并在监考员处签名。因上传大文件需要一定时间，请考生合理安排自己的答题时间。<br/>';
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;考试时间终了时仍未点击【交卷结束考试】的考生，将被视为白卷。<br/>';
 		$pdf->SetCellPaddings(3,3,3,3);
 		$pdf->WriteHTMLCell(198,40,6,38,$description,1,1,'L',true,'',0,false,'T','T');
