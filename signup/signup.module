@@ -3149,9 +3149,9 @@ function signup_overview_set_validated_submit($form, $form_state) {
 				watchdog('onlinecharge',
 					'!user set !num students as validated.', array(
 						'!user'=>$GLOBALS['user']->name,
-						'!num'=>$result,
+						'!num'=>$result),
 					WATCHDOG_INFO
-				));
+				);
 			}
 		}
 		
@@ -3165,9 +3165,9 @@ function signup_overview_set_validated_submit($form, $form_state) {
 				watchdog('onlinecharge',
 					'!user set !num students as inactive.', array(
 						'!user'=>$GLOBALS['user']->name,
-						'!num'=>$result,
+						'!num'=>$result),
 					WATCHDOG_INFO
-				));
+				);
 			}
 		}
 	}
@@ -4866,6 +4866,11 @@ function signup_ticket_report($user) {
 	$pdf->Text(180,195,'请用A4纸横向打印，黑白稿、复印件皆有效');
 
 	$pdf->SetProtection(array('copy','modify','extract','assemble'));
+	if($GLOBALS['user']->uid == $user->uid)
+		watchdog('user', '!user downloaded ticket report.', array(
+			'!user' => $GLOBALS['user']->name),
+			WATCHDOG_INFO
+		);
 	$pdf->Output($r->uid.'_ticket.pdf', 'I');
 }
 
