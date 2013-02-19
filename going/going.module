@@ -115,8 +115,7 @@ function going_menu() {
 
 function going_menu_perm()
 {
-	$r=db_select('vl_going','g')->fields('g')->condition('department',$GLOBALS['user']->name)->countQuery()->execute()->fetchField();
-	return user_access('administer going')||(user_access('administer own going') && $r);
+	return user_access('administer going')||user_access('administer own going');
 }
 
 function going_menu_assign_modify($gid)
@@ -165,7 +164,6 @@ function going_goinglist() {
 		->extend('TableSort')
 		->orderByHeader($header);
 	$result = $query->execute();
-
 	$output = drupal_render(drupal_get_form('going_goinglist_filter'));
 
 	$rows = array();
@@ -576,11 +574,15 @@ function going_assign_list() {
 		array('data'=>t('Operations'), 'colspan'=>'2'),
 	);
 
-	$query=db_select('vl_going', 'g')->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'))
+	$query=db_select('vl_going', 'g')
 		->fields('g')
 		->extend('TableSort')
-		->orderByHeader($header)
-		->extend('PagerDefault')->limit(25);
+		->orderByHeader($header);
+	
+	if(!$is_dep_only) 
+		$query->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'));
+	else
+		$query->extend('PagerDefault')->limit(25);
 
 	$result = $query->execute();
 
@@ -632,10 +634,13 @@ function going_assign_list() {
 			);
 		}
 	}
-
-	$output = drupal_render(drupal_get_form('going_goinglist_filter'));
+	
+	$output = '';
+	if(!$is_dep_only)
+		$output .= drupal_render(drupal_get_form('going_goinglist_filter'));
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty' => t('No going have been filled.')));
-	$output .= theme('pager');
+	if(!$is_dep_only)
+		$output .= theme('pager');
 
 	return $output;
 }
