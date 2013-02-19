@@ -580,9 +580,7 @@ function going_assign_list() {
 		->orderByHeader($header);
 	
 	if(!$is_dep_only) 
-		$query->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'));
-	else
-		$query->extend('PagerDefault')->limit(25);
+		$query=$query->where(variable_get('zhaoban_going_list_date_filter_'.$GLOBALS['user']->name,'1'))->extend('PagerDefault')->limit(25);
 
 	$result = $query->execute();
 
