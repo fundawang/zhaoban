@@ -615,7 +615,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$answer)->execute()->fetchObject();
 			$form['orig_answers']['orig_answer'.$i]=array(
 				'#type' => 'item',
-				'#title' => t('Material @i', array('@i'=>$i++)),
+				'#title' => t('Answer @i', array('@i'=>$i++)),
 				'#markup' => l($q->filename,file_create_url($q->uri)),
 			);
 		}
@@ -763,7 +763,6 @@ function onlinetests_quest_report($gid=NULL) {
 
 	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/tcpdf.php');
-	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/barcodes.php');
 
 	ini_set('max_execution_time','500');
 
@@ -807,8 +806,8 @@ function onlinetests_quest_report($gid=NULL) {
 		$description ='&nbsp;<br/>答题要求：<br/><br/>';
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;① 使用自己的准考证号和密码登录 '.$GLOBALS['base_url'].' 网站。如遗忘密码可在网站自行重设密码。<br/>';
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;② 登录后选择【我的在线考试】功能。<br/>';
-		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;③ 根据网站提示输入本试题中提供的试题访问代码，可查看试题及下载有关材料。<br/>';
-		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;④ 答题结束，将有关答案文件上传至该网站，确定无误后点击网站上的【交卷结束考试】按钮，并在监考员处签名。因上传大文件需要一定时间，请考生合理安排自己的答题时间。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;③ 根据网站提示输入本试题中提供的试题访问代码，可查看试题及下载有关材料。下载材料后请先进行试听，确认无误后等待考试开始信号发出再行作答。<br/>';
+		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;④ 答题结束，将有关答案文件上传至该网站。请先选择【临时保存】，上传结束后请从网站重新下载上传的答案文件，确定可以正常打开后，再点击网站上的【交卷结束考试】按钮，并在本试题页结尾处签名。因上传大文件需要一定时间，为避免临近考试结束时出现网络拥堵，请考生合理安排自己的答题时间。<br/>';
 		$description.='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;考试时间终了时仍未点击【交卷结束考试】的考生，将被视为白卷。<br/>';
 		$pdf->SetCellPaddings(3,3,3,3);
 		$pdf->WriteHTMLCell(198,40,6,38,$description,1,1,'L',true,'',0,false,'T','T');
@@ -838,6 +837,11 @@ function onlinetests_quest_report($gid=NULL) {
 			$pdf->Ln();
 			$pdf->MultiCell(200,6,$e->stem,0,'L',false);
 		}
+		$pdf->Line(6,$pdf->GetY()+12,204,$pdf->GetY()+12);
+		$pdf->Ln();
+		$pdf->Cell(30,6,'交卷签名：');
+		$pdf->Ln();
+		$pdf->MultiCell(200,6,'交卷签名即表示我已经将所有的答案文件上传至规定网站，所有文件重新下载后均可正常打开。',0,'L',false);
 	}
 	$pdf->Output(variable_get('zhaoban_current_year',date('Y')).'_'.$gid.'.pdf', 'I');
 }
