@@ -368,7 +368,7 @@ function score_input_going_list() {
 	}
 	$exams=$query->execute();
 	foreach($exams as $exam) {
-		$output1 .= '<dt>';
+		$output1 = '<dt>';
 		$output1 .= l($exam->enamefull, 'score/input/'.$exam->eid.'/'.$exam->gid);
 		$output1 .= '</dt><dd>';
 		$query=db_select('vl_going','g')->fields('g',array('time'))->fields('r',array('rname'));
@@ -397,7 +397,7 @@ function score_input_going_list() {
 		->where("NOT e.eid LIKE '3%'");
 	
 	$output2='';
-	$rdb=$query->execute();
+	$rdbo=$query->execute();
 	foreach($rdbo as $r) {
 		$output2 .= '<dt>'.l($r->exam, 'score/input/'.$r->eid).'</dt>';
 		$output2 .= '<dd>'.t('There are !num of your students have this score.', array('!num'=>$r->num)).'</dd>';
@@ -483,7 +483,7 @@ function theme_score_input_going_form($variables) {
 	$warn = '<div class="messages error" id="notification">';
 	$warn.= t('WARNING: The score may be input only once, please keep it correct 100%!');
 	$warn.= '</div>';
-	$ouput = '';
+	$output = '';
 	$header=array(
 			array('data'=>t('No.')),
 		array('data'=>t('Student ID')),
