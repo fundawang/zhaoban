@@ -518,6 +518,7 @@ function going_going_edit_submit($form, &$form_state) {
 				if($etype==3)
 					db_update('vl_going')
 						->condition('gid', arg(3))
+						->isNull('status')
 						->fields(array(
 							'status' => 1,
 						))->execute();
@@ -774,6 +775,8 @@ function going_assign_students_submit($form, &$form_state) {
 		sort($students);
 	for($j=0;$j<count($students);$j++) {
 			$student=$students[$j];
+			if(db_select('vl_going','g')->fields('g')->condition('gid',arg(3))->condition('gname','%专业复试','like')->countQuery()->execute()->fetchField()>0)
+				$i=NULL;
 			db_update('students_going')->fields(array(
 				'gid' => arg(3),
 				'gorder' => $i,
@@ -1178,7 +1181,7 @@ function going_mygoing() {
 			$r->rname?$r->rname:t('To be arranged'),
 			$r->wname?$r->wname:'',
 			_going_datetime_to_string($r->time),
-			($r->gorder&&$r->eid<>'146')?$r->gorder:'',
+			(!is_null($r->gorder)&&$r->eid<>'146')?$r->gorder:'',
 		);
 	}
 	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
