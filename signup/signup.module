@@ -1952,13 +1952,24 @@ function signup_user_examinations_form($form, $form_state) {
 	// Draw every exam as a seperated frameset
 	sort($exams);
 	$page_weight = 0;
+	$should_disabled=$isvalidated;
+	
+	$query=db_select('students_going','sg')->condition('sg.uid',$user->name);
+	$query->innerJoin('vl_going','g','sg.gid=g.gid');
+	$query->fields('g',array('time'))->orderBy('g.time');
+	$starttime=$query->execute()->fetchField();
+	if($isvalidated)
+		if(!$starttime) $should_disabled=FALSE;
+		else if(date('YmdHi0000',time()+3600*24)<$starttime)
+			$should_disabled=FALSE;
 	foreach($exams as $eid) {
+		// Lets fetch the start time of specific going
 		$r = db_select('vl_exam','e')->fields('e')->condition('e.eid',$eid)->execute()->fetchObject();
 		$form[$eid] = array(
 			'#type' => 'fieldset',
 			'#title' => $r->ename . $r->elevel,
-			'#collapsible' => !empty($r->opus) || !empty($r->eadditonal) || $isvalidated,
-			'#collapsed' => $isvalidated,
+			'#collapsible' => !empty($r->opus) || !empty($r->eadditonal) || $should_disabled,
+			'#collapsed' => $should_disabled,
 			'#weight'=> $page_weight++,
 		);
 		$form[$eid]['etype'] = array(
@@ -1977,7 +1988,7 @@ function signup_user_examinations_form($form, $form_state) {
 		if($r->eadditional) {
 			$form[$eid]['eadditional'.$eid] = unserialize($r->eadditional);
 			$form[$eid]['eadditional'.$eid]['#default_value']=isset($default_values['eadditional'])?$default_values['eadditional']:NULL;
-			$form[$eid]['eadditional'.$eid]['#disabled']=$isvalidated;
+			$form[$eid]['eadditional'.$eid]['#disabled']=$should_disabled;
 			$form[$eid]['eadditional'.$eid]['#title'] = isset($form[$eid]['eadditional'.$eid]['#title'])?t($form[$eid]['eadditional'.$eid]['#title']):NULL;
 			if(!isset($form[$eid]['eadditional'.$eid]['#type'])||$form[$eid]['eadditional'.$eid]['#type']=='markup')
 				$form[$eid]['eadditional'.$eid]['#markup'] = t($form[$eid]['eadditional'.$eid]['#value']);
@@ -1996,10 +2007,10 @@ function signup_user_examinations_form($form, $form_state) {
 			$form[$eid][$eid.'opus'.$i] = array(
 				'#type' => 'textfield',
 				'#maxlength' => 30,
-				'#required' => !$isvalidated,
+				'#required' => !$should_disabled,
 				'#title' => t('Opus No.!i', array('!i' => $i)),
 				'#default_value' => isset($default_values['opus'.$i])?$default_values['opus'.$i]:NULL,
-				'#disabled' => $isvalidated,
+				'#disabled' => $should_disabled,
 			);
 			if($ispassthrough) {
 				$form[$eid][$eid.'opus'.$i]['#value'] = isset($default_values['opus'.$i])?$default_values['opus'.$i]:t('Not needed for passthrough students');
@@ -2014,7 +2025,17 @@ function signup_user_examinations_form($form, $form_state) {
 function signup_user_examinations_form_save($form, $form_state) {
 	$user=$form['#user'];
 	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
-	if($isvalidated) return;
+	$should_disabled=$isvalidated;
+	
+	$query=db_select('students_going','sg')->condition('sg.uid',$user->name);
+	$query->innerJoin('vl_going','g','sg.gid=g.gid');
+	$query->fields('g',array('time'))->orderBy('g.time');
+	$starttime=$query->execute()->fetchField();
+	if($isvalidated)
+		if(!$starttime) $should_disabled=FALSE;
+		else if(date('YmdHi0000')<$starttime)
+			$should_disabled=FALSE;
+	if($should_disabled) return;
 
 		$opus_to_save = array();
 
