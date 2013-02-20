@@ -367,8 +367,9 @@ function score_input_going_list() {
 		return theme('admin_block_content', array('content' => $content));
 	}
 	$exams=$query->execute();
+	$output1 = '';
 	foreach($exams as $exam) {
-		$output1 = '<dt>';
+		$output1 .= '<dt>';
 		$output1 .= l($exam->enamefull, 'score/input/'.$exam->eid.'/'.$exam->gid);
 		$output1 .= '</dt><dd>';
 		$query=db_select('vl_going','g')->fields('g',array('time'))->fields('r',array('rname'));
@@ -393,12 +394,13 @@ function score_input_going_list() {
 	$query->innerJoin('vl_exam','e','c.eid=e.eid');
 	$query->addExpression("CONCAT_WS('', ename, elevel)",'ename');
 	$query->addExpression("COUNT(c.uid)",'num');
-	$query=$query->fields('e',array('eid'))->condition('p.uid',$user->name)->condition('e.uid',$user->name,'<>')
+	$query=$query->fields('e',array('eid'))->condition('p.uid',$user->name)->condition('e.uid',$user->name,'<>')->isNotNull('e.eid')
 		->where("NOT e.eid LIKE '3%'");
 	
 	$output2='';
 	$rdbo=$query->execute();
 	foreach($rdbo as $r) {
+		if(is_null($r->eid)) continue;
 		$output2 .= '<dt>'.l($r->exam, 'score/input/'.$r->eid).'</dt>';
 		$output2 .= '<dd>'.t('There are !num of your students have this score.', array('!num'=>$r->num)).'</dd>';
 	}
