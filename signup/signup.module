@@ -2061,8 +2061,7 @@ function signup_user_examinations_form_save($form, $form_state) {
 			->condition('uid', $user->name)
 			->condition('eid', $eid)
 			->execute();
-			}
-			
+	}
 	signup_user_goto($user);
 }
 
