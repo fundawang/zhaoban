@@ -637,7 +637,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 				'file_validate_extensions' => NULL,
 			),
 			'#plupload_settings' => array(
-				'max_file_size' => '800mb',
+				'max_file_size' => '2000mb',
 			),
 		);
 		if(!count($answers)) {
