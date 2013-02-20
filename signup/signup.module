@@ -993,6 +993,10 @@ function signup_user_account_form_save($form, &$form_state) {
 	$user=$form_state['user'];
 	$edit=$form_state['values'];
 
+	if(!empty($edit['pass']))
+		$data['pass']=$edit['pass'];
+	user_save($user, $data);
+
 	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
 	if($isvalidated) return;
 
