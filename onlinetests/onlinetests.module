@@ -122,10 +122,10 @@ function onlinetests_onlinetests_list() {
 	$is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
 
 	$header = array(
-		array('data'=>t('Status'), 'field'=>'num'),
+		array('data'=>t('Status'), 'field'=>'status'),
 		array('data'=>t('Schedule Name'), 'field'=>'gid', 'sort'=>'asc'),
 		array('data'=>t('Place'), 'field'=>'g.place'),
-		array('data'=>t('Existing people'), 'field'=>'num'),
+		array('data'=>t('Existing people')),
 		array('data'=>t('Time'), 'field'=>'g.time'),
 		array('data'=>t('Operations'), 'colspan'=>'2'),
 	);
@@ -1097,7 +1097,7 @@ function onlinetests_answer_list($gid=NULL) {
 			$i,
 			$fname,
 			sprintf("%s %s", $r->uid, $r->name),
-			implode('<br/>',$links),
+			(count($links)==1)?$links[0]:'<ul><li>'.implode('</li><li>',$links).'</li></ul>',
 		);
 		if($going->status==ONLINETEST_STATUS_INTERVIEWING)
 			unset($rows[count($rows)-1][2]);
