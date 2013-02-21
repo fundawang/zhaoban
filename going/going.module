@@ -1102,7 +1102,7 @@ function going_print_score_report($gid=NULL)
 		$pdf->SetFillColor(255,255,255);
 		$ruid=$r->uid;
 		$rname=$r->name;
-		if(preg_match('/二轮/',$going->gname)) {
+		if(preg_match('/二轮/',$going->gname) || preg_match('/钢琴表演/',$going->gname)) {
 			$ruid=substr($r->uid,0,6).'**'.substr($r->uid,8,1);
 			$rname=mb_substr($r->name,0,1,'UTF-8').'**';
 		}
