@@ -163,7 +163,8 @@ function onlinetests_onlinetests_list() {
 					$tmp_status=t("Now interviewing").' '.l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score sheet').'"/>',"definations/onlinetests/printonlinetestscore/$r->gid", array('html'=>true));
 					break;
 				case ONLINETEST_STATUS_FINISHED:
-					$tmp_status=t("Finished"); break;
+					$tmp_status=t("Finished").' '.l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score sheet').'"/>',"definations/onlinetests/printonlinetestscore/$r->gid", array('html'=>true));
+					break;
 			}
 		}
 		else
@@ -199,9 +200,11 @@ function onlinetests_onlinetests_list() {
 					break;
 				case ONLINETEST_STATUS_FINISHED:
 					$rows[count($rows)-1][]=array(
-						'data'=>'<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>',
-						'colspan'=>'2',
+						'data'=>'<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'<br/>'.
+							l(t('View answer files'), "definations/onlinetests/answers/$r->gid").
+							'</nobr>',
 					);
+					$rows[count($rows)-1][]='';
 					break;
 				default:
 					$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
@@ -454,6 +457,14 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			$description.='<br/>';
 			$description.=t('Now will start to review the answers.');
 			$submit=t('Begin review');
+			break;
+		case ONLINETEST_STATUS_INTERVIEWING: // Now about to end the interviewing
+			$title=t('Stop review').' - '.$going->gname;
+			$form['info']=array(
+				'#type' => 'markup',
+				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+			);
+			$description=t('Stop the reviewing will cause students id showing in score report and the answer files downloading page.');
 			break;
 	}
 	if($operation_impossible['status'] ) {
@@ -943,7 +954,7 @@ function onlinetests_print_score_report($gid=NULL)
 	if($going->status==ONLINETEST_STATUS_INTERVIEWING)
 		$this->Cell(30, 2, t('Raw number'),0, false, 'C');
 	else
-		$this->Cell(30, 2, t('Student ID'),0, false, 'C');
+		$this->Cell(60, 2, t('Student ID'),0, false, 'C');
 	$this->Cell(30, 2, '专业',0, false, 'C');
 	$this->Cell(55, 2, '成绩',0, false, 'C');
 	$this->Cell(52, 2, '备注',0, false, 'C');
@@ -1016,7 +1027,7 @@ function onlinetests_print_score_report($gid=NULL)
 		if($going->status==ONLINETEST_STATUS_INTERVIEWING)
 			$pdf->Cell(30,2,$fname, 0, false, 'C',true);
 		else
-			$pdf->Cell(30,2,$r->uid, 0, false, 'C',true);
+			$pdf->Cell(60,2,sprintf("%s %s", $r->uid, $r->name), 0, false, 'C',true);
 		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
 
 		$pdf->Ln();
@@ -1067,7 +1078,8 @@ function onlinetests_answer_list($gid=NULL) {
 		unset($header[2]);
 	$rows=array();
 	$query=db_select('students_going','sg')->condition('sg.gid',$gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers')->fields('sg')->orderRandom();
-	
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->fields('s',array('name'));
 	$result=$query->execute();
 	$i=1;
 	foreach($result as $r) {
@@ -1084,7 +1096,7 @@ function onlinetests_answer_list($gid=NULL) {
 		$rows[]=array(
 			$i,
 			$fname,
-			$r->uid,
+			sprintf("%s %s", $r->uid, $r->name),
 			implode('<br/>',$links),
 		);
 		if($going->status==ONLINETEST_STATUS_INTERVIEWING)
