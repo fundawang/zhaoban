@@ -282,11 +282,11 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 		);
 
 		foreach($materials as $material) {
-			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$material)->execute()->fetchObject();
+			$q=db_select('file_managed','f')->fields('f',array('uri','filename','filesize'))->condition('fid',$material)->execute()->fetchObject();
 			$form['orig_material']['orig_material'.$i]=array(
 				'#type' => 'item',
 				'#title' => t('Material @i', array('@i'=>$i++)),
-				'#markup' => l($q->filename,file_create_url($q->uri)),
+				'#markup' => sprintf('%s (%s)',l($q->filename,file_create_url($q->uri)), _onlinetests_formatRawSize($q->filesize)),
 			);
 		}
 	}
@@ -308,6 +308,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 				'file_validate_extensions' => NULL,
 			),
 			'#plupload_settings' => array(
+				'chunk_size' => '1mb',
 				'max_file_size' => '800mb',
 			),
 		);
@@ -670,11 +671,11 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 	$materials=explode(', ', $r->materials);
 	$i=1;
 	foreach($materials as $material) {
-		$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$material)->execute()->fetchObject();
+		$q=db_select('file_managed','f')->fields('f',array('uri','filename','filesize'))->condition('fid',$material)->execute()->fetchObject();
 		$form['orig_material'.$i]=array(
 			'#type' => 'item',
 			'#title' => t('Material @i', array('@i'=>$i++)),
-			'#markup' => l($q->filename,file_create_url($q->uri)),
+			'#markup' => sprintf('%s (%s)',l($q->filename,file_create_url($q->uri)), _onlinetests_formatRawSize($q->filesize)),
 		);
 	}
 
@@ -689,11 +690,11 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 		);
 
 		foreach($answers as $answer) {
-			$q=db_select('file_managed','f')->fields('f',array('uri','filename'))->condition('fid',$answer)->execute()->fetchObject();
+			$q=db_select('file_managed','f')->fields('f',array('uri','filename','filesize'))->condition('fid',$answer)->execute()->fetchObject();
 			$form['orig_answers']['orig_answer'.$i]=array(
 				'#type' => 'item',
 				'#title' => t('Answer @i', array('@i'=>$i++)),
-				'#markup' => l($q->filename,file_create_url($q->uri)),
+				'#markup' => sprintf('%s (%s)',l($q->filename,file_create_url($q->uri)), _onlinetests_formatRawSize($q->filesize)),
 			);
 		}
 	}
@@ -714,6 +715,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 				'file_validate_extensions' => NULL,
 			),
 			'#plupload_settings' => array(
+				'chunk_size' => '1mb',
 				'max_file_size' => '2000mb',
 			),
 		);
