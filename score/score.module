@@ -1684,6 +1684,10 @@ function score_mark_3rd_round_list() {
 	$query->exists($subquery);
 	$rdbo=$query->execute();
 	
+	$tot_mainland_in=0;
+	$tot_mainland_out=0;
+	$tot_outmainland_in=0;
+	$tot_outmainland_out=0;
 	while($r=$rdbo->fetchObject())
 	{
 		$did=$r->did;
@@ -1712,6 +1716,7 @@ function score_mark_3rd_round_list() {
 }
 
 function score_mark_3rd_round_check($pid=NULL) {
+	global $user;
 	$query=db_select('students','s')->condition('pass_round1_major',0,'>')->fields('s');
 	if($pid)
 		$query->condition('s.profession_major',$pid);
