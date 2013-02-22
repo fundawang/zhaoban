@@ -182,7 +182,11 @@ function onlinetests_onlinetests_list() {
 			switch($r->status) {
 				case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
 					$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
-					$rows[count($rows)-1][]='<nobr>'.l(t('Start'), "definations/onlinetests/op/$r->gid").'</nobr>';
+					$stem=db_select('vl_quest','q')->condition('q.gid',$going->gid)->fields('q',array('stem'))->execute()->fetchField();
+					if($stem)
+						$rows[count($rows)-1][]='<nobr>'.l(t('Start'), "definations/onlinetests/op/$r->gid").'</nobr>';
+					else
+						$rows[count($rows)-1][]='';
 					break;
 				case ONLINETEST_STATUS_ONGOING:
 					$rows[count($rows)-1][]='<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
