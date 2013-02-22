@@ -3167,6 +3167,9 @@ function signup_overview_set_validated_submit($form, $form_state) {
 			$students->condition('sc.period',1)->condition('o.status',100);
 			$query=db_update('students')->fields(array('validated' => 1))->exists($students);
 			$result=$query->execute();
+			$students=db_select('students','s')->fields('s',array('uid'))->condition('s.validated',1)->where('{users}.name=s.uid');
+			$query=db_update('users')->fields(array('status'=>1))->exists($students);
+			$query->execute();
 			
 			if($result) {
 				drupal_set_message(t('!num students have been marked as validated.', array('!num'=>$result)));
