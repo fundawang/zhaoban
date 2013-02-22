@@ -1960,7 +1960,7 @@ function signup_user_examinations_form($form, $form_state) {
 	
 	$query=db_select('students_going','sg')->condition('sg.uid',$user->name);
 	$query->innerJoin('vl_going','g','sg.gid=g.gid');
-	$query->fields('g',array('time'))->orderBy('g.time');
+	$query->fields('g',array('time'))->orderBy('g.time')->condition('g.time','2013022200000000','>');
 	$starttime=$query->execute()->fetchField();
 	if($isvalidated)
 		if(!$starttime) $should_disabled=FALSE;
