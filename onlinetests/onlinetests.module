@@ -951,10 +951,7 @@ function onlinetests_print_score_report($gid=NULL)
 	$this->SetFont('droidsansfallbackfull', 'B', 12, '', true);
 	$this->Ln();
 	$this->Cell(10, 2, '序号',0, false, 'C');
-	if($going->status==ONLINETEST_STATUS_INTERVIEWING)
-		$this->Cell(30, 2, t('Raw number'),0, false, 'C');
-	else
-		$this->Cell(60, 2, t('Student ID'),0, false, 'C');
+	$this->Cell(40, 2, t('考生编号'),0, false, 'C');
 	$this->Cell(30, 2, '专业',0, false, 'C');
 	$this->Cell(55, 2, '成绩',0, false, 'C');
 	$this->Cell(52, 2, '备注',0, false, 'C');
@@ -1025,9 +1022,9 @@ function onlinetests_print_score_report($gid=NULL)
 			break;
 		}
 		if($going->status==ONLINETEST_STATUS_INTERVIEWING)
-			$pdf->Cell(30,2,$fname, 0, false, 'C',true);
+			$pdf->Cell(40,2,$fname, 0, false, 'C',true);
 		else
-			$pdf->Cell(60,2,sprintf("%s %s", $r->uid, $r->name), 0, false, 'C',true);
+			$pdf->Cell(40,2,sprintf("%s %s", $r->uid, $r->name), 0, false, 'C',true);
 		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
 
 		$pdf->Ln();
