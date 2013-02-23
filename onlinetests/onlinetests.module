@@ -665,7 +665,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 	$form['stem']=array(
 		'#type' => 'item',
 		'#title' => t('Stem'),
-		'#markup' => $r->stem,
+		'#markup' => nl2br($r->stem),
 	);
 
 	$materials=explode(', ', $r->materials);
