@@ -906,8 +906,8 @@ function onlinetests_quest_report($gid=NULL) {
 		$query->condition('sg.uid',$s->uid);
 		$query->orderBy('e.eid');
 		$exams=$query->execute();
+		$pdf->SetDrawColor(0,0,0);
 		foreach($exams as $e) {
-			$pdf->SetDrawColor(0,0,0);
 			$pdf->Line(6,$pdf->GetY()+12,204,$pdf->GetY()+12);
 			$pdf->SetFontSize(20);
 			$pdf->setY($pdf->GetY()+10);
@@ -916,8 +916,10 @@ function onlinetests_quest_report($gid=NULL) {
 			$pdf->Ln();
 			$pdf->MultiCell(200,6,$e->stem,0,'L',false);
 		}
+		$pdf->setY($pdf->GetY()+10);
 		$pdf->Line(6,$pdf->GetY()+12,204,$pdf->GetY()+12);
 		$pdf->Ln();
+		$pdf->SetDrawColor(0,0,0);
 		$pdf->Cell(30,6,'交卷签名：');
 		$pdf->Ln();
 		$pdf->MultiCell(200,6,'交卷签名即表示我已经将所有的答案文件上传至规定网站，所有文件重新下载后均可正常打开。',0,'L',false);
