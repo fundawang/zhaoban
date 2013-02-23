@@ -1092,12 +1092,12 @@ function onlinetests_answer_list($gid=NULL) {
 		$fname=substr($f->filename, 0,3);
 		unset($f);
 		$links=array();
-		foreach($answers as $f) {
+		foreach($answers as $fileid) {
 			$f=file_load($fileid);
 			$links[]=sprintf('%s (%s)',l($f->filename,file_create_url($f->uri)), _onlinetests_formatRawSize($f->filesize));
 		}
 		$rows[]=array(
-			$i,
+			$i++,
 			$fname,
 			sprintf("%s %s", $r->uid, $r->name),
 			(count($links)==1)?$links[0]:'<ul><li>'.implode('</li><li>',$links).'</li></ul>',
