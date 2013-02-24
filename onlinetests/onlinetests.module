@@ -1056,7 +1056,7 @@ function onlinetests_print_score_report($gid=NULL)
 }
 
 function onlinetests_print_score_report_perm($gid=NULL) {
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->condition('g.status',ONLINETEST_STATUS_INTERVIEWING,'>=')->fields('sg');
+	$query=db_select('vl_going','g')->condition('g.gid',$gid)->condition('g.status',ONLINETEST_STATUS_INTERVIEWING,'>=')->fields('g');
 	$r=$query->countQuery()->execute()->fetchField();
 	return user_access('print order list') && $r;
 }
