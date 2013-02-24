@@ -576,7 +576,7 @@ function onlinetests_file_download($uri) {
 	if(preg_match('/^onlinetests\/answers/', $target)) {
 		$query=db_select('file_managed','f')->condition('f.uid',$GLOBALS['user']->uid)->condition('f.uri',$uri)->fields('f')->countQuery();
 		$r=$query->execute()->fetchField();
-		if($r==1 || $GLOBALS['user']->uid==1) {
+		if($r==1 || user_access('administer online exams')) {
 			$query=db_select('file_managed','f')->condition('f.uri',$uri)->fields('f');
 			$r=$query->execute()->fetchObject();
 			$headers=array(
