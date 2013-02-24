@@ -511,7 +511,7 @@ function onlinetests_operations_submit($form, &$form_state) {
 	// If about the end the exam, the force end individual student's status
 	if($st==ONLINETEST_STATUS_ONGOING) {
 		$query=db_select('students_going','sg')->condition('sg.gid',arg(3))->condition('sg.status',ONLINETEST_STATUS_ONGOING)->fields('sg',array('uid','eid','answers'));
-		$result=$queyr->execute();
+		$result=$query->execute();
 		foreach($result as $r) {
 			$answers=explode(', ',$r->answers);
 			$i=1;
@@ -528,6 +528,7 @@ function onlinetests_operations_submit($form, &$form_state) {
 	}
 	// If about to start review the answer, then we need to rename the answer files.
 	if($st==ONLINETEST_STATUS_ENDED) {
+		ini_set('max_execution_time','900');
 		$query=db_select('students_going','sg')->condition('sg.gid',arg(3))
 			->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers')->fields('sg',array('uid','eid','answers'));
 		$result=$query->execute();
@@ -708,7 +709,7 @@ function onlinetests_myonlinetests_for_students($form, $form_state) {
 				'#markup' => sprintf('%s (%s)',l($q->filename,file_create_url($q->uri)), _onlinetests_formatRawSize($q->filesize)),
 			);
 		}
-	}
+	} else $answers=NULL;
 
 	if($r->status != ONLINETEST_STATUS_ENDED) {
 		$form['answersframe']=array(
