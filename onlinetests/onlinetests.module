@@ -1051,7 +1051,7 @@ function onlinetests_print_score_report_perm($gid=NULL) {
 
 function _onlinetests_formatRawSize($bytes) {
 	if(!empty($bytes)) {
-		$s = array(t('bytes'), 'kb', 'MB', 'GB', 'TB', 'PB');
+		$s = array(t('bytes'), 'KiB', 'MiB', 'GiB', 'TiB', 'PiB');
 		$e = floor(log($bytes)/log(1024));
 		$output = sprintf('%.2f '.$s[$e], ($bytes/pow(1024, floor($e))));
 		return $output;
