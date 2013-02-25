@@ -517,6 +517,8 @@ function onlinetests_operations_submit($form, &$form_state) {
 			$i=1;
 			foreach($answers as $answer) {
 				$f=file_load($answer);
+				$f->status=FILE_STATUS_PERMANENT;
+				$f=file_save($f);
 				$ext=strrchr($f->filename, '.');
 				file_move($f, sprintf('private://onlinetests/answers/%s_%s_%s%s', $r->uid, $r->eid, $i++, $ext));
 			}
