@@ -1126,9 +1126,10 @@ function going_print_score_report($gid=NULL)
 			else
 				$t=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue;
 			$pdf->SetX(140);
-			$pdf->MultiCell(60, 2, $t, 0, 'L',true);
+			$pdf->MultiCell(60, 0, $t, 0, 'L',true);
 		}
 		$pdf->Ln();
+		$pdf->setY($pdf->getY()-1);
 		$pdf->Line(6,$pdf->GetY()-2,200,$pdf->GetY()-2);
 	}
 	
