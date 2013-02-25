@@ -99,9 +99,11 @@ function essential_block_view($delta = '') {
 function essential_cron() {
 	$options=array('timeout'=>1);
 	$valid_code=array('302','200');
-	$r=drupal_http_request("http://m.weather.com.cn/data/101010100.html",$options);
-	if($r->code=='200') variable_set('current_weather', $r->data);
-	else variable_del('current_weather');
+	while($r!=='200')
+	do {
+		$r=drupal_http_request("http://m.weather.com.cn/data/101010100.html",$options);
+	} while ($r->code !='200');
+	variable_set('current_weather', $r->data);
 }
 
 function essential_username_alter(&$name, $account) {
