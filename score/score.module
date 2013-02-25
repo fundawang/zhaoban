@@ -482,12 +482,13 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 
 function theme_score_input_going_form($variables) {
 	$form=$variables['form'];
+	if(!isset($form['opus'])) $form['opus']=array();
 	$warn = '<div class="messages error" id="notification">';
 	$warn.= t('WARNING: The score may be input only once, please keep it correct 100%!');
 	$warn.= '</div>';
 	$output = '';
 	$header=array(
-			array('data'=>t('No.')),
+		array('data'=>t('No.')),
 		array('data'=>t('Student ID')),
 		array('data'=>t('Real Name')),
 		array('data'=>t('Score')),
