@@ -415,7 +415,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 						'#name' => 'submit'.$r->period,
 						'#value' => t('Pay'),
 					);
-				else if($examplace!='110000' && $r->period==1)
+				else if(isset($examplace) && $examplace!='110000' && $r->period==1)
 					$form['submit'.$r->period]=array(
 						'#type' => 'item',
 						'#markup' => t('Please pay your order offline.'),
