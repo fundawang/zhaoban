@@ -479,7 +479,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	$form['help']=array(
 		'#markup' =>
 			'<b>'.t('Notice').'</b><br/>'.
-			'<span style="color: red; font-weight: bold">'.t('Please ensure you have seen the 2nd round result, then pay the order. We will not refund your money in any cases.').'</span>'.
+			'<span style="color: red; font-weight: bold">'.t('Please ensure you have seen the 2nd round result, then pay the order. We will not refund your money in any cases.').'</span><br/>'.
 			t('If your payment is successful, but we do not show the result here, please wait a few minutes to have our record updated.').'<br/>'.
 			t('If you still have inconsistent record here, for instance, multiple sucessful payments, please contact us at @tel.', array('@tel'=>variable_get('charging_telephone')))
 	);
