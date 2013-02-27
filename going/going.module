@@ -664,6 +664,10 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 		'addition' => array('data'=>t('Additional')),
 	);
 	
+	$etype=db_select('vl_exam','e')->condition('e.eid',$valid_exams[0])->fields('e',array('etype'))->execute()->fetchField();
+	if($etype <> 2)
+		$header['uid']['sort']='asc';
+	
 	$query=db_select('vl_going','g')->fields('g')->condition('g.gid',$gid);
 	$query->innerJoin('vl_room','r','g.place=r.rid');
 	$going=$query->fields('r')->execute()->fetchObject();
@@ -746,6 +750,10 @@ function going_assign_students($form, $form_state, $gid=NULL) {
 	    '#options' => $options,
 	    '#attributes' => array('class'=>array('assign_students')),
 	    '#empty' => t('No suitable students.'),
+	);
+	$form['redirect']=array(
+		'#type' => 'hidden',
+		'#value' => empty($_SERVER['HTTP_REFERER'])?'definations/arrange':$_SERVER['HTTP_REFERER'],
 	);
 
 	if(count($options)) {
