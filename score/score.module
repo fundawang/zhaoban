@@ -447,9 +447,7 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 			'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$ename.' / '.$going->rname.'</div>',
 		);
 	else
-		$form['info']=array(
-			'#markup'=>'<div class="messages">'.$ename.'</div>',
-		);
+		drupal_set_title(sprintf('%s - %s',t('Score'), $ename));
 	$text='';
 	$j=1;
 	
