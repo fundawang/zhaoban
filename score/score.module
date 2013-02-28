@@ -840,8 +840,10 @@ function score_batch_submit($form, &$form_state) {
 
 function score_batch_validate($form, $form_state) {
 	$form_values=$form_state['values'];
-	//var_dump($form_values);
 	$eid=$form_values['eid'];
+	$etype=db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e',array('etype'))->execute()->fetchField();
+	if($etype!=2 && $form_values['scoretype']=='rank')
+		form_set_error('scoretype', t('You cannot upload rank for this exam.'));
 	$mass_score=explode("\r\n", $form_values['score']);
 	$score=array();
 	foreach($mass_score as $scores) {
