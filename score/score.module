@@ -401,7 +401,7 @@ function score_input_going_list() {
 	$rdbo=$query->execute();
 	foreach($rdbo as $r) {
 		if(is_null($r->eid)) continue;
-		$output2 .= '<dt>'.l($r->exam, 'score/input/'.$r->eid).'</dt>';
+		$output2 .= '<dt>'.l($r->ename, 'score/input/'.$r->eid).'</dt>';
 		$output2 .= '<dd>'.t('There are !num of your students have this score.', array('!num'=>$r->num)).'</dd>';
 	}
 	if($output2=='') {
@@ -409,7 +409,7 @@ function score_input_going_list() {
 		$output.=drupal_render($form['own']['output1']);
 	}
 	else {
-		$form['stu']['output2']=array('#value'=>$output2);
+		$form['stu']['output2']=array('#markup'=>$output2);
 		$output.=drupal_render($form['own']);
 		$output.=drupal_render($form['stu']);
 	}
@@ -423,8 +423,11 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 	global $user;
 	
 	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$going=$query->fields('r')->execute()->fetchObject();
+	if(!is_null($gid)) {
+		$query->condition('g.gid',$gid);
+		$query->innerJoin('vl_room','r','g.place=r.rid');
+		$going=$query->fields('r')->execute()->fetchObject();
+	}
 	
 	$query=db_select('vl_exam','e')->condition('e.eid',$eid);
 	$query->addExpression(" CONCAT_WS('',e.ename,e.elevel)",'ename');
@@ -434,11 +437,19 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 	$query->innerJoin('students_going','g','s.uid=g.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->fields('g',array('gorder','eid'));
-	$query=$query->condition('g.eid',$eid)->condition('g.gid',$gid)->orderBy('g.gorder');
-
-	$form['info']=array(
-		'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$ename.' / '.$going->rname.'</div>',
-	);
+	$query=$query->condition('g.eid',$eid)->orderBy('g.gorder');
+	if(!is_null($gid))
+		$query->condition('g.gid',$gid);
+	else $query->isNotNull('g.gid');
+	
+	if(!is_null($gid))
+		$form['info']=array(
+			'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$ename.' / '.$going->rname.'</div>',
+		);
+	else
+		$form['info']=array(
+			'#markup'=>'<div class="messages">'.$ename.'</div>',
+		);
 	$text='';
 	$j=1;
 	
@@ -483,9 +494,11 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 function theme_score_input_going_form($variables) {
 	$form=$variables['form'];
 	if(!isset($form['opus'])) $form['opus']=array();
-	$warn = '<div class="messages error" id="notification">';
-	$warn.= t('WARNING: The score may be input only once, please keep it correct 100%!');
-	$warn.= '</div>';
+	if(!is_null(arg(3))) {
+		$warn = '<div class="messages error" id="notification">';
+		$warn.= t('WARNING: The score may be input only once, please keep it correct 100%!');
+		$warn.= '</div>';
+	} else $warn = '';
 	$output = '';
 	$header=array(
 		array('data'=>t('No.')),
