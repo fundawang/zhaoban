@@ -1544,21 +1544,22 @@ function score_prepare_3rd_detail($prof=NULL) {
 	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
 	$profession_exams = unserialize($profession->exams);
 	drupal_set_title(t('Prepare for the 3rd round students').' - '.$profession->pname);
-	$output .= '<div class=\'messages\'>';
+	$output = '<div class=\'messages\'>';
 	$output .= '<p>'.t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
 	$tmp = $profession->memo;
 	if (!is_null($tmp) && strlen($tmp) != 0)
 		$output .= $tmp;
-		$output .= '</p>';
+	$output .= '</p>';
 	$output .= '<p>'.t('The formula used to generate the result is:').'</p><blockquote>';
-		ksort($profession_exams);
-		foreach($profession_exams as $eid => $eweight){
-			$exam = db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
-			if ($eweight)
-				$edata .= $exam->ename.$exam->elevel.'&times;'.sprintf('%d%%',$eweight*100).'+';
-		}
-		$output .= substr($edata, 0, strlen($edata)-1);
-		$output .= '</blockquote></div>';
+	ksort($profession_exams);
+	$edata='';
+	foreach($profession_exams as $eid => $eweight){
+		$exam = db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
+		if ($eweight)
+			$edata .= $exam->ename.$exam->elevel.'&times;'.sprintf('%d%%',$eweight*100).'+';
+	}
+	$output .= substr($edata, 0, strlen($edata)-1);
+	$output .= '</blockquote></div>';
 
 	
 	$header=array(
@@ -1673,7 +1674,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$rows[count($rows)-1][]=number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,'');
 		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
-	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
 	return $output;
 }
 
@@ -1812,7 +1813,7 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 			'#header' => $header,
 			'#options' => $rows,
 			'#attributes' => array('class'=>array('assign_students')),
-			'#empty' => t('No scores to empty.'),
+			'#empty' => t('No students to operate.'),
 	);
 	$form['status']=array(
 		'#type'=>'select',
