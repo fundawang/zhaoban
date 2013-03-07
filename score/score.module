@@ -1541,6 +1541,11 @@ function score_prepare_3rd_overview() {
 }
 
 function score_prepare_3rd_detail($prof=NULL) {
+	drupal_add_css(
+		'div#sidebar-left { display: none; } '."\n".
+		'.one-sidebar div#content { width: 95%; } '."\n".
+		array('type' => 'inline')
+	);
 	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
 	$profession_exams = unserialize($profession->exams);
 	drupal_set_title(t('Prepare for the 3rd round students').' - '.$profession->pname);
