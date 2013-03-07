@@ -395,7 +395,7 @@ function score_input_going_list() {
 	$query->addExpression("CONCAT_WS('', ename, elevel)",'ename');
 	$query->addExpression("COUNT(c.uid)",'num');
 	$query=$query->fields('e',array('eid'))->condition('p.uid',$user->name)->condition('e.uid',$user->name,'<>')->isNotNull('e.eid')
-		->where("NOT e.eid LIKE '3%'");
+		->where("NOT e.eid LIKE '3%'")->groupBy('e.eid');
 	
 	$output2='';
 	$rdbo=$query->execute();
@@ -2494,17 +2494,19 @@ function score_cron() {
 				if($weight||substr($eid,0,1)=='3') $totals[]="e$eid.".($should_use_rank?'rank':'score')."*$weight";
 			}
 		}
-		$query->addExpression(implode('+', $totals), 'total_score');;
+		$query->addExpression(implode('+', $totals), 'total_score');
 		$sdbo=$query->execute();
 		foreach($sdbo as $s) {
 			$total_score=(strpos($query->__toString(), '.rank'))?$s->total_score*(-1):($s->total_score>100?100:$s->total_score);
-			if(db_select('students_total_score','ts')->condition('ts.uid',$s->uid)->condition('ts.total_score', $total_score, '<>')->fields('ts')->countQuery()->execute()->fetchField()>1) {
-				db_delete('students_total_score')->condition('uid',$s->uid)->condition('total_score', $total_score, '<>')->execute();
-				db_insert('students_total_score')->fields(array(
-					'uid' => $s->uid,
-					'total_score' => $total_score,
+			$record=array(
+				'uid' => $s->uid,
+				'total_score' => $total_score,
+			);
+			db_merge('students_total_score')
+				->key(array('uid' => $s->uid))
+				->fields(array(
+					'total_score' => $total_score
 				))->execute();
-			}
 		}
 		$students=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->execute();
 		foreach($students as $s) {
