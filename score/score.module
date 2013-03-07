@@ -1542,8 +1542,8 @@ function score_prepare_3rd_overview() {
 
 function score_prepare_3rd_detail($prof=NULL) {
 	drupal_add_css(
-		'div#sidebar-left { display: none; } '."\n".
-		'.one-sidebar div#content { width: 95%; } '."\n".
+		'div#sidebar-left { display: none; } '.
+		'.one-sidebar div#content { width: 95%; } ',
 		array('type' => 'inline')
 	);
 	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
