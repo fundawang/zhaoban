@@ -458,7 +458,7 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 		$text.=$student->uid;
 		$form['eid'][$student->uid]=array('#type'=>'hidden', '#markup'=>$student->eid);
 		$form['name'][$student->uid]=array('#markup'=>$student->name);
-		$form['gorder'][$student->uid]=array('#markup'=>is_null($gid)?(($student->gid).($student->gorder)):$student->gorder);
+		$form['gorder'][$student->uid]=array('#markup'=>!is_null($gid)?(($student->gid).($student->gorder)):$student->gorder);
 		$text.="\t".$student->name;
 		$form['profession'][$student->uid]=array('#markup'=>$student->pname);
 		$text.="\t".$student->pname."\\n";
