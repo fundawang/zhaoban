@@ -3728,12 +3728,12 @@ function signup_3rd_round_by_province_download($prov) {
 			$r->gb_pid,
 			mb_convert_encoding($r->gb_pname, 'GBK', 'UTF-8'),
 			'',
-			0,
+			sprintf("%.3f",0),
 			mb_convert_encoding($r->pname, 'GBK', 'UTF-8'),
-			isset($r->total_score)?abs(round($r->total_score,3)):0,
+			isset($r->total_score)?sprintf("%.3f",$r->total_score):0,
 			isset($r->rank)?$r->rank:0,
 			mb_convert_encoding('中央音乐学院', 'GBK', 'UTF-8'),
-			($r->total_score<0)?mb_convert_encoding('校考成绩列为考生平均序，非成绩。有关内容由我院向考生解释。', 'GBK', 'UTF-8'):'',
+			'',
 		));
 		if(!$t) return NULL;
 	}
@@ -3835,7 +3835,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 			// Page number
 			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
 			$this->Cell(30, 12, date('Y年n月j日'));
-			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。成绩带括号者为其平均序，非成绩。', 0, false, 'C');
+			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。', 0, false, 'C');
 			$this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
 		}
 	}
