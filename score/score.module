@@ -1640,8 +1640,8 @@ function score_prepare_3rd_detail($prof=NULL) {
 	$query->innerJoin('students_total_score','ts','s.uid=ts.uid');
 	$query->addExpression('ABS(ts.total_score)','total_score');
 	
-		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-			$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
+	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
 	} else {
 		$query->addExpression('ABS(ts.total_score)','total_score');
 	}
