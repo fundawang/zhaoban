@@ -1606,7 +1606,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender'));
 	// FIXME: HACK FOR CELLA
 	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
-		$query->condition('s.validated',1);
+		$query->condition('s.pass_round1_major',1);
 		if($prof=='D603' || $prof=='D716') {
 			$query->where("s.profession_major='D603' OR s.profession_major='D716'");
 		} else if($prof=='D604' || $prof=='D717') {
@@ -1626,32 +1626,27 @@ function score_prepare_3rd_detail($prof=NULL) {
 	foreach($profession_exams as $eid=>$weight) {
 		if(substr($eid,0,1)=='3') {
 			$neid='e'.$eid;
-			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
-			$query->condition("$neid.eid", $eid);
+			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 			$query->addExpression("$neid.score",$neid);
 
 			if($eid<>'350') {
 				$neid='e'.str_replace('32','30',$eid);
-				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
-				$query->condition("$neid.eid", $eid);
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 				$query->addExpression("$neid.score",$neid);
 
 				$neid='e'.str_replace('32','31',$eid);
-				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
-				$query->condition("$neid.eid", $eid);
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 				$query->addExpression("$neid.score",$neid);
 			}
 		}
 		if($weight!=0 && substr($eid,0,1)!='3') {
 			$neid='e'.$eid;
-			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
-			$query->condition("$neid.eid", $eid);
+			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 			$query->addExpression("$neid.score",$neid);
 
 			if(!in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) continue;
 			$neid='r'.$eid;
-			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
-			$query->condition("$neid.eid", $eid);
+			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 			$query->addExpression("$neid.rank",$neid);
 		}
 	}
@@ -1660,6 +1655,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')))
 	{
 		$query->addExpression('ts.total_rank','total_rank');
+		$query->addExpression('ts.rank','tsrank');
 		$query->addExpression('(100000-ts.total_rank)*100000+ts.total_score','totsort');
 	}
 	
@@ -2506,8 +2502,7 @@ function score_cron() {
 		foreach($profession_exams as $eid=>$weight) {
 			$neid='e'.$eid;
 			if($weight!=0||substr($eid,0,1)=='3') {
-				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
-				$query->condition("$neid.eid", $eid);
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 				if($weight||substr($eid,0,1)=='3') $totals[]="$neid.score*$weight";
 			}
 		}
@@ -2545,17 +2540,33 @@ function score_cron() {
 				))->execute();
 		}
 
-		//
+		// Now calulate the actural rank
 		$students=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->execute();
 		foreach($students as $s) {
-			$score=db_select('students_total_score','sc')->condition('sc.uid',$s->uid)->fields('sc',array('total_score'))->execute()->fetchField();
-			$query=db_select('students_total_score','sc')->condition('sc.total_score)',$score*1,'>');
-			$query->innerJoin('students','s','sc.uid=s.uid');
-			$query->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->condition('s.uid',$s->uid,'<>')->condition('sc.total_score',0,'<>');
-			$query->addExpression('count(*)','num');
-			db_update('students_total_score')->condition('uid',$s->uid)->fields(array(
-				'rank'=>($score==0)?'999':$query->execute()->fetchField()+1,
-			))->execute();
+			if(in_array(substr($r->pid,0,2),array('D5','D6','D7','D8'))) {
+				$query=db_select('students_total_score','sc')->condition('sc.uid',$s->uid);
+				$query->addExpression('(100000-sc.total_rank)*100000+sc.total_score','totsort');
+				$score=$query->execute()->fetchField();
+				$query=db_select('students_total_score','sc');
+				//$t=$query->addExpression('(100000-sc.total_rank)*100000+sc.total_score');
+				$query->where('(100000-sc.total_rank)*100000+sc.total_score > '.$score);
+				$query->innerJoin('students','s','sc.uid=s.uid');
+				$query->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->condition('s.uid',$s->uid,'<>')->condition('sc.total_score',0,'<>');
+				$query->addExpression('count(*)','num');
+				db_update('students_total_score')->condition('uid',$s->uid)->fields(array(
+					'rank'=>($score==0)?'999':$query->execute()->fetchField()+1,
+				))->execute();
+			}
+			else {
+				$score=db_select('students_total_score','sc')->condition('sc.uid',$s->uid)->fields('sc',array('total_score'))->execute()->fetchField();
+				$query=db_select('students_total_score','sc')->condition('sc.total_score',$score*1,'>');
+				$query->innerJoin('students','s','sc.uid=s.uid');
+				$query->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->condition('s.uid',$s->uid,'<>')->condition('sc.total_score',0,'<>');
+				$query->addExpression('count(*)','num');
+				db_update('students_total_score')->condition('uid',$s->uid)->fields(array(
+					'rank'=>($score==0)?'999':$query->execute()->fetchField()+1,
+				))->execute();
+			}
 		}
 	}
 	
