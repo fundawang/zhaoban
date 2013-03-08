@@ -1601,7 +1601,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 
 	$rows=array();
 	
-	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender'));
+	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','profession_major'));
 	// FIXME: HACK FOR CELLA
 	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
 		$query->condition('s.pass_round1_major',1);
@@ -1692,7 +1692,10 @@ function score_prepare_3rd_detail($prof=NULL) {
 		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
 			$rows[count($rows)-1][]=round($r['total_rank'], 2);
 		}
-		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
+		if($r['profession_major']!==$prof)
+			$rows[count($rows)-1][]='* '.t('This is a secondary profession student');
+		else
+			$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
 	return $output;
