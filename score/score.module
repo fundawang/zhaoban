@@ -1595,7 +1595,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 	}
 		
 	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$header[]=array('data'=>t('Total score'), 'field'=>'tsrank', 'sort'=>'asc');
+		$header[]=array('data'=>t('Total score'), 'field'=>'totsort', 'sort'=>'desc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
@@ -1622,32 +1622,49 @@ function score_prepare_3rd_detail($prof=NULL) {
 	$query->addExpression('u.uid','uuid');
 	
 	$totals=array();
+	$totals_r=array();
 	foreach($profession_exams as $eid=>$weight) {
-		if($weight!=0||substr($eid,0,1)=='3') {
-			if(substr($eid,0,1)=='3') {
-				$should_use_rank=false;
-			} else {
-				$squery=db_select('students_score','e')->condition('e.eid',$eid);
-				$squery->innerJoin('students','s','e.uid=s.uid');
-				$squery->condition('s.pass_round1_major',1);
-				$squery->addExpression('MIN(IFNULL(e.rank,0))');
-				$should_use_rank=$squery->execute()->fetchField();
+		if(substr($eid,0,1)=='3') {
+			$neid='e'.$eid;
+			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+			$query->condition("$neid.eid", $eid);
+			$query->addExpression("$neid.score",$neid);
+
+			if($eid<>'350') {
+				$neid='e'.str_replace('32','30',$eid);
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+				$query->condition("$neid.eid", $eid);
+				$query->addExpression("$neid.score",$neid);
+
+				$neid='e'.str_replace('32','31',$eid);
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+				$query->condition("$neid.eid", $eid);
+				$query->addExpression("$neid.score",$neid);
 			}
-			$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid AND e'.$eid.'.eid='.$eid);
-			$query->addExpression('e'.$eid.'.'.($should_use_rank?'rank':'score'),'e'.$eid);
+		}
+		if($weight!=0 && substr($eid,0,1)!='3') {
+			$neid='e'.$eid;
+			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+			$query->condition("$neid.eid", $eid);
+			$query->addExpression("$neid.score",$neid);
+
+			if(!in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) continue;
+			$neid='r'.$eid;
+			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+			$query->condition("$neid.eid", $eid);
+			$query->addExpression("$neid.rank",$neid);
 		}
 	}
-	$query->innerJoin('students_total_score','ts','s.uid=ts.uid');
-	$query->addExpression('ABS(ts.total_score)','total_score');
-	
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
-	} else {
-		$query->addExpression('ABS(ts.total_score)','total_score');
+	$query->leftJoin('students_total_score','ts','s.uid=ts.uid');
+	$query->addExpression('ts.total_score','total_score');
+	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')))
+	{
+		$query->addExpression('ts.total_rank','total_rank');
+		$query->addExpression('(100000-ts.total_rank)*100000+ts.total_score','totsort');
 	}
 	
 	$query->extend('TableSort')->orderByHeader($header);
-	$rdbo=$query->execute();
+	//var_dump($query->__toString());
 	$rdbo=$query->execute();
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {
@@ -1666,7 +1683,10 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$i++;
 		foreach($profession_exams as $eid=>$weight) {
 			if($weight!=0||substr($eid,0,1)=='3') {
-				$rows[count($rows)-1][]=($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
+				if(isset($r['totsort']))
+					$rows[count($rows)-1][]=number_format($r['r'.$eid], 2, '.' ,'');
+				else
+					$rows[count($rows)-1][]=($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
 				if(in_array($eid, array(321,322,323,324)) && $r['e'.$eid]) {
 					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='(';
 					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format(db_select('students_score','sc')->fields('sc',array('score'))->condition('eid',str_replace('32','30',$eid))->condition('uid',$r['uid'])->execute()->fetchField(),1);
@@ -1676,7 +1696,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 				}
 			}
 		}
-		$rows[count($rows)-1][]=number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,'');
+		$rows[count($rows)-1][]=(isset($r['totsort'])?(number_format($r['total_rank'], 2, '.' ,'').' / '):('')).number_format($r['total_score'], 2, '.' ,'');
 		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
@@ -2388,7 +2408,6 @@ function score_mark_gaokao_round($form, $form_state, $prof) {
 		);
 		
 	}
-	//$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 	$form['students']=array(
 			'#type' => 'tableselect',
 			'#header' => $header,
@@ -2480,39 +2499,53 @@ function score_cron() {
 	$rdbo=$q->execute();
 	// Compose query string
 	foreach($rdbo as $r) {
+		// Now calculate total_score
 		$query=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1);
 		$profession_exams = unserialize($r->exams);
 		$totals=array();
 		foreach($profession_exams as $eid=>$weight) {
+			$neid='e'.$eid;
 			if($weight!=0||substr($eid,0,1)=='3') {
-				if(substr($eid,0,1)=='3') {
-					$should_use_rank=false;
-				} else {
-					$squery=db_select('students_score','e')->condition('e.eid',$eid);
-					$squery->innerJoin('students','s','e.uid=s.uid');
-					$squery->condition('s.pass_round1_major',1);
-					$squery->addExpression('MIN(IFNULL(e.rank,0))');
-					$should_use_rank=$squery->execute()->fetchField();
-				}
-				$query->leftJoin('students_score','e'.$eid,'s.uid=e'.$eid.'.uid AND e'.$eid.'.eid='.$eid);
-				$query->addExpression('e'.$eid.'.'.($should_use_rank?'rank':'score'),'e'.$eid);
-				if($weight||substr($eid,0,1)=='3') $totals[]="e$eid.".($should_use_rank?'rank':'score')."*$weight";
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+				$query->condition("$neid.eid", $eid);
+				if($weight||substr($eid,0,1)=='3') $totals[]="$neid.score*$weight";
 			}
 		}
 		$query->addExpression(implode('+', $totals), 'total_score');
 		$sdbo=$query->execute();
 		foreach($sdbo as $s) {
-			$total_score=(strpos($query->__toString(), '.rank'))?$s->total_score*(-1):($s->total_score>100?100:$s->total_score);
-			$record=array(
-				'uid' => $s->uid,
-				'total_score' => $total_score,
-			);
 			db_merge('students_total_score')
 				->key(array('uid' => $s->uid))
 				->fields(array(
-					'total_score' => $total_score
+					'pid' => $r->pid,
+					'total_score' => $s->total_score
 				))->execute();
 		}
+
+		// Now calculate total_rank
+		if(!in_array(substr($r->pid,0,2),array('D5','D6','D7','D8'))) continue;
+		$query=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1);
+		$profession_exams = unserialize($r->exams);
+		$totals=array();
+		foreach($profession_exams as $eid=>$weight) {
+			$neid='e'.$eid;
+			if($weight!=0||substr($eid,0,1)=='3') {
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid");
+				$query->condition("$neid.eid", $eid);
+				if($weight||substr($eid,0,1)=='3') $totals[]="IFNULL($neid.rank,0)*$weight";
+			}
+		}
+		$query->addExpression(implode('+', $totals), 'total_rank');
+		$sdbo=$query->execute();
+		foreach($sdbo as $s) {
+			db_merge('students_total_score')
+				->key(array('uid' => $s->uid))
+				->fields(array(
+					'total_rank' => $s->total_rank
+				))->execute();
+		}
+
+		//
 		$students=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->execute();
 		foreach($students as $s) {
 			$score=db_select('students_total_score','sc')->condition('sc.uid',$s->uid)->fields('sc',array('total_score'))->execute()->fetchField();
@@ -2548,6 +2581,7 @@ function score_cron() {
 				'uid' => $r->uid,
 				'total_score' => 100,
 				'rank' => 1,
+				'total_rank' => '1'
 			))->execute();
 	}
 
