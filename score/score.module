@@ -807,24 +807,20 @@ function score_batch_submit($form, &$form_state) {
 	
 	foreach($score as $row) {
 		if($form_values['scoretype']=='rank') {
-			if(db_select('students_score','c')->condition('c.uid',$row[0])->condition('c.eid',$eid)->fields('c')->countQuery()->execute()->fetchField()>=1)
-				db_update('students_score')
-				->fields(array(
-					'rank'=>trim($row[count($row)-1])
-				))->condition('uid',$row[0])->condition('eid',$eid)->execute();
-			else
-				 db_insert('students_score')
+			db_merge('students_score')
+				->key(array('uid' => $s->uid, 'eid' => $eid))
 				->fields(array(
 					'uid'=>$row[0],
 					'eid'=>$eid,
-					'rank'=>trim($row[count($row)-1])
+					'rank'=>trim(round($row[count($row)-1],3))
 				))->execute();
 		} else {
-			db_insert('students_score')
+			db_merge('students_score')
+				->key(array('uid' => $s->uid, 'eid' => $eid))
 				->fields(array(
 					'uid'=>$row[0],
 					'eid'=>$eid,
-					'score'=>trim($row[count($row)-1])
+					'score'=>trim(round($row[count($row)-1],3))
 				))->execute();
 		}
 	}
@@ -1595,7 +1591,8 @@ function score_prepare_3rd_detail($prof=NULL) {
 	}
 		
 	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$header[]=array('data'=>t('Total score (Rank / Score)'), 'field'=>'totsort', 'sort'=>'desc');
+		$header[]=array('data'=>t('Total score'));
+		$header[]=array('data'=>t('Total average rank'), 'field'=>'totsort', 'sort'=>'desc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
@@ -1693,7 +1690,11 @@ function score_prepare_3rd_detail($prof=NULL) {
 				}
 			}
 		}
-		$rows[count($rows)-1][]=(isset($r['totsort'])?(round($r['total_rank'], 2).' / '):('')).number_format($r['total_score'], 2, '.' ,'');
+		$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
+		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+			$rows[count($rows)-1][]=round($r['total_rank'], 2);
+		}
+		//$rows[count($rows)-1][]=(isset($r['totsort'])?(round($r['total_rank'], 2).' / '):('')).number_format($r['total_score'], 2, '.' ,'');
 		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
