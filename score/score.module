@@ -1591,7 +1591,8 @@ function score_prepare_3rd_detail($prof=NULL) {
 	}
 		
 	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$header[]=array('data'=>t('Total score'));
+		if(in_array(substr($prof,0,2),array('D5','D6','D8')))
+			$header[]=array('data'=>t('Total score'));
 		$header[]=array('data'=>t('Total average rank'), 'field'=>'totsort', 'sort'=>'desc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
@@ -1690,11 +1691,11 @@ function score_prepare_3rd_detail($prof=NULL) {
 				}
 			}
 		}
-		$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
+		if(!in_array(substr($prof,0,2),array('D7')))
+			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
 		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
 			$rows[count($rows)-1][]=round($r['total_rank'], 2);
 		}
-		//$rows[count($rows)-1][]=(isset($r['totsort'])?(round($r['total_rank'], 2).' / '):('')).number_format($r['total_score'], 2, '.' ,'');
 		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
