@@ -1607,11 +1607,6 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$query->condition('s.pass_round1_major',1);
 		$squery=db_select('students_total_score','sts')->fields('sts',array('total_score'))->condition('sts.pid',$prof)->where('sts.uid=s.uid');
 		$query->exists($squery);
-		if($prof=='D603' || $prof=='D716') {
-			$query->where("s.profession_major='D603' OR s.profession_major='D716'");
-		} else if($prof=='D604' || $prof=='D717') {
-			$query->where("s.profession_major='D604' OR s.profession_major='D717'");
-		}
 	} else {
 		$query->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
 	}
@@ -1651,6 +1646,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 		}
 	}
 	$query->leftJoin('students_total_score','ts','s.uid=ts.uid');
+	$query->condition('ts.pid',$prof);
 	$query->addExpression('ts.total_score','total_score');
 	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')))
 	{
@@ -2493,13 +2489,53 @@ function score_myscore_roundg() {
 function score_cron() {
 	// Force recalculate the total_score of all students
 	$q=db_select('vl_professions','p')->fields('p',array('pid','exams'));
-	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1)->where('s.profession_major=p.pid');
+	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1);
+	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+		$subquery->innerJoin('students_going','sg','s.uid=sg.uid');
+		$subquery->isNotNull('sg.gid');
+		switch($prof) {
+			case 'D603':
+				$subquery->condition('sg.eid','208');
+				break;
+			case 'D604':
+				$subquery->condition('sg.eid','210');
+				break;
+			case 'D716':
+				$subquery->condition('sg.eid','285');
+				break;
+			case 'D717':
+				$subquery->condition('sg.eid','286');
+				break;
+		}
+	} else
+		$subquery->where('s.profession_major=p.pid');
 	$q->exists($subquery);
 	$rdbo=$q->execute();
 	// Compose query string
 	foreach($rdbo as $r) {
 		// Now calculate total_score
-		$query=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1);
+		$query=db_select('students','s')->fields('s',array('uid'))->condition('s.pass_round1_major',1);
+		if(in_array($r->pid,array('D603','D604','D716','D717'))) {
+			$subquery=db_select('students_going','sg')->fields('sg');
+			$subquery->where('s.uid=sg.uid');
+			$subquery->isNotNull('sg.gid');
+			switch($r->pid) {
+				case 'D603':
+					$subquery->condition('sg.eid','208');
+					break;
+				case 'D604':
+					$subquery->condition('sg.eid','210');
+					break;
+				case 'D716':
+					$subquery->condition('sg.eid','285');
+					break;
+				case 'D717':
+					$subquery->condition('sg.eid','286');
+					break;
+			}
+			$query->exists($subquery);
+		} else
+			$query->condition('s.profession_major',$r->pid);
 		$profession_exams = unserialize($r->exams);
 		$totals=array();
 		foreach($profession_exams as $eid=>$weight) {
@@ -2513,7 +2549,7 @@ function score_cron() {
 		$sdbo=$query->execute();
 		foreach($sdbo as $s) {
 			db_merge('students_total_score')
-				->key(array('uid' => $s->uid))
+				->key(array('uid' => $s->uid, 'pid'=>$r->pid))
 				->fields(array(
 					'pid' => $r->pid,
 					'total_score' => $s->total_score
@@ -2522,7 +2558,27 @@ function score_cron() {
 
 		// Now calculate total_rank
 		if(!in_array(substr($r->pid,0,2),array('D5','D6','D7','D8'))) continue;
-		$query=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1);
+		$query=db_select('students','s')->fields('s',array('uid'))->condition('s.pass_round1_major',1);
+		if(in_array($r->pid,array('D603','D604','D716','D717'))) {
+			$subquery=db_select('students_going','sg')->fields('sg');
+			$subquery->where('s.uid=sg.uid');
+			$subquery->isNotNull('sg.gid');
+			switch($r->pid) {
+				case 'D603':
+					$subquery->condition('sg.eid','208');
+					break;
+				case 'D604':
+					$subquery->condition('sg.eid','210');
+					break;
+				case 'D716':
+					$subquery->condition('sg.eid','285');
+					break;
+				case 'D717':
+					$subquery->condition('sg.eid','286');
+					break;
+			}
+			$query->exists($subquery);
+		}
 		$profession_exams = unserialize($r->exams);
 		$totals=array();
 		foreach($profession_exams as $eid=>$weight) {
@@ -2536,27 +2592,25 @@ function score_cron() {
 		$query->addExpression(implode('+', $totals), 'total_rank');
 		$sdbo=$query->execute();
 		foreach($sdbo as $s) {
-			db_merge('students_total_score')
-				->key(array('uid' => $s->uid))
+			db_update('students_total_score')->condition('uid',$s->uid)->condition('pid',$r->pid)
 				->fields(array(
 					'total_rank' => $s->total_rank
 				))->execute();
 		}
 
 		// Now calulate the actural rank
-		$students=db_select('students','s')->fields('s',array('uid'))->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->execute();
+		$students=db_select('students_total_score','s')->fields('s',array('uid'))->condition('s.pid',$r->pid)->execute();
 		foreach($students as $s) {
 			if(in_array(substr($r->pid,0,2),array('D5','D6','D7','D8'))) {
-				$query=db_select('students_total_score','sc')->condition('sc.uid',$s->uid);
+				$query=db_select('students_total_score','sc')->condition('sc.pid',$r->pid)->condition('sc.uid',$s->uid);
 				$query->addExpression('(100000-sc.total_rank)*100000+sc.total_score','totsort');
 				$score=$query->execute()->fetchField();
-				$query=db_select('students_total_score','sc');
-				//$t=$query->addExpression('(100000-sc.total_rank)*100000+sc.total_score');
+				$query=db_select('students_total_score','sc')->condition('sc.pid',$r->pid);
 				$query->where('(100000-sc.total_rank)*100000+sc.total_score > '.$score);
 				$query->innerJoin('students','s','sc.uid=s.uid');
-				$query->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->condition('s.uid',$s->uid,'<>')->condition('sc.total_score',0,'<>');
+				$query->condition('s.pass_round1_major',1)->condition('s.uid',$s->uid,'<>')->condition('sc.total_score',0,'<>');
 				$query->addExpression('count(*)','num');
-				db_update('students_total_score')->condition('uid',$s->uid)->fields(array(
+				db_update('students_total_score')->condition('uid',$s->uid)->condition('pid',$r->pid)->fields(array(
 					'rank'=>($score==0)?'999':$query->execute()->fetchField()+1,
 				))->execute();
 			}
