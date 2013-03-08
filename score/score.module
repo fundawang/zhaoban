@@ -880,6 +880,12 @@ function score_batch_validate($form, $form_state) {
 				if(!is_numeric(trim($row[count($row)-1]))) { // The last entry is not numeric
 					form_set_error('score', t('The score of student !uid: !score is not valid.', array('!uid'=>$row[0], '!score'=>$row[count($row)-1])));
 				}
+				if($form_values['scoretype']=='rank') {
+					if(floatval(trim($row[count($row)-1])) < 1)
+						form_set_error('score', t('The score of student !uid: !score is not valid.', array('!uid'=>$row[0], '!score'=>$row[count($row)-1])));
+				}
+				else if(floatval(trim($row[count($row)-1])) < 0 || floatval(trim($row[count($row)-1])) > 100)
+					form_set_error('score', t('The score of student !uid: !score is not valid.', array('!uid'=>$row[0], '!score'=>$row[count($row)-1])));
 			} else { // The score of the student have been imported already.
 				form_set_error('score', t('The score of student !uid has been already imported.', array('!uid'=>$row[0])));
 			}
