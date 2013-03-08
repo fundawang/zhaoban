@@ -29,7 +29,7 @@ function score_schema() {
 			'pid' => array('type' => 'varchar', 'length' => '4', 'not null' => TRUE, 'default' => ''),
 			'total_score' => array('type' => 'float', 'not null' => FALSE),
 			'total_rank' => array('type' => 'float', 'not null' => FALSE),
-			'rank' => array('type' => 'varchar', 'length' => '3', 'not null' => FALSE),
+			'rank' => array('type' => 'int', 'not null' => FALSE),
 			'outrank' => array('type' => 'int', 'not null'=> FALSE),
 		),
 		'primary key' => array('uid','pid'),
