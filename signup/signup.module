@@ -528,10 +528,12 @@ function signup_form_user_register_form_submit($form, &$form_state) {
 	$data['roles']=array( '5' => 'students');
 	
 	// Now generating the ID number of the student
-	$query=db_select('users','u')->condition('u.name', variable_get('zhaoban_current_year',date('Y')).'B%', 'LIKE');
-	$query->addExpression('MAX(name)');
-	$sid_prev=$query->execute()->fetchField();
-	$data['name']=sprintf(variable_get('zhaoban_current_year',date('Y')).'B%04d',substr($sid_prev,5)+1);
+	do {
+		$sid=sprintf('%sB%04d', variable_get('zhaoban_current_year',date('Y')), mt_rand(1,9999));
+		$query=db_select('users','u')->condition('u.name', $sid)->fields('u');
+		$cancontinue=$query->countQuery()->execute()->fetchField();
+	} while ($cancontinue>=1);
+	$data['name']=$sid;
 	$data['contact']=false;
 	
 	// Create the user !
