@@ -458,7 +458,7 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 		$text.=$student->uid;
 		$form['eid'][$student->uid]=array('#type'=>'hidden', '#markup'=>$student->eid);
 		$form['name'][$student->uid]=array('#markup'=>$student->name);
-		$form['gorder'][$student->uid]=array('#markup'=>!is_null($gid)?(($student->gid).($student->gorder)):$student->gorder);
+		$form['gorder'][$student->uid]=array('#markup'=>$student->gorder);
 		$text.="\t".$student->name;
 		$form['profession'][$student->uid]=array('#markup'=>$student->pname);
 		$text.="\t".$student->pname."\\n";
@@ -482,7 +482,6 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 	$form['submit']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
-		'#prefix'=>$pre,
 		'#suffix'=>'<input type="button" id="copytoclip" value="'.t('Copy to clipboard').'" class="form-submit"/><script>ZeroClipboard.setMoviePath(\'/'.drupal_get_path('module','score').'/ZeroClipboard.swf\'); var clip = new ZeroClipboard.Client(); clip.setText(\''.$text.'\'); clip.glue(\'copytoclip\'); clip.addEventListener(\'onComplete\', my_complete ); function my_complete( client, text ) { jQuery().toastmessage({position: \'middle-center\', stayTime: 2000}); jQuery().toastmessage(\'showSuccessToast\', \''.t('Copy Succeeded.').'\');}</script>'
 	);
 	if(is_null($gid)) unset($form['submit']);
