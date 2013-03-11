@@ -1632,11 +1632,11 @@ function score_prepare_3rd_detail($prof=NULL) {
 
 			if($eid<>'350') {
 				$neid='e'.str_replace('32','30',$eid);
-				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=".str_replace('32','30',$eid));
 				$query->addExpression("$neid.score",$neid);
 
 				$neid='e'.str_replace('32','31',$eid);
-				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
+				$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=".str_replace('32','31',$eid));
 				$query->addExpression("$neid.score",$neid);
 			}
 		}
@@ -1686,9 +1686,9 @@ function score_prepare_3rd_detail($prof=NULL) {
 					$rows[count($rows)-1][]=($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
 				if(in_array($eid, array(321,322,323,324)) && $r['e'.$eid]) {
 					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='(';
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format(db_select('students_score','sc')->fields('sc',array('score'))->condition('eid',str_replace('32','30',$eid))->condition('uid',$r['uid'])->execute()->fetchField(),1);
+					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format($r['e'.str_replace('32','30',$eid)],1);
 					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='/';
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format(db_select('students_score','sc')->fields('sc',array('score'))->condition('eid',str_replace('32','31',$eid))->condition('uid',$r['uid'])->execute()->fetchField(),2);
+					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format($r['e'.str_replace('32','31',$eid)],2);
 					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=')';
 				}
 			}
