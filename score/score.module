@@ -807,18 +807,14 @@ function score_batch_submit($form, &$form_state) {
 	foreach($score as $row) {
 		if($form_values['scoretype']=='rank') {
 			db_merge('students_score')
-				->key(array('uid' => $s->uid, 'eid' => $eid))
+				->key(array('uid' => $row[0], 'eid' => $eid))
 				->fields(array(
-					'uid'=>$row[0],
-					'eid'=>$eid,
 					'rank'=>trim(round($row[count($row)-1],3))
 				))->execute();
 		} else {
 			db_merge('students_score')
-				->key(array('uid' => $s->uid, 'eid' => $eid))
+				->key(array('uid' => $row[0], 'eid' => $eid))
 				->fields(array(
-					'uid'=>$row[0],
-					'eid'=>$eid,
 					'score'=>trim(round($row[count($row)-1],3))
 				))->execute();
 		}
