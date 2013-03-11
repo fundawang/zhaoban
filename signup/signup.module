@@ -2132,7 +2132,7 @@ function signup_user_contact_form($form, $form_state) {
 	$form['contact_round3']['zip_round3'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Postcode'),
-		'#maxlength' => 20,
+		'#maxlength' => ($user->ucategory==1)?6:20,
 		'#required' => 'true',
 		'#default_value' => $default_values['zip_round3'],
 	);
@@ -2162,7 +2162,7 @@ function signup_user_contact_form($form, $form_state) {
 	$form['contact_roundg']['zip_roundg'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Postcode'),
-		'#maxlength' => 20,
+		'#maxlength' => ($user->ucategory==1)?6:20,
 		'#required' => 'true',
 		'#default_value' => $default_values['zip_roundg'],
 	);
@@ -2199,7 +2199,7 @@ function signup_user_contact_form($form, $form_state) {
 	$form['contact_school']['zip_school'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Postcode'),
-		'#maxlength' => 20,
+		'#maxlength' => ($user->ucategory==1)?6:20,
 		'#required' => 'true',
 		'#default_value' => $default_values['zip_school'],
 	);
