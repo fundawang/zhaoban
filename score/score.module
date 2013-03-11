@@ -1563,7 +1563,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 	foreach($profession_exams as $eid => $eweight){
 		$exam = db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
 		if ($eweight)
-			$edata .= $exam->ename.$exam->elevel.'&times;'.sprintf('%d%%',$eweight*100).'+';
+			$edata .= $exam->ename.$exam->elevel.'&times;'.round($eweight*100,1).'%+';
 	}
 	$output .= substr($edata, 0, strlen($edata)-1);
 	$output .= '</blockquote></div>';
@@ -1680,7 +1680,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$i++;
 		foreach($profession_exams as $eid=>$weight) {
 			if($weight!=0||substr($eid,0,1)=='3') {
-				if(isset($r['totsort']) && substr($eid,0,1)!='3')
+				if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')) && substr($eid,0,1)!='3')
 					$rows[count($rows)-1][]=number_format($r['r'.$eid], 2, '.' ,'');
 				else
 					$rows[count($rows)-1][]=($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
