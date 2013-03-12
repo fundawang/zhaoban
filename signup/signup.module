@@ -3449,6 +3449,7 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
+	$query->condition('ts.pid',$prof);
 	$query->addExpression('u.uid', 'sys_uid');
 	$query = $query->fields('c', array('personnel_record_at'))
 		->fields('gk')
@@ -3456,6 +3457,11 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
 		->where($sql_department_insert)->where($valins)->condition('s.pass_round3_major','0','<>')
 		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
 		->extend('PagerDefault')->limit(20);
+	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		$query->orderBy('ts.total_rank');
+	} else {
+		$query->orderBy('ts.total_score', 'desc');
+	}
 	$rdbo=$query->execute();
 	if(count($rdbo)==0) {
 			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
@@ -3776,7 +3782,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$query->leftJoin('vl_city_district','c','sg.city_district=c.cid');
 	if(db_table_exists('students_total_score')) {
 		$query->innerJoin('students_total_score','ss','s.uid=ss.uid');
-		$query=$query->fields('ss',array('total_score','rank'));
+		$query=$query->fields('ss',array('total_score','rank'))->where('ss.pid=s.profession_major');
 	}
 	$query=$query->condition('sg.province',$prov)
 		->fields('s',array('name','idcard_number','gender'))
