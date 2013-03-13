@@ -2094,10 +2094,10 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 		$form['prof'][$r->uid]=array('#markup'=>l($r->pname,'signup/3rdround/profession/'.$r->profession_major,array('attributes'=>array('title'=>t('View 3rd round students')))));
 		$form['name'][$r->uid]=array('#markup'=>'<nobr>'.l($r->name,'user/'.$r->uuid,array('attributes'=>array('title'=>$r->idcard_number))).'</nobr>',);
 		$form['_sis-'.$r->uid]=array('#type'=>'checkbox','#default_value'=>$r->is_math_subjects,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
-		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
-		$form['_slg-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_languages,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
-		$form['_smt-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_math,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
-		$form['_sst-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_synthesis,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>7,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_slg-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_languages,'#size'=>7,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_smt-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_math,'#size'=>7,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_sst-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_synthesis,'#size'=>7,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 		$form['validated-'.$r->uid]=array('#type'=>'checkbox', '#default_value'=>$r->validated);
 		$form['memory-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->memory,'#size'=>10,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 	}
@@ -2114,6 +2114,7 @@ function theme_score_gaokao_province_detail_form($variables) {
 		'div#sidebar-left { display: none; } '.
 		'.one-sidebar div#content { width: 95%; } '.
 		'input:disabled { border: 2px solid transparent; background-color: transparent; color: black; } '.
+		'input[disabled] { border: 2px solid transparent; background-color: transparent; color: black } '.
 		'',
 		array('type' => 'inline')
 	);
@@ -2171,6 +2172,17 @@ function theme_score_gaokao_province_detail_form($variables) {
 	
 	$output.=drupal_render($form['pager']);
 	$output.=drupal_render_children($form);
+	drupal_add_js(
+		"jQuery(document).ready(function(){".
+		"jQuery('form').submit(function() ".
+		"{ jQuery('[disabled]').each(function(i) ".
+		"{ d_name = jQuery(this).attr('name'); ".
+		"d_val = (jQuery(this).attr('type')=='checkbox' && !jQuery(this).is(':checked'))?'0':jQuery(this).val(); jQuery(this).after(".
+		"'<input type=\"hidden\" name=\"' + d_name + '\" value=\"' + d_val + '\" />');".
+    	"});".
+		"return true;});});",
+		'inline'
+	);
 	return $output;
 
 }
@@ -2197,19 +2209,19 @@ function score_gaokao_province_detail_form_validate($form, &$form_state) {
 }
 
 function score_gaokao_province_detail_form_submit($form, &$form_state) {
-	$form_values=$form_state['values'];
+	$form_values=$_POST;
 	$keys=array_keys($form_values);
 	foreach($keys as $key) {
 		if(substr($key,0,4)!=variable_get('zhaoban_current_year',date('Y'))) continue;
 		db_update('students_gk')->condition('uid',$key)->fields(array(
 			'sid' => $form_values['_sid-'.$key],
-			'is_math_subjects' => $form_values['_sis-'.$key],
+			'is_math_subjects' => ($form_values['_sis-'.$key]==='1')?1:0,
 			'score_chinese' => $form_values['_sch-'.$key],
 			'score_languages' => $form_values['_slg-'.$key],
 			'score_math' => $form_values['_smt-'.$key],
 			'score_synthesis' => $form_values['_sst-'.$key],
 			'score_total' => ($form_values['_sch-'.$key]+$form_values['_slg-'.$key]+$form_values['_smt-'.$key]+$form_values['_sst-'.$key])*$form_values['coefficient'],
-			'validated' => $form_values['validated-'.$key],
+			'validated' => ($form_values['validated-'.$key]==='1')?1:0,
 			'memory' => $form_values['memory-'.$key]
 		))->execute();
 	}
