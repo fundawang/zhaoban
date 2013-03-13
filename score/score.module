@@ -2112,12 +2112,15 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 function theme_score_gaokao_province_detail_form($variables) {
 	drupal_add_css(
 		'div#sidebar-left { display: none; } '.
-		'.one-sidebar div#content { width: 95%; } ',
+		'.one-sidebar div#content { width: 95%; } '.
+		'input:disabled { border: 2px solid transparent; background-color: transparent; color: black; } '.
+		'',
 		array('type' => 'inline')
 	);
 	$form=$variables['form'];
 	$output = '';
 	$header=array(
+		array('data'=>t('Validated')),
 		array('data'=>t('Gaokao SID')),
 		array('data'=>t('Real Name')),
 		array('data'=>t('Profession')),
@@ -2126,7 +2129,6 @@ function theme_score_gaokao_province_detail_form($variables) {
 		array('data'=>t('Math')),
 		array('data'=>t('Foreign language')),
 		array('data'=>t('Synthesis subject')),
-		array('data'=>t('Validated')),
 		array('data'=>t('Memory')),
 	);
 	
@@ -2138,6 +2140,7 @@ function theme_score_gaokao_province_detail_form($variables) {
 
 	foreach(element_children($form['uid']) as $u) {
 		$rows[]=array(
+			drupal_render($form['validated-'.$u]),
 			$should_disable_all?$form['_sid-'.$u]['#default_value']:drupal_render($form['_sid-'.$u]),
 			//drupal_render($form['idcard_number'][$u]),
 			drupal_render($form['name'][$u]),
@@ -2147,7 +2150,6 @@ function theme_score_gaokao_province_detail_form($variables) {
 			$should_disable_all?$form['_smt-'.$u]['#default_value']:drupal_render($form['_smt-'.$u]),
 			$should_disable_all?$form['_slg-'.$u]['#default_value']:drupal_render($form['_slg-'.$u]),
 			$should_disable_all?$form['_sst-'.$u]['#default_value']:drupal_render($form['_sst-'.$u]),
-			drupal_render($form['validated-'.$u]),
 			$should_disable_all?$form['memory-'.$u]['#default_value']:drupal_render($form['memory-'.$u]),
 		);
 		if($should_disable_all) {
