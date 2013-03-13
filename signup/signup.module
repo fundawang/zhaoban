@@ -3662,6 +3662,12 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		$output .= '&nbsp;';
 		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/3rdround/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
 		$output .= '<p/>';
+		if(module_exists('kuaidi100'))
+			if($r->ucategory==uc_MAINLAND_STUDENT || $r->ucategory==uc_HKTW_STUDENT) {
+				$output .= '<div class="container-inline">';
+				$output .= drupal_render(drupal_get_form('signup_3rd_round_province_delivery', $prov));
+				$output .= '</div>';
+			}
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 	$output .= theme('pager');
@@ -3913,6 +3919,83 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$pdf->Cell(0,15,'·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·   以下无正文   ·',0, false, 'C');
 	$pdf->SetDisplayMode('fullwidth');
 	$pdf->Output('3rd_round_report.pdf', 'I');
+}
+
+function signup_3rd_round_province_delivery($form, $form_state, $prov) {
+	if(!isset($prov)) return FALSE;
+	$form=array();
+	$form['deliver']=array(
+		'#type' => 'fieldset',
+		'#title' => t('Paper deliver track'),
+		'#collapsible' => TRUE,
+		'#collapsed' => TRUE,
+	);
+	if($_SERVER['REQUEST_METHOD']=='POST' && $form_state['clicked_button']['#name'] == 'refresh') {
+		$form['deliver']['#collapsed'] = FALSE;
+		$r=kuaidi100_get_status('signup','3rdround,'.$prov); 
+		if($r) {
+			kuaidi100_update_status($r->com, $r->orderno);
+			drupal_set_message(t('Status updated.'));
+		}
+	}
+	$r=kuaidi100_get_status('signup','3rdround,'.$prov); 
+	if($r!==FALSE) {
+		$form['deliver']['status']=array(
+			'#type' => 'item',
+			'#title' => t('Current status'),
+		);
+		switch($r->status) {
+			case 3: $form['deliver']['status']['#markup'] = sprintf('%s (%s %s)',t('Delivered'), t($r->com), $r->orderno); break;
+			default:
+				$form['deliver']['status']['#markup'] = $r->statustext;
+				$form['deliver']['refresh']=array(
+					'#type' => 'button',
+					'#name' => 'refresh',
+					'#value' => t('Refresh'),
+				);
+		}
+	}
+	if($r===FALSE || $r->status !=3) {
+		if($r)
+			$form['deliver']['split']=array(
+				'#type' => 'markup',
+				'#markup' => ' | ',
+			);
+		$form['deliver']['prov']=array(
+			'#type' => 'hidden',
+			'#value' => $prov,
+		);
+		$form['deliver']['com']=array(
+			'#type' => 'select',
+			'#title' => t('Deliver by'),
+			'#options' => array(
+				'shunfeng' => t('SF-Express'),
+				'ems' => t('EMS'),
+			),
+		);
+		if($r) $form['deliver']['com']['#default_value'] = $r->com;
+		$form['deliver']['orderno']=array(
+			'#type' => 'textfield',
+			'#default_value' => isset($r->orderno)?$r->orderno:'',
+			'#maxlength' => 15,
+			'#size' => 15,
+			'#title' => t('Deliver order no'),
+			'#title_display' => 'invisible',
+			'#required' => TRUE,
+		);
+		$form['deliver']['save']=array(
+			'#type' => 'submit',
+			'#name' => 'save',
+			'#value' => t('Save'),
+		);
+	}
+	return $form;
+}
+
+function signup_3rd_round_province_delivery_submit($form, $form_state) {
+	var_dump($form_state['clicked_button']['#name']); exit;
+	kuaidi100_save('signup', sprintf('%s,%s', '3rdround', $form_state['values']['prov']), $form_state['values']['com'], $form_state['values']['orderno']);
+	drupal_set_message(t('Configuration saved.'));
 }
 
 function signup_ground_by_profession() {
