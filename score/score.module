@@ -2090,16 +2090,16 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 		settype($r->score_math,'float');
 		settype($r->score_synthesis,'float');
 		$form['uid'][$r->uid]=array('#type'=>'hidden','#value'=>$r->uid);
-		$form['_sid-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->sid,'#size'=>19,'#maxlength'=>14,'#attributes'=>array('style'=>'padding-left: 2px; padding-right: 2px;'));
+		$form['_sid-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->sid,'#size'=>19,'#maxlength'=>14,'#attributes'=>array('style'=>'padding-left: 2px; padding-right: 2px;'),'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 		$form['prof'][$r->uid]=array('#markup'=>l($r->pname,'signup/3rdround/profession/'.$r->profession_major,array('attributes'=>array('title'=>t('View 3rd round students')))));
 		$form['name'][$r->uid]=array('#markup'=>'<nobr>'.l($r->name,'user/'.$r->uuid,array('attributes'=>array('title'=>$r->idcard_number))).'</nobr>',);
-		$form['_sis-'.$r->uid]=array('#type'=>'checkbox','#default_value'=>$r->is_math_subjects);
-		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>4,'#maxlength'=>6);
-		$form['_slg-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_languages,'#size'=>4,'#maxlength'=>6);
-		$form['_smt-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_math,'#size'=>4,'#maxlength'=>6);
-		$form['_sst-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_synthesis,'#size'=>4,'#maxlength'=>6);
+		$form['_sis-'.$r->uid]=array('#type'=>'checkbox','#default_value'=>$r->is_math_subjects,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_slg-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_languages,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_smt-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_math,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
+		$form['_sst-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_synthesis,'#size'=>4,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 		$form['validated-'.$r->uid]=array('#type'=>'checkbox', '#default_value'=>$r->validated);
-		$form['memory-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->memory,'#size'=>10,'#maxlength'=>6);
+		$form['memory-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->memory,'#size'=>10,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 	}
 
 	$form['submit']=array('#type'=>'submit', '#value'=>t('Save, and caculate total score with coefficient:'), '#prefix' => '<div class="inline-element-div">');
@@ -2110,6 +2110,11 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 }
 
 function theme_score_gaokao_province_detail_form($variables) {
+	drupal_add_css(
+		'div#sidebar-left { display: none; } '.
+		'.one-sidebar div#content { width: 95%; } ',
+		array('type' => 'inline')
+	);
 	$form=$variables['form'];
 	$output = '';
 	$header=array(
