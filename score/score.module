@@ -1967,7 +1967,7 @@ function score_myscore() {
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			if($student->ucategory==1)
-				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+				$output .= '</b><br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 1:
 			$output .= '<b>'.t('You are marked as unplaned students, and the order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
@@ -1976,7 +1976,7 @@ function score_myscore() {
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			if($student->ucategory==1)
-				$output .= '<br/></b>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+				$output .= '</b><br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 0:
 			$output .= t('You are marked as unqualified students.');
