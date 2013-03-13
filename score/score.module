@@ -1656,7 +1656,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$query->addExpression('(100000-ts.total_rank)*100000+ts.total_score','totsort');
 	}
 	
-	$query->extend('TableSort')->orderByHeader($header);
+	$query->extend('TableSort')->orderByHeader($header)->orderBy('s.uid');
 	$rdbo=$query->execute();
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {

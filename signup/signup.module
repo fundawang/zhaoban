@@ -3462,6 +3462,7 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
 	} else {
 		$query->orderBy('ts.total_score', 'desc');
 	}
+	$query->orderBy('s.uid');
 	$rdbo=$query->execute();
 	if(count($rdbo)==0) {
 			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
