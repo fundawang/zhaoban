@@ -3599,14 +3599,12 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		array('data' =>t('Status'), 'field'=>'s.pass_round3_major'),
 	);
 
-	if($prov=='000000') {
+	if($prov=='000000')
 		$provcondition='s.ucategory = 0';
-		unset($header[1]);
-	}
-	else
+	else 
 		$provcondition="gk.province='".$prov."'";
-	
-	//$tablesort = tablesort_sql($header);
+	if($prov=='000000' || $prov=='800000')
+		unset($header[1]);
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
@@ -3656,7 +3654,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 			),
 			$r->pass_round3_major==1?t('To be determined'):t('Determined'),
 		);
-		if($prov=='000000')
+		if($prov=='000000' || $prov=='800000')
 			unset($rows[count($rows)-1][1]);
 	}
 	if($r->ucategory) {
