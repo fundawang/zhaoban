@@ -3544,7 +3544,7 @@ function signup_3rd_round_by_province() {
 	$rows=array();
 	
 	foreach($rdbo as $r) {
-		if($r->pid) {
+		if($r->pid && $r->ucategory>0) {
 			// Determine whether you are plain department
 			if(user_access('view own draft') && !user_access('view draft'))
 				if($GLOBALS['user']->name !== $r->uid) continue;
