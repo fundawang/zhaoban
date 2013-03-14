@@ -1894,6 +1894,14 @@ function score_myscore() {
 	$uid=$user->name;
 
 	$student=db_select('students','s')->fields('s')->condition('uid',$uid)->execute()->fetchObject();
+	if($student->ucategory==1) {
+		$sid=db_select('students_gk','sg')->fields('sg',array('sid'))->condition('sg.uid',$student->uid)->execute()->fetchField();
+		if(empty($sid)) {
+			$output = '<p>'.t('You did not fill up your gaokao sid, please <a href="@url">click here</a> to fill it at first.',
+				array('@url'=>sprintf('/user/%s/edit/%s?destination=/myscore', $user->uid, signup_user_GAOKAO))).'</p>';
+			return $output;
+		}
+	}
 	$output  = '<p>';
 	$output .= t('Dear student @uid @name, ',
 		array(
