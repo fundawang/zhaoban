@@ -2279,6 +2279,11 @@ function score_prepare_gk_detail($prof=NULL) {
 		$output .= t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
 		$output .= '</blockquote></div>';
 
+	drupal_add_css(
+		'div#sidebar-left { display: none; } '.
+		'.one-sidebar div#content { width: 95%; } ',
+		array('type' => 'inline')
+	);
 	
 	$header=array(
 		array('data'=>t('No.')),
@@ -2289,10 +2294,10 @@ function score_prepare_gk_detail($prof=NULL) {
 		array('data'=>t('Gender')),
 	);
 	
-		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$header[]=array('data'=>t('Total score'), 'field'=>'tsrank');
+	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		$header[]=array('data'=>t('Total average rank'), 'field'=>'tsrank', 'sort'=>'asc');
 	} else {
-		$header[]=array('data'=>t('Total score'), 'field'=>'total_score');
+		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
 	$header[]=array('data'=>t('Chinese'));
 	$header[]=array('data'=>t('Foreign language'));
@@ -2313,22 +2318,21 @@ function score_prepare_gk_detail($prof=NULL) {
 	
 	$totals=array();
 	$query->innerJoin('students_total_score','ts','s.uid=ts.uid');
-	$query->addExpression('ABS(ts.total_score)','total_score');
-	$query->fields('ts',array('outrank'));
+	$query->condition('ts.pid',$prof)->fields('ts',array('total_score','total_rank','outrank'));
 	
-		$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
-		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-			$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
-			$query->orderBy('tsrank','ASC');
+	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
+		$query->orderBy('tsrank','ASC');
 	} else {
-		$query->addExpression('ABS(ts.total_score)','total_score');
+		$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
+		$query->fields('ts',array('total_score'));
 		$query->orderBy('total_score','DESC');
 	}
+	$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
 
 	$rdbo=$query->execute();
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {
-		
 		settype($r['score_chinese'],'float');
 		settype($r['score_languages'],'float');
 		settype($r['score_total'],'float');
@@ -2338,7 +2342,7 @@ function score_prepare_gk_detail($prof=NULL) {
 			'',
 			$r['pass_round3_major'] == '10' ? t('Determined'):(t('To be determined').'/'.$r['outrank']),
 			$r['gender'] == 1 ? t('Male'): t('Female'),
-			number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			in_array(substr($prof,0,2),array('D5','D6','D7','D8'))?round($r['total_rank'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
 			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_chinese'],
 			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_languages'],
 			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_total'],
