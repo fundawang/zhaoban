@@ -2338,11 +2338,10 @@ function signup_user_gaokao_form($form, $form_state) {
 	$form['gkinfo']['sid'] = array(
 		'#type' => 'textfield',
 		'#title' => t('The student ID given by your exam organizer'),
-		'#description' => $ucategory == 1? t('It should be a 14-digit number, beginning with @year.',array('@year'=>substr(variable_get('zhaoban_current_year',date('Y')),-2))).t('You can leave it blank safely.') : '',
+		'#description' => $ucategory == 1? t('It should be a 14-digit number, beginning with @year.',array('@year'=>substr(variable_get('zhaoban_current_year',date('Y')),-2))) : '',
 		'#maxlength' => 14,
 		'#default_value' => $default_values['sid'],
-		'#required' => $is_gk_enabled,
-		'#disabled' => ($default_values['validated']==1)?true:false,
+		'#required' => TRUE,
 	);
 	$form['gkinfo']['city_district'] = array(
 		'#type' => 'select',
@@ -2352,7 +2351,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#required' => true,
 		'#options' => $citylist,
 		'#default_value' => $default_values['city_district'],
-		'#disabled' => ($default_values['validated']==1)?true:false,
 	);
 	// Is one a science student?
 	$form['gkinfo']['is_math_subjects'] = array(
@@ -2361,7 +2359,6 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#options' => array('0' => t('Liberal'), '1' => t('Science')),
 		'#default_value' => $default_values['is_math_subjects'],
 		'#required' => true,
-		'#disabled' => ($default_values['validated']==1)?true:false,
 	);
 
 	$form['score'] = array(
@@ -2374,14 +2371,12 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#type' => 'textfield',
 		'#title' => t('Chinese'),
 		'#default_value' => $default_values['score_chinese'],
-		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#required' => TRUE,
 	);
 	$form['score']['score_languages'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Foreign language'),
 		'#default_value' => $default_values['score_languages'],
-		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#required' => TRUE,
 	);
 	$form['score']['score_math'] = array(
@@ -2389,27 +2384,17 @@ function signup_user_gaokao_form($form, $form_state) {
 		'#title' => t('Math'),
 		'#description' => t('The score of Mathematics has been counted in since 2006.'),
 		'#default_value' => $default_values['score_math'],
-		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#required' => TRUE,
 	);
 	$form['score']['score_synthesis'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Synthesis subject'),
 		'#default_value' => $default_values['score_synthesis'],
-		'#disabled' => ($default_values['validated']==1)?true:false,
 		'#description' => t('If you are from Shandong province, please add your testing score into synthesis subject.'),
 		'#required' => TRUE,
 	);
 	// Computes visibility of score section.
-	if($default_values['validated']===1) {
-		$form['score']['#description'] = t('We\'ve get your scores from your province, so you do not need to input them yourself.');
-		unset($form['gkinfo']['sid']['#value']);
-		unset($form['score']['score_chinese']['#value']);
-		unset($form['score']['score_languages']['#value']);
-		unset($form['score']['score_math']['#value']);
-		unset($form['score']['score_synthesis']['#value']);
-	}
-	else if(!$is_gk_enabled) {
+	if(!$is_gk_enabled) {
 		$form['score']['#description'] = t('The score uploading feature of your provice is banned by the administrator.');
 		unset($form['score']['score_chinese']);
 		unset($form['score']['score_languages']);
