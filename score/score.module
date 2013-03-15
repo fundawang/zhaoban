@@ -1969,18 +1969,22 @@ function score_myscore() {
 	$ts=db_select('students_total_score','ts')->fields('ts')->condition('ts.uid',$student->uid)->condition('ts.pid',$student->profession_major)->execute()->fetchObject();
 	switch($student->pass_round3_major) {
 		case 10:
-			$output .= '<b>'.t('You are marked as planed students.');
+			$output .= '<b>';
 			if($student->profession_major=='D301' || $student->profession_major=='DA02')
-				$output .= t('Your gaokao score will affect your order when considering marking in.', array('@rank'=>$ts->rank));
+				$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
+			else 
+				$output .= t('You are marked as planed students.');
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			if($student->ucategory==1)
 				$output .= '</b><br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 1:
-			$output .= '<b>'.t('You are marked as unplaned students, and the order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
+			$output .= '<b>';
 			if($student->profession_major=='D301' || $student->profession_major=='DA02')
-				$output .= t('Your gaokao score will affect your order when considering marking in.');
+				$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
+			else
+				$output .= t('You are marked as unplaned students, and the order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			if($student->ucategory==1)
