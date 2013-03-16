@@ -2234,13 +2234,13 @@ function score_gaokao_province_detail_form_submit($form, &$form_state) {
 		if(substr($key,0,4)!=variable_get('zhaoban_current_year',date('Y'))) continue;
 		db_update('students_gk')->condition('uid',$key)->fields(array(
 			'sid' => $form_values['_sid-'.$key],
-			'is_math_subjects' => ($form_values['_sis-'.$key]==='1')?1:0,
+			'is_math_subjects' => (isset($form_values['_sis-'.$key]) && $form_values['_sis-'.$key]==='1')?1:0,
 			'score_chinese' => $form_values['_sch-'.$key],
 			'score_languages' => $form_values['_slg-'.$key],
 			'score_math' => $form_values['_smt-'.$key],
 			'score_synthesis' => $form_values['_sst-'.$key],
 			'score_total' => ($form_values['_sch-'.$key]+$form_values['_slg-'.$key]+$form_values['_smt-'.$key]+$form_values['_sst-'.$key])*$form_values['coefficient'],
-			'validated' => ($form_values['validated-'.$key]==='1')?1:0,
+			'validated' => (isset($form_values['validated-'.$key]) && $form_values['validated-'.$key]==='1')?1:0,
 			'memory' => $form_values['memory-'.$key]
 		))->execute();
 	}
@@ -2542,26 +2542,12 @@ function score_cron() {
 	// Force recalculate the total_score of all students
 	$q=db_select('vl_professions','p')->fields('p',array('pid','exams'));
 	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1);
-	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
-		$subquery->innerJoin('students_going','sg','s.uid=sg.uid');
-		$subquery->isNotNull('sg.gid');
-		switch($prof) {
-			case 'D603':
-				$subquery->condition('sg.eid','208');
-				break;
-			case 'D604':
-				$subquery->condition('sg.eid','210');
-				break;
-			case 'D716':
-				$subquery->condition('sg.eid','285');
-				break;
-			case 'D717':
-				$subquery->condition('sg.eid','286');
-				break;
-		}
-	} else
-		$subquery->where('s.profession_major=p.pid');
+	$subquery->where('s.profession_major=p.pid');
 	$q->exists($subquery);
+	$subquery=db_select('students','s1')->fields('s1')->condition('s1.pass_round3_major',0,'<>');
+	$p=db_select('students_passthrough','sp')->where('s1.idcard_number=sp.idcard_number')->fields('sp',array('idcard_number'));
+	$subquery->notExists($p);
+	$q->notExists($subquery);
 	$rdbo=$q->execute();
 	// Compose query string
 	foreach($rdbo as $r) {
