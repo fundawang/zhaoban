@@ -3981,8 +3981,7 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 }
 
 function signup_3rd_round_province_delivery_submit($form, $form_state) {
-	if($form_state['clicked_button']['#name']=='save');
-		kuaidi100_save('signup', sprintf('%s,%s', '3rdround', $form_state['values']['prov']), $form_state['values']['com'], $form_state['values']['orderno']);
+	kuaidi100_save('signup', sprintf('%s,%s', '3rdround', $form_state['values']['prov']), $form_state['values']['com'], $form_state['values']['orderno']);
 	drupal_set_message(t('Configuration saved.'));
 }
 
