@@ -4601,7 +4601,6 @@ function signup_report($account) {
 	$result_contact = db_select('students_contact','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
-	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf_barcodes_1d.php');
 	
 	ini_set('max_execution_time','500');
 
@@ -4825,7 +4824,6 @@ function signup_ticket_report($user) {
 	$student=$query->execute()->fetchObject();
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
-	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf_barcodes_1d.php');
 	
 	ini_set('max_execution_time','500');
 
@@ -4894,7 +4892,6 @@ function signup_ticket_report($user) {
 	$pdf->Text(40,189,'此证需配合有效身份证件原件方为有效');
 	$pdf->Text(46,195,'打印时间：'.date('Y年n月j日G:i'));
 
-	$barcode=new TCPDFBarcode($student->uid,'C128B');
 	$pdf->StartTransform();
 	$pdf->Rotate(90, 70, 110);
 	$pdf->SetFontSize(8);
