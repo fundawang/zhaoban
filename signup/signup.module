@@ -4602,7 +4602,7 @@ function signup_report($account) {
 	$result_contact = db_select('students_contact','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
-	require_once(drupal_get_path('module','signup').'/../tcpdf/barcodes.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf_barcodes_1d.php');
 	
 	ini_set('max_execution_time','500');
 
@@ -4826,7 +4826,7 @@ function signup_ticket_report($user) {
 	$student=$query->execute()->fetchObject();
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
-	require_once(drupal_get_path('module','signup').'/../tcpdf/barcodes.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf_barcodes_1d.php');
 	
 	ini_set('max_execution_time','500');
 
