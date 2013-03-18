@@ -1937,7 +1937,7 @@ function score_myscore() {
 	
 	$exams = unserialize($profession->exams);
 	foreach($rdbo as $r) {
-		if($exams[$r->eid]==0 && substr($r->eid,0,1)!='3') continue;
+		if(isset($exams[$r->eid]) && $exams[$r->eid]==0 && substr($r->eid,0,1)!='3') continue;
 		if(!$r->rank) {
 			$rows[]=array(
 				$r->ename.$r->elevel,
@@ -1976,6 +1976,7 @@ function score_myscore() {
 				$output .= t('You are marked as planed students.');
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
+			$output .= '</b>';
 			if($student->ucategory==1)
 				$output .= '</b><br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
@@ -1987,8 +1988,9 @@ function score_myscore() {
 				$output .= t('You are marked as unplaned students, and the order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
+			$output .= '</b>';
 			if($student->ucategory==1)
-				$output .= '</b><br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 0:
 			$output .= t('You are marked as unqualified students.');

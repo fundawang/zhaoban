@@ -1468,6 +1468,17 @@ function signup_user_view($user, $view_mode, $langcode) {
 	if($rdbo)
 		$r = t('Department !dname Profession !pname', array('!dname'=>$rdbo->dname, '!pname'=>$rdbo->pname));
 
+	if(user_access('view passround3')) {
+		$query=db_select('students','s')->fields('s',array('pass_round3_major','pass_roundg_major'))->condition('s.uid',$user->name);
+		$query->innerJoin('students_total_score','ts','s.uid=ts.uid AND s.profession_major=ts.pid');
+		$query->fields('ts',array('outrank'));
+		$q=$query->execute()->fetchObject();
+		switch($q->pass_round3_major) {
+			case 10: $r .= ' ('.t('Determined').')'; break;
+			case 1: $r .= ' ('.t('To be determined').$q->outrank.')'; break;
+		}
+	}
+
 	$user->content['pr'] = array(
 		'#type' => 'user_profile_category',
 		'#title' => t('Profession and Examinations'),
@@ -1478,12 +1489,13 @@ function signup_user_view($user, $view_mode, $langcode) {
 	$query = $query->fields('cd',array('name_simp'));
 	$examplace = $query->execute()->fetchField();
 	if($r)
-		if($examplace <> '')
+		if(!empty($examplace))
 			$proftext = $r.' / '.$examplace;
 		else
 			$proftext = $r;
 	else
 		$proftext = t('N/A');
+
 	$user->content['pr']['name'] = array(
 		'#type' => 'user_profile_item',
 		'#title' => t('Profession'),
@@ -1509,13 +1521,14 @@ function signup_user_view($user, $view_mode, $langcode) {
 			}
 			$item['value'] .= implode($org_opus, ' / ');
 		}
-	$user->content['pr'][] = array(
-		'#type' => 'user_profile_item',
-		'#title' => $r->ename.$r->elevel,
-		'#markup' => isset($item['value'])?$item['value']:'',
-		'#weight' => $r->eid,
-	);
+		$user->content['pr'][] = array(
+			'#type' => 'user_profile_item',
+			'#title' => $r->ename.$r->elevel,
+			'#markup' => isset($item['value'])?$item['value']:'',
+			'#weight' => $r->eid,
+		);
 	}
+	
 }
 
 function signup_user_professions_form($form, $form_state) {
