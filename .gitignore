@@ -2,6 +2,7 @@
 tcpdf/*.php
 tcpdf/tcpdf.*
 tcpdf/*.TXT
+tcpdf/include
 tcpdf/images
 tcpdf/sRGB.icc
 tcpdf/cache
