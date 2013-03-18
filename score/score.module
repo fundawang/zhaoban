@@ -274,13 +274,13 @@ function score_permission() {
 		'review all score' => array(
 			'title' => t('Review all scores'),
 		),
-		'check sutdents own scores' => array(
+		'check students own scores' => array(
 			'title' => t('Review students own scores'),
 		),
 		'input gaokao score' => array(
 			'title' => t('Input students gaokao scores'),
 		),
-		'check sutdents roundg scores' => array(
+		'check students roundg scores' => array(
 			'title' => t('Review my roundg status'),
 		),
 	);
@@ -1880,21 +1880,23 @@ function score_myscore_check() {
 	global $user;
 	if(!$user->uid) return false;
 	$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
-	return user_access('check sutdents own scores') && $r;
+	return user_access('check students own scores') && $r;
 }
 
 function score_myscore_check_roundg() {
 	global $user;
 	if(!$user->uid) return false;
 	$r=db_select('students','s')->fields('s',array('pass_roundg_major'))->condition('uid',$user->name)->execute()->fetchField();
-	return user_access('check sutdents roundg scores') && $r;
+	return user_access('check students roundg scores') && $r;
 }
 function score_myscore() {
 	global $user;
 	$uid=$user->name;
 
 	$student=db_select('students','s')->fields('s')->condition('uid',$uid)->execute()->fetchObject();
-	if($student->ucategory==1) {
+	if(empty($student)) return FALSE;
+
+	if($student->ucategory==1 && $student->pass_round3_major>=1) {
 		$sid=db_select('students_gk','sg')->fields('sg',array('sid'))->condition('sg.uid',$student->uid)->execute()->fetchField();
 		if(empty($sid)) {
 			$output = '<p>'.t('You did not fill up your gaokao sid, please <a href="@url">click here</a> to fill it at first.',
@@ -1967,6 +1969,7 @@ function score_myscore() {
 	$output .= '<p>';
 	
 	$ts=db_select('students_total_score','ts')->fields('ts')->condition('ts.uid',$student->uid)->condition('ts.pid',$student->profession_major)->execute()->fetchObject();
+	if(!isset($student->pass_round3_major)) return FALSE;
 	switch($student->pass_round3_major) {
 		case 10:
 			$output .= '<b>';
