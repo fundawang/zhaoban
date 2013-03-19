@@ -3945,16 +3945,15 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 			'#type' => 'item',
 			'#title' => t('Current status'),
 		);
-		switch($r->status) {
-			case 3: $form['deliver']['status']['#markup'] = sprintf('%s (%s %s)',t('Delivered'), t($r->com), $r->orderno); break;
-			default:
-				$form['deliver']['status']['#markup'] = sprintf('<span title="%s">%s</span>', $r->statustext, kuadi100_resolve_state_code($r->status));
-				$form['deliver']['refresh']=array(
-					'#type' => 'button',
-					'#name' => 'refresh',
-					'#value' => t('Refresh'),
-				);
-		}
+		$form['deliver']['status']['#markup'] = sprintf('<span title="%s">%s</span>', $r->statustext, kuadi100_resolve_state_code($r->status));
+		if($r->status==3)
+			$form['deliver']['status']['#markup'] .= sprintf('(%s %s)', t($r->com), $r->orderno);
+		else
+			$form['deliver']['refresh']=array(
+				'#type' => 'button',
+				'#name' => 'refresh',
+				'#value' => t('Refresh'),
+			);
 	}
 	if($r===FALSE || $r->status !=3) {
 		if($r)
