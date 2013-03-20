@@ -5161,7 +5161,7 @@ function signup_search_students($citera) {
 	return $output;
 }
 
-function signup_simpleoauth($input) {
+function signup_simpleoauth($input, $appid=NULL) {
 	$output=array();
 	if(empty($input) || empty($input['sid']) || empty($input['idcard_number'])) {
 		$output=array(
@@ -5192,6 +5192,12 @@ function signup_simpleoauth($input) {
 			'pid' => $r->profession_major,
 			'dname' => $r->dname,
 			'pname' => $r->pname,
+		);
+		$appname=simpleoauth_get_appname($appid);
+		watchdog(
+			'signup',
+			$r->uid.'@uid was connected via @appid.',
+			array('@uid'=>$r->uid, '@appid'=>$appname)
 		);
 	}
 	return $output;
