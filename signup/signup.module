@@ -5196,7 +5196,7 @@ function signup_simpleoauth($input, $appid=NULL) {
 		$appname=simpleoauth_get_appname($appid);
 		watchdog(
 			'signup',
-			$r->uid.'@uid was connected via @appid.',
+			'@uid was connected via @appid.',
 			array('@uid'=>$r->uid, '@appid'=>$appname)
 		);
 	}
