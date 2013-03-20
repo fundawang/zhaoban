@@ -3715,7 +3715,7 @@ function signup_3rd_round_by_province_download($prov) {
 	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
 	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
 	if(db_table_exists('students_total_score')) {
-		$query->innerJoin('students_total_score','ss','s.uid=ss.uid');
+		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and s.profession_major=ss.pid');
 		$query=$query->fields('ss',array('total_score','rank'));
 	}
 	$query=$query->condition('sg.province',$prov)
