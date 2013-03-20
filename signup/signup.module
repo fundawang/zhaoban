@@ -3680,7 +3680,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 function signup_3rd_round_by_province_download($prov) {
 	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
 	if(!isset($r) || !($r->name))
-		drupal_access_denied();
+		return FALSE;
 	$provname=$r->simplified_name;
 	
 	$def = array(
@@ -3732,7 +3732,6 @@ function signup_3rd_round_by_province_download($prov) {
 	}
 		
 	foreach($result as $r) {
-		//var_dump($r);
 		$t=dbase_add_record ($fhandle, array(
 			($r->sid)?$r->sid:'',
 			mb_convert_encoding($r->name, 'GBK', 'UTF-8'),
@@ -3780,9 +3779,8 @@ function signup_3rd_round_by_province_download($prov) {
 function signup_3rd_round_by_province_report($prov=NULL) {
 	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
 	if(!isset($r) || !($r->name))
-		drupal_access_denied();
+		return FALSE;
 	$provname=$r->name;
-	//var_dump($provname); exit;
 	
 	$query=db_select('students','s')->condition('s.pass_round3_major','0','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -3790,8 +3788,8 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
 	$query->leftJoin('vl_city_district','c','sg.city_district=c.cid');
 	if(db_table_exists('students_total_score')) {
-		$query->innerJoin('students_total_score','ss','s.uid=ss.uid');
-		$query=$query->fields('ss',array('total_score','rank'))->where('ss.pid=s.profession_major');
+		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and ss.pid=s.profession_major');
+		$query=$query->fields('ss',array('total_score','rank'));
 	}
 	$query=$query->condition('sg.province',$prov)
 		->fields('s',array('name','idcard_number','gender'))
@@ -4313,7 +4311,7 @@ function signup_ground_by_province_detail($prov=NULL) {
 function signup_ground_by_province_report($prov=NULL) {
 	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
 	if(!isset($r) || !($r->name))
-		drupal_access_denied();
+		return FALSE;
 	$provname=$r->name;
 	
 	$query=db_select('students','s')->condition('s.pass_roundg_major','0','<>');
