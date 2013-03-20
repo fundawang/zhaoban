@@ -5160,4 +5160,40 @@ function signup_search_students($citera) {
 	
 	return $output;
 }
+
+function signup_simpleoauth($input) {
+	$output=array();
+	if(empty($input) || empty($input['sid']) || empty($input['idcard_number'])) {
+		$output=array(
+			'status' => '40002',
+			'errmsg' => t('Invalid input for @op operation.', array('@op'=>'signup')),
+		);
+		return $output;
+	}
+	$query=db_select('students','s')->condition('s.uid',$input['sid'])->condition('s.idcard_number', $input['idcard_number']);
+	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->innerJoin('vl_department', 'd', 'p.did = d.did');
+	$query->fields('s')->fields('p',array('pname'))->fields('d',array('dname'));
+	$r=$query->execute()->fetchObject();
+	if(empty($r)) {
+		$output=array(
+			'status' => '40010',
+			'errmsg' => t('No such student.'),
+		);
+	} else {
+		$output=array(
+			'status' => '0',
+			'sid' => $r->uid,
+			'name' => $r->name,
+			'idcard_number' => $r->idcard_number,
+			'validated' => $r->validated,
+			'pass_round1' => $r->pass_round1_major,
+			'pass_round3' => $r->pass_round3_major,
+			'pid' => $r->profession_major,
+			'dname' => $r->dname,
+			'pname' => $r->pname,
+		);
+	}
+	return $output;
+}
 ?>
