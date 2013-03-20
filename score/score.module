@@ -2715,3 +2715,34 @@ function score_cron() {
 			->execute();
 	}
 }
+
+function score_simpleoauth($input, $appid=NULL) {
+	$output=array();
+	if(empty($input) || empty($input['sid'])) {
+		$output=array(
+			'status' => '40002',
+			'errmsg' => t('Invalid input for @op operation.', array('@op'=>'score')),
+		);
+		return $output;
+	}
+	$query=db_select('students_score','s')->condition('s.uid',$input['sid'])->fields('s')->condition('s.eid', '3%', 'LIKE')->orderBy('s.eid');
+	$query->innerJoin('vl_exam','e','s.eid=e.eid');
+	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
+	$scores=$query->execute();
+	if(empty($scores)) {
+		$output=array(
+			'status' => '40020',
+			'errmsg' => t('No such student @sid.', array('@sid'=>$input['sid'])),
+		);
+		return $output;
+	}
+	foreach($scores as $r) {
+		$output['sid']=$r->uid;
+		$output[$r->eid]=array(
+			'eid' => $r->eid,
+			'ename' => $r->enamefull,
+			'score' => $r->score
+		);
+	}
+	return $output;
+}
