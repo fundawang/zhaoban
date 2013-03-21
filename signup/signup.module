@@ -3805,7 +3805,6 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		return MENU_NOT_FOUND;
 	}
 	
-	//var_dump($account);
 	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
@@ -3858,7 +3857,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$pdf = new MYPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
 	// set document information
-	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(variable_get('site_name', ''));
 
 	// Set font
 	// dejavusans is a UTF-8 Unicode font, if you only need to
@@ -3873,7 +3872,6 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$pdf->SetFooterMargin(15);
 	$pdf->setHeaderData('',0,variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试合格考生名册 '.$provname,'');
 	
-	//$pdf->SetMargins(6, 6, 6);
 	$pdf->SetAutoPageBreak(true, 12);
 
 	//set some language-dependent strings
@@ -4620,7 +4618,7 @@ function signup_report($account) {
 	// set document information
 	$pdf->SetCreator(PDF_CREATOR);
 	$pdf->SetTitle('中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生专业考试报名表');
-	$pdf->SetAuthor('中央音乐学院');
+	$pdf->SetAuthor(variable_get('site_name', ''));
 	$pdf->SetSubject($result->uid.' '.$result->name);
 
 	// Set font
@@ -4843,7 +4841,7 @@ function signup_ticket_report($user) {
 	// set document information
 	$pdf->SetCreator(PDF_CREATOR);
 	$pdf->SetTitle('中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生专业考试准考证');
-	$pdf->SetAuthor('中央音乐学院');
+	$pdf->SetAuthor(variable_get('site_name', ''));
 	$pdf->SetSubject($student->uid.' '.$student->name);
 
 	// Set font
