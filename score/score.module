@@ -2725,6 +2725,13 @@ function score_simpleoauth($input, $appid=NULL) {
 		);
 		return $output;
 	}
+	if(variable_get('simpleoauth.connect.'.$appid.$input['sid'],0)==0) {
+		$output=array(
+			'status' => '40003',
+			'errmsg' => t('@sid has not been connected yet.', array('@sid'=>$input['sid'])),
+		);
+		return $output;
+	}
 	if($input['subop']=='eids') {
 		$query=db_select('students_score','s')->condition('s.uid',$input['sid'])->fields('s')->condition('s.eid', '3%', 'LIKE')->orderBy('s.eid');
 		$query->innerJoin('vl_exam','e','s.eid=e.eid');
@@ -2771,6 +2778,11 @@ function score_simpleoauth($input, $appid=NULL) {
 		$output['eid']=$r->eid;
 		$output['ename']=$r->enamefull;
 		$output['score']=$r->score;
+		watchdog(
+			'score',
+			'@appid queried the score of @sid.',
+			array('@uid'=>$r->uid, '@appid'=>simpleoauth_get_appname($appid))
+		);
 	} else {
 		$output=array(
 			'status' => '40002',
@@ -2779,3 +2791,5 @@ function score_simpleoauth($input, $appid=NULL) {
 	}
 	return $output;
 }
+
+?>

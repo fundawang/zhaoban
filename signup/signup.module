@@ -5198,6 +5198,7 @@ function signup_simpleoauth($input, $appid=NULL) {
 			'@uid was connected via @appid.',
 			array('@uid'=>$r->uid, '@appid'=>$appname)
 		);
+		variable_set('simpleoauth.connect.'.$appid.$r->uid, 1);
 	}
 	return $output;
 }
