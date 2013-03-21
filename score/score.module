@@ -2752,8 +2752,8 @@ function score_simpleoauth($input, $appid=NULL) {
 			$eids[]=$r->eid;
 			$enames[]=$r->enamefull;
 		}
-		$output['eids']=implode(':',$eids);
-		$output['enames']=implode(':',$enames);
+		$output['eids']=implode(';',$eids);
+		$output['enames']=implode(';',$enames);
 	} else if($input['subop']=='geteid') {
 		if(empty($input['eid'])) {
 			$output=array(
