@@ -3871,7 +3871,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
 	$pdf->SetFooterMargin(15);
 	$pdf->setHeaderData('',0,variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试合格考生名册 '.$provname,'');
-	
+	$pdf->setTitle(variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试合格考生名册 '.$provname,'');
 	$pdf->SetAutoPageBreak(true, 12);
 
 	//set some language-dependent strings
@@ -4386,7 +4386,7 @@ function signup_ground_by_province_report($prov=NULL) {
 	$pdf = new MYPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
 	// set document information
-	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(variable_get('site_name', ''));
 
 	// Set font
 	// dejavusans is a UTF-8 Unicode font, if you only need to
@@ -4400,6 +4400,7 @@ function signup_ground_by_province_report($prov=NULL) {
 	$pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
 	$pdf->SetFooterMargin(15);
 	$pdf->setHeaderData('',0,variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试拟录取考生名册 '.$provname,'');
+	$pdf->setTitle(variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试拟录取考生名册 '.$provname);
 	
 	//$pdf->SetMargins(6, 6, 6);
 	$pdf->SetAutoPageBreak(true, 12);
