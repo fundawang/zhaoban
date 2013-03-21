@@ -2718,30 +2718,63 @@ function score_cron() {
 
 function score_simpleoauth($input, $appid=NULL) {
 	$output=array();
-	if(empty($input) || empty($input['sid'])) {
+	if(empty($input) || empty($input['sid']) || empty($input['subop'])) {
 		$output=array(
 			'status' => '40002',
 			'errmsg' => t('Invalid input for @op operation.', array('@op'=>'score')),
 		);
 		return $output;
 	}
-	$query=db_select('students_score','s')->condition('s.uid',$input['sid'])->fields('s')->condition('s.eid', '3%', 'LIKE')->orderBy('s.eid');
-	$query->innerJoin('vl_exam','e','s.eid=e.eid');
-	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
-	$scores=$query->execute();
-	if(empty($scores)) {
-		$output=array(
-			'status' => '40020',
-			'errmsg' => t('No such student @sid.', array('@sid'=>$input['sid'])),
-		);
-		return $output;
-	}
-	foreach($scores as $r) {
+	if($input['subop']=='eids') {
+		$query=db_select('students_score','s')->condition('s.uid',$input['sid'])->fields('s')->condition('s.eid', '3%', 'LIKE')->orderBy('s.eid');
+		$query->innerJoin('vl_exam','e','s.eid=e.eid');
+		$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
+		$scores=$query->execute();
+		if($scores->rowCount()==0) {
+			$output=array(
+				'status' => '40020',
+				'errmsg' => t('No valid exams for @sid.', array('@sid'=>$input['sid'])),
+			);
+			return $output;
+		}
+		$output['status']='0';
+		$output['sid']=$input['sid'];
+		$eids=array();
+		$enames=array();
+		foreach($scores as $r) {
+			$eids[]=$r->eid;
+			$enames[]=$r->enamefull;
+		}
+		$output['eids']=implode(':',$eids);
+		$output['enames']=implode(':',$enames);
+	} else if($input['subop']=='geteid') {
+		if(empty($input['eid'])) {
+			$output=array(
+				'status' => '40002',
+				'errmsg' => t('Invalid input for @op operation.', array('@op'=>'score')),
+			);
+			return $output;
+		}
+		$query=db_select('students_score','s')->condition('s.uid',$input['sid'])->condition('s.eid',$input['eid'])->condition('s.eid', '3%', 'LIKE')->fields('s')->orderBy('s.eid');
+		$query->innerJoin('vl_exam','e','s.eid=e.eid');
+		$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
+		$r=$query->execute()->fetchObject;
+		if(empty($r)) {
+			$output=array(
+				'status' => '40020',
+				'errmsg' => t('No valid exams for @sid.', array('@sid'=>$input['sid'])),
+			);
+			return $output;
+		}
+		$output['status']='0';
 		$output['sid']=$r->uid;
-		$output[$r->eid]=array(
-			'eid' => $r->eid,
-			'ename' => $r->enamefull,
-			'score' => $r->score
+		$output['eid']=$r->eid;
+		$output['ename']=$r->enamefull;
+		$output['score']=$r->score;
+	} else {
+		$output=array(
+			'status' => '40002',
+			'errmsg' => t('Invalid input for @op operation.', array('@op'=>'score')),
 		);
 	}
 	return $output;
