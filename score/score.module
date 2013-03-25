@@ -2771,12 +2771,14 @@ function score_simpleoauth($input, $appid=NULL) {
 		$output['sid']=$input['sid'];
 		$eids=array();
 		$enames=array();
+		$exams=array();
 		foreach($scores as $r) {
-			$eids[]=$r->eid;
-			$enames[]=$r->enamefull;
+			$exams[]=array(
+				'eid' => $r->eid,
+				'ename' => $r->enamefull
+			);
 		}
-		$output['eids']=implode(';',$eids);
-		$output['enames']=implode(';',$enames);
+		$output['exams']=$exams;
 	} else if($input['subop']=='geteid') {
 		if(empty($input['eid'])) {
 			$output=array(
