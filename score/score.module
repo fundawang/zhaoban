@@ -1926,6 +1926,16 @@ function score_myscore($user=NULL) {
 			return $output;
 		}
 	}
+
+	if(module_exists('simpleoauth')) {
+		$result=db_select('simpleoauth','s')->fields('s',array('appid','appname'))->execute();
+		foreach($result as $r) {
+			if((variable_get('simpleoauth.connect.'.$r->appid.'.'.$uid,0)!==0)) {
+				drupal_set_message(t('You have connected with @app, which means the app will access your scores.',array('@app'=>$r->appname)), 'warning');
+			}
+		}
+	}
+
 	$output  = '<p>';
 	$output .= t('Dear student @uid @name, ',
 		array(
