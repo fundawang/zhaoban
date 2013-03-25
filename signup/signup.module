@@ -3775,6 +3775,7 @@ function signup_3rd_round_by_province_download($prov) {
 	drupal_add_http_header('Content-Length', filesize($fname));
 	readfile($fname);
 	unlink($fname);
+	exit;
 }
 
 function signup_3rd_round_by_province_report($prov=NULL) {
