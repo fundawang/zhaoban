@@ -3717,13 +3717,13 @@ function signup_3rd_round_by_province_download($prov) {
 	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
 	if(db_table_exists('students_total_score')) {
 		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and s.profession_major=ss.pid');
-		$query=$query->fields('ss',array('total_score','rank'));
+		$query=$query->fields('ss',array('total_score','total_rank','rank'));
 	}
 	$query=$query->condition('sg.province',$prov)
 		->fields('s',array('name','idcard_number','gender'))
 		->fields('sc',array('personnel_record_at'))
 		->fields('sg',array('sid'))
-		->fields('p',array('pname','gb_pid','gb_pname'))
+		->fields('p',array('did','pname','gb_pid','gb_pname'))
 		->orderBy('s.idcard_number');
 	$result=$query->execute();
 	
@@ -3747,10 +3747,10 @@ function signup_3rd_round_by_province_download($prov) {
 			'',
 			sprintf("%.3f",0),
 			mb_convert_encoding($r->pname, 'GBK', 'UTF-8'),
-			isset($r->total_score)?sprintf("%.3f",$r->total_score):0,
+			isset($r->total_rank)?sprintf("%.3f",$r->total_rank):sprintf("%.3f",$r->total_score),
 			isset($r->rank)?$r->rank:0,
 			mb_convert_encoding('中央音乐学院', 'GBK', 'UTF-8'),
-			'',
+			isset($r->total_rank)?mb_convert_encoding('校考成绩为平均排序，非直接成绩。', 'GBK', 'UTF-8'):'',
 		));
 		if(!$t) return NULL;
 	}
@@ -3790,7 +3790,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$query->leftJoin('vl_city_district','c','sg.city_district=c.cid');
 	if(db_table_exists('students_total_score')) {
 		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and ss.pid=s.profession_major');
-		$query=$query->fields('ss',array('total_score','rank'));
+		$query=$query->fields('ss',array('total_score','total_rank','rank'));
 	}
 	$query=$query->condition('sg.province',$prov)
 		->fields('s',array('name','idcard_number','gender'))
@@ -3850,7 +3850,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 			// Page number
 			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
 			$this->Cell(30, 12, date('Y年n月j日'));
-			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。', 0, false, 'C');
+			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。校考成绩加括号者为平均排序，非直接成绩。', 0, false, 'C');
 			$this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
 		}
 	}
@@ -3907,7 +3907,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$pdf->Cell(13,2,$r->gb_pid, 0, false, 'L');
 		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
 		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
-		$pdf->Cell(12,2,$r->total_score<=0?('['.abs(round($r->total_score,2)).']'):number_format($r->total_score,2));
+		$pdf->Cell(12,2,isset($r->total_rank)?sprintf('[%s]',round($r->total_rank,2)):sprintf('%.2f',$r->total_score));
 		$pdf->Cell(10,2,$r->rank, 0, false, 'C');
 		$pdf->Cell(20,2,$r->name_simp);
 		$pdf->LN();
