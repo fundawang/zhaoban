@@ -3901,15 +3901,15 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$pdf->SetTextColor(0,0,0);
 		$pdf->Cell(40,2,$r->idcard_number, 0, false, 'C');
 		$pdf->Cell(30,2,$r->sid, 0, false, 'C');
-		$pdf->Cell(20,2,$r->name, 0, false, 'L');
+		$pdf->MultiCell(20,2,$r->name, 0, 'L', false, false);
 		$pdf->Cell(5,2,$r->gender==1?'男':'女', 0, false, 'C');
-		$pdf->Cell(60,2,$r->personnel_record_at, 0, false, 'L');
+		$pdf->Cell(60,2,mb_substr($r->personnel_record_at,0,16,'UTF-8'), 0, false, 'L');
 		$pdf->Cell(13,2,$r->gb_pid, 0, false, 'L');
 		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
 		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
 		$pdf->Cell(12,2,isset($r->total_rank)?sprintf('[%s]',round($r->total_rank,2)):sprintf('%.2f',$r->total_score));
 		$pdf->Cell(10,2,$r->rank, 0, false, 'C');
-		$pdf->Cell(20,2,$r->name_simp);
+		$pdf->Cell(20,2,mb_substr($r->name_simp,0,9,'UTF-8'));
 		$pdf->LN();
 		$pdf->setY($pdf->getY()+3);
 	}
