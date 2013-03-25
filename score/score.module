@@ -236,7 +236,8 @@ function score_menu() {
 	);
 
 	$items['user/%user/scores'] = array(
-		'title' => 'His/Her Scores',
+		'title callback' => 'score_myscore_title_callback',
+		'title arguments' => array(1),
 		'page callback' => 'score_myscore',
 		'page arguments' => array(1),
 		'type' => MENU_LOCAL_TASK,
@@ -1902,6 +1903,14 @@ function score_myscore_check_roundg() {
 	$r=db_select('students','s')->fields('s',array('pass_roundg_major'))->condition('uid',$user->name)->execute()->fetchField();
 	return user_access('check students roundg scores') && $r;
 }
+
+function score_myscore_title_callback($user) {
+	$g=db_select('students','s')->fields('s',array('gender'))->condition('s.uid',$user->name)->execute()->fetchField();
+	if(empty($g)) return t('His/Her Scores');
+	if($g==1) return t('His Scores');
+	else return t('Her Scores');
+}
+
 function score_myscore($user=NULL) {
 	if(is_null($user)) $user=$GLOBALS['user'];
 	$uid=$user->name;
