@@ -1473,10 +1473,11 @@ function signup_user_view($user, $view_mode, $langcode) {
 		$query->innerJoin('students_total_score','ts','s.uid=ts.uid AND s.profession_major=ts.pid');
 		$query->fields('ts',array('outrank'));
 		$q=$query->execute()->fetchObject();
-		switch($q->pass_round3_major) {
-			case 10: $r .= ' ('.t('Determined').')'; break;
-			case 1: $r .= ' ('.t('To be determined').$q->outrank.')'; break;
-		}
+		if($q)
+			switch($q->pass_round3_major) {
+				case 10: $r .= ' ('.t('Determined').')'; break;
+				case 1: $r .= ' ('.t('To be determined').$q->outrank.')'; break;
+			}
 	}
 
 	$user->content['pr'] = array(
