@@ -3706,7 +3706,7 @@ function signup_3rd_round_by_province_download($prov) {
 
 	// creation
 	$fname=tempnam(sys_get_temp_dir(),'3rd').'.dbf';
-	unlink($fname);
+	if(is_file($fname)) unlink($fname);
 	$fhandle=dbase_create($fname, $def);
 	if (!$fhandle) {
 		return NULL;
