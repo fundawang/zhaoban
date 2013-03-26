@@ -2758,7 +2758,7 @@ function score_simpleoauth($input, $appid=NULL) {
 		);
 		return $output;
 	}
-	if(variable_get('simpleoauth.connect.'.$appid.$input['sid'],0)==0) {
+	if(variable_get('simpleoauth.connect.'.$appid.'.'.$input['sid'],0)==0) {
 		$output=array(
 			'status' => '40003',
 			'errmsg' => t('@sid has not been connected yet.', array('@sid'=>$input['sid'])),
