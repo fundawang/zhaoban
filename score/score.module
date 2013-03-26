@@ -2800,7 +2800,7 @@ function score_simpleoauth($input, $appid=NULL) {
 		$query=db_select('students_score','s')->condition('s.uid',$input['sid'])->condition('s.eid',$input['eid'])->condition('s.eid', '3%', 'LIKE')->fields('s')->orderBy('s.eid');
 		$query->innerJoin('vl_exam','e','s.eid=e.eid');
 		$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
-		$r=$query->execute()->fetchObject;
+		$r=$query->execute()->fetchObject();
 		if(empty($r)) {
 			$output=array(
 				'status' => '40020',
