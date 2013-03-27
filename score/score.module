@@ -2170,8 +2170,8 @@ function theme_score_gaokao_province_detail_form($variables) {
 	drupal_add_css(
 		'div#sidebar-left { display: none; } '.
 		'.one-sidebar div#content { width: 95%; } '.
-		'input:disabled { border: 2px solid transparent; background-color: transparent; color: black; } '.
-		'input[disabled] { border: 2px solid transparent; background-color: transparent; color: black } '.
+		'input:disabled { border: 2px solid transparent; background-color: transparent; color: black; text-shadow: none; } '.
+		'input[disabled] { border: 2px solid transparent; background-color: transparent; color: black; text-shadow: none; } '.
 		'',
 		array('type' => 'inline')
 	);
@@ -2179,7 +2179,7 @@ function theme_score_gaokao_province_detail_form($variables) {
 	$output = '';
 	$header=array(
 		array('data'=>t('Validated')),
-		array('data'=>t('Gaokao SID')),
+		array('data'=>t('Gaokao SID'), 'field'=>'','sort'=>'asc'),
 		array('data'=>t('Real Name')),
 		array('data'=>t('Profession')),
 		array('data'=>t('Is Science subject').'?'),
