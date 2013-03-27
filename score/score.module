@@ -2148,7 +2148,7 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 		settype($r->score_synthesis,'float');
 		$form['uid'][$r->uid]=array('#type'=>'hidden','#value'=>$r->uid);
 		$form['_sid-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->sid,'#size'=>19,'#maxlength'=>14,'#attributes'=>array('style'=>'padding-left: 2px; padding-right: 2px;'),'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
-		$form['prof'][$r->uid]=array('#markup'=>l($r->pname,'signup/3rdround/profession/'.$r->profession_major,array('attributes'=>array('title'=>t('View 3rd round students')))));
+		$form['prof'][$r->uid]=array('#markup'=>l($r->pname,'signup/3rdround/profession/'.$r->profession_major,array('attributes'=>array('title'=>t('View 3rd round students of @prof',array('@prof'=>$r->pname))))));
 		$form['name'][$r->uid]=array('#markup'=>'<nobr>'.l($r->name,'user/'.$r->uuid,array('attributes'=>array('title'=>$r->idcard_number))).'</nobr>',);
 		$form['_sis-'.$r->uid]=array('#type'=>'checkbox','#default_value'=>$r->is_math_subjects,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 		$form['_sch-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->score_chinese,'#size'=>7,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
