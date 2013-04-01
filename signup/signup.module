@@ -1469,7 +1469,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 		$r = t('Department !dname Profession !pname', array('!dname'=>$rdbo->dname, '!pname'=>$rdbo->pname));
 
 	if(user_access('view passround3')) {
-		$query=db_select('students','s')->fields('s',array('pass_round3_major','pass_roundg_major'))->condition('s.uid',$user->name);
+		$query=db_select('students','s')->fields('s',array('pass_round1_major','pass_round3_major','pass_roundg_major'))->condition('s.uid',$user->name);
 		$query->innerJoin('students_total_score','ts','s.uid=ts.uid AND s.profession_major=ts.pid');
 		$query->fields('ts',array('outrank'));
 		$q=$query->execute()->fetchObject();
@@ -1477,6 +1477,12 @@ function signup_user_view($user, $view_mode, $langcode) {
 			switch($q->pass_round3_major) {
 				case 10: $r .= ' ('.t('Determined').')'; break;
 				case 1: $r .= ' ('.t('To be determined').$q->outrank.')'; break;
+				case 0:
+					if($q->pass_round1_major=='1')
+						$r .= ' ('.t('Passed 1st round exam but not qualified').')';
+					else
+						$r .= ' ('.t('Failed in 1st round exam').')';
+					break;
 			}
 	}
 
