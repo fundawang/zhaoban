@@ -3927,8 +3927,7 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 		'#collapsible' => TRUE,
 		'#collapsed' => TRUE,
 	);
-	if($_SERVER['REQUEST_METHOD']=='POST' && $form_state['clicked_button']['#name'] == 'refresh') {
-		$form['deliver']['#collapsed'] = FALSE;
+	if($_SERVER['REQUEST_METHOD']=='POST' && isset($form_state['clicked_button']) && $form_state['clicked_button']['#name'] == 'refresh') {
 		$r=kuaidi100_get_status('signup','3rdround,'.$prov); 
 		if($r) {
 			kuaidi100_update_status($r->com, $r->orderno);
