@@ -3738,7 +3738,7 @@ function signup_3rd_round_by_province_download($prov) {
 			mb_convert_encoding($r->name, 'GBK', 'UTF-8'),
 			$r->gender,
 			$r->idcard_number,
-			mb_convert_encoding($r->personnel_record_at, 'GBK', 'UTF-8'),
+			mb_substr(mb_convert_encoding($r->personnel_record_at, 'GBK', 'UTF-8'),0,20,'GBK'),
 			'10045',
 			mb_convert_encoding('中央音乐学院', 'GBK', 'UTF-8'),
 			'1',
@@ -3747,7 +3747,7 @@ function signup_3rd_round_by_province_download($prov) {
 			'',
 			sprintf("%.3f",0),
 			mb_convert_encoding($r->pname, 'GBK', 'UTF-8'),
-			isset($r->total_rank)?sprintf("%.3f",$r->total_rank):sprintf("%.3f",$r->total_score),
+			in_array($r->did,array('D5','D6','D7','D8'))?sprintf("%.3f",$r->total_rank):sprintf("%.3f",$r->total_score),
 			isset($r->rank)?$r->rank:0,
 			mb_convert_encoding('中央音乐学院', 'GBK', 'UTF-8'),
 			isset($r->total_rank)?mb_convert_encoding('校考成绩为平均排序，非直接成绩。', 'GBK', 'UTF-8'):'',
@@ -3798,7 +3798,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		->fields('sc',array('personnel_record_at'))
 		->fields('sg',array('sid'))
 		->fields('c',array('name_simp'))
-		->fields('p',array('pname','gb_pid','gb_pname','years'))
+		->fields('p',array('did','pname','gb_pid','gb_pname','years'))
 		->orderBy('s.idcard_number');
 	$result=$query->execute();
 	
@@ -3908,7 +3908,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$pdf->Cell(13,2,$r->gb_pid, 0, false, 'L');
 		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
 		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
-		$pdf->Cell(12,2,isset($r->total_rank)?sprintf('[%s]',round($r->total_rank,2)):sprintf('%.2f',$r->total_score));
+		$pdf->Cell(12,2,in_array($r->did,array('D5','D6','D7','D8'))?sprintf('[%s]',round($r->total_rank,2)):sprintf('%.2f',$r->total_score));
 		$pdf->Cell(10,2,$r->rank, 0, false, 'C');
 		$pdf->Cell(20,2,mb_substr($r->name_simp,0,9,'UTF-8'));
 		$pdf->LN();
