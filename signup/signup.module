@@ -3644,8 +3644,6 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 				$plink = $r->province;
 				break;
 		}
-			
-			
 		$rows[] = array(
 			'<nobr>'.$r->idcard_number.'</nobr>',
 			'<nobr>'.$r->sid.'</nobr>',
@@ -3939,6 +3937,7 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 	}
 	$r=kuaidi100_get_status('signup','3rdround,'.$prov); 
 	if($r!==FALSE) {
+		$form['deliver']['#collapsed'] = FALSE;
 		$form['deliver']['status']=array(
 			'#type' => 'item',
 			'#title' => t('Current status'),
