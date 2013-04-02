@@ -3940,14 +3940,14 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 			drupal_set_message(t('Status updated.'));
 		}
 	}
-	$r=kuaidi100_get_status('signup','3rdround,'.$prov); 
+	$r=kuaidi100_get_status('signup','3rdround,'.$prov);
 	if($r!==FALSE) {
 		$form['deliver']['#collapsed'] = FALSE;
 		$form['deliver']['status']=array(
 			'#type' => 'item',
 			'#title' => t('Current status'),
 		);
-		$form['deliver']['status']['#markup'] = sprintf('<span title="%s">%s</span>', $r->statustext, kuadi100_resolve_state_code($r->status));
+		$form['deliver']['status']['#markup'] = sprintf('<span title="%s">%s</span>', format_date($r->timestamp).' '.$r->statustext, kuadi100_resolve_state_code($r->status));
 		if($r->status==3)
 			$form['deliver']['status']['#markup'] .= sprintf('(%s %s)', t($r->com), $r->orderno);
 		else
