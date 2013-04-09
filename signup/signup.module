@@ -264,21 +264,21 @@ function signup_menu() {
 		'title' => 'View gaokao round students',
 		'description' => "Check the students which will be enrolled into gaokao round examination",
 		'page callback' => 'signup_ground_by_profession',
-		'access callback' => 'signup_3rd_overview',
+		'access callback' => 'signup_ground_overview',
 	);
 	$items['signup/ground/profession'] = array(
 		'title' => 'By Profession',
 		'description' => "Check the students which will be enrolled into gaokao round examination",
 		'page callback' => 'signup_ground_by_profession',
 		'type' => MENU_DEFAULT_LOCAL_TASK,
-		'access callback' => 'signup_3rd_overview',
+		'access callback' => 'signup_ground_overview',
 	);
 	$items['signup/ground/profession/%'] = array(
 		'title' => 'By Profession',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_ground_by_profession_detail',
 		'page arguments' => array(3),
-		'access callback' => 'signup_3rd_overview',
+		'access callback' => 'signup_ground_overview',
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
 	$items['signup/ground/province'] = array(
@@ -286,14 +286,14 @@ function signup_menu() {
 		'description' => "Check the students which will be enrolled into gaokao round examination",
 		'page callback' => 'signup_ground_by_province',
 		'type' => MENU_LOCAL_TASK,
-		'access callback' => 'signup_3rd_overview',
+		'access callback' => 'signup_ground_overview',
 	);
 	$items['signup/ground/province/%'] = array(
 		'title' => 'By Province',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_ground_by_province_detail',
 		'page arguments' => array(3),
-		'access callback' => 'signup_3rd_overview',
+		'access callback' => 'signup_ground_overview',
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
 	$items['signup/ground/province/%/report'] = array(
@@ -301,7 +301,7 @@ function signup_menu() {
 		'description' => "Download printable report for this province",
 		'page callback' => 'signup_ground_by_province_report',
 		'page arguments' => array(3),
-		'access callback' => 'signup_3rd_overview',
+		'access callback' => 'signup_ground_overview',
 		'type' => MENU_CALLBACK,
 	);
 	$items['user/%user/report'] = array(
@@ -350,6 +350,11 @@ function signup_2nd_overview() {
 function signup_3rd_overview() {
 	$r=db_select('students', 's')->fields('s')->condition('pass_round3_major','0','<>')->countQuery()->execute()->fetchField();
 	return user_access('view passround3') && $r;
+}
+
+function signup_ground_overview() {
+	$r=db_select('students', 's')->fields('s')->condition('pass_roundg_major','0','<>')->countQuery()->execute()->fetchField();
+	return user_access('view passroundg') && $r;
 }
 
 function signup_report_perm($uid) {
