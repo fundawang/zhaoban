@@ -3603,7 +3603,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		array('data' =>t('Student ID number'), 'field'=>'gk.sid'),
 		array('data' =>t('Real Name')),
 		array('data' =>t('Gender'), 'field'=>'s.gender'),
-		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
+		array('data' =>t('Profession'), 'field'=>'ppid'),
 		array('data' =>t('Status'), 'field'=>'s.pass_round3_major'),
 	);
 
@@ -3619,9 +3619,10 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->addExpression('u.uid', 'sys_uid');
+	$query->addExpression('CONCAT(p.gb_scode,p.gb_pid,p.pid)', 'ppid');
 	$query = $query->fields('c', array('personnel_record_at'))
 		->fields('gk')
-		->fields('p',array('pname'))
+		->fields('p',array('pname','gb_pid','gb_pname'))
 		->where($provcondition)->where($valins)->condition('s.pass_round3_major','0','<>')
 		->extend('TableSort')->orderByHeader($header)
 		->extend('PagerDefault')->limit(40);
@@ -3655,7 +3656,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 			'<nobr>'.$r->sid.'</nobr>',
 			'<nobr>'.l($r->name, 'user/'.$r->sys_uid).'</nobr>',
 			$r->gender == 1 ? t('Male'): t('Female'),
-			l($r->pname, 'signup/3rdround/profession/'.$r->profession_major, array(
+			l(sprintf("%s(%s)",$r->gb_pname,$r->pname), 'signup/3rdround/profession/'.$r->profession_major, array(
 				'title' => t('Click to view the details of @prof', array('@prof' => $r->pname)))
 			),
 			$r->pass_round3_major==1?t('To be determined'):t('Determined'),
