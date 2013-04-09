@@ -2577,6 +2577,9 @@ function score_myscore_roundg() {
 }
 
 function score_cron() {
+	$query=db_select('watchdog','w')->condition('w.user',0,'<>')->condition('w.type','score')->orderBy('w.timestamp','DESC')->fields('w',array('timestamp'))->range(0,1);
+	$timestamp=$query->execute()->fetchField();
+	if($timestamp >= time()-3600*24) return;
 	// Force recalculate the total_score of all students
 	$q=db_select('vl_professions','p')->fields('p',array('pid','exams'));
 	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1);
