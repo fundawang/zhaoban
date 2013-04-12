@@ -3616,8 +3616,10 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		$provcondition='s.ucategory = 0';
 	else 
 		$provcondition="gk.province='".$prov."'";
-	if($prov=='000000' || $prov=='800000')
+	if($prov=='000000')
 		unset($header[1]);
+	if($prov=='800000')
+		$header[1]=array('data'=>t('Country / Region'), 'field'=>'gk.city_district');
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
@@ -3666,8 +3668,10 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 			),
 			$r->pass_round3_major==1?t('To be determined'):t('Determined'),
 		);
-		if($prov=='000000' || $prov=='800000')
+		if($prov=='000000')
 			unset($rows[count($rows)-1][1]);
+		if($prov=='800000')
+			$rows[count($rows)-1][1]=$province;
 	}
 	if($r->ucategory) {
 		$output .= l('<img src="/'.drupal_get_path('module','signup').'/download.png" style="vertical-align: bottom">'.t('Download database'), 'signup/3rdround/province/'.$prov.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province'))));
