@@ -3634,10 +3634,6 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		->extend('TableSort')->orderByHeader($header)
 		->extend('PagerDefault')->limit(40);
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
-	}
-	else
 	foreach($rdbo as $r) {
 		switch($r->ucategory) {
 			case uc_OWN_STUDENT:
@@ -3685,7 +3681,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 				$output .= '</div>';
 			}
 	}
-	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable students.')));
 	$output .= theme('pager');
 	$output .= "</div>";
 	
