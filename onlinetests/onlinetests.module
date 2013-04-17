@@ -269,6 +269,13 @@ function onlinetests_modify_quest($form, $form_state, $going) {
 		'#default_value' => isset($default_values->stem)?$default_values->stem:'',
 		'#required' => TRUE,
 	);
+	drupal_add_js(drupal_get_path('module','onlinetests').'/jquery.autosize.js');
+	drupal_add_js(
+		'jQuery(document).ready(function(){'.
+		"jQuery('textarea').autosize();".
+		'});',
+		'inline'
+	);
 
 	if(!empty($default_values->materials)) {
 		$materials=explode(', ', $default_values->materials);
