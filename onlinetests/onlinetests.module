@@ -60,7 +60,7 @@ function onlinetests_menu() {
 		'page callback' => 'onlinetests_onlinetests_list',
 		'access callback' => 'onlinetests_onlinetests_list_perm',
 	);
-	$items['definations/onlinetests/modify/%'] = array(
+	$items['definations/onlinetests/modify/%going'] = array(
 		'title' => 'Modify paper',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('onlinetests_modify_quest',3),
@@ -68,7 +68,7 @@ function onlinetests_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/onlinetests/op/%'] = array(
+	$items['definations/onlinetests/op/%going'] = array(
 		'title' => 'Operation on tests',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('onlinetests_operations',3),
@@ -76,7 +76,7 @@ function onlinetests_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/onlinetests/quest/%'] = array(
+	$items['definations/onlinetests/quest/%going'] = array(
 		'title' => 'Output all students quest',
 		'page callback' => 'onlinetests_quest_report',
 		'page arguments' => array(3),
@@ -84,7 +84,7 @@ function onlinetests_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/onlinetests/answers/%'] = array(
+	$items['definations/onlinetests/answers/%going'] = array(
 		'title' => 'Download the answers files',
 		'page callback' => 'onlinetests_answer_list',
 		'page arguments' => array(3),
@@ -92,7 +92,7 @@ function onlinetests_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/onlinetests/printonlinetestscore/%'] = array(
+	$items['definations/onlinetests/printonlinetestscore/%going'] = array(
 		'title' => 'Print Scroe Report',
 		'page callback' => 'onlinetests_print_score_report',
 		'page arguments' => array(3),
@@ -228,7 +228,7 @@ function onlinetests_onlinetests_list() {
 	return $output;
 }
 
-function onlinetests_onlinetests_list_perm($gid=NULL) {
+function onlinetests_onlinetests_list_perm($going=NULL) {
 	if($GLOBALS['user']->uid==0) return FALSE;
 	$is_dep_only=db_select('vl_exam','e')->condition('uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
 	if(!$is_dep_only)
@@ -236,7 +236,7 @@ function onlinetests_onlinetests_list_perm($gid=NULL) {
 	else { 
 		$goingexams=array();
 		$query=db_select('vl_going','g')->condition('department',$GLOBALS['user']->name)->fields('g');
-		if($gid) $query->condition('gid',$gid);
+		if(!empty($going)) $query->condition('gid',$going->gid);
 		$result=$query->execute();
 		foreach($result as $r) {
 			$goingexams+=explode(', ',$r->valid_exams);
@@ -249,8 +249,7 @@ function onlinetests_onlinetests_list_perm($gid=NULL) {
 	return FALSE; 
 }
 
-function onlinetests_modify_quest($form, $form_state, $gid) {
-	$going=db_select('vl_going','g')->condition('gid',$gid)->fields('g')->execute()->fetchObject();
+function onlinetests_modify_quest($form, $form_state, $going) {
 
 	$is_passed = (isset($going->status) && $going->status != ONLINETEST_STATUS_ABOUT_TO_BEGIN);
 	if($is_passed)
@@ -260,7 +259,7 @@ function onlinetests_modify_quest($form, $form_state, $gid) {
 
 	$exam_id=$going->valid_exams;
 	$form=array();
-	$default_values=db_select('vl_quest','q')->fields('q')->condition('gid',$gid)->condition('eid',$exam_id)->execute()->fetchObject();
+	$default_values=db_select('vl_quest','q')->fields('q')->condition('gid',$going->gid)->condition('eid',$exam_id)->execute()->fetchObject();
 
 	$form['stem']=array(
 		'#type' => 'textarea',
@@ -377,20 +376,15 @@ function onlinetests_modify_quest_submit($form, &$form_state) {
 	$form_state['redirect']='definations/onlinetests';
 }
 
-function onlinetests_operations($form, $form_state, $gid=NULL) {
-	$query=db_select('vl_going','g')->condition('gid',$gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$query->fields('r',array('rname'));
-	$going=$query->execute()->fetchObject();
-	if($going===false || is_null($going->status)) { drupal_access_denied(); return; }
+function onlinetests_operations($form, $form_state, $going) {
 	$operation_impossible=array('status' => 0);
 	$form=array();
 	switch($going->status) {
 		case ONLINETEST_STATUS_ABOUT_TO_BEGIN: // Now to start
 			// First check whether the students are available
-			$result=db_select('students_going','sg')->condition('sg.gid',$gid)->fields('sg',array('uid'))->execute();
+			$result=db_select('students_going','sg')->condition('sg.gid',$going->gid)->fields('sg',array('uid'))->execute();
 			foreach($result as $r) {
-				$query=db_select('students_going','sg')->condition('sg.gid',$gid,'<>')->condition('sg.uid',$r->uid)->condition('sg.status',ONLINETEST_STATUS_ONGOING)->fields('sg');
+				$query=db_select('students_going','sg')->condition('sg.gid',$going->id,'<>')->condition('sg.uid',$r->uid)->condition('sg.status',ONLINETEST_STATUS_ONGOING)->fields('sg');
 				if($query->countQuery()->execute()->fetchField()) {
 					$operation_impossible=array(
 						'status' => 1,
@@ -402,7 +396,7 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			// Now provides information to start the test
 			$form['info']=array(
 				'#type' => 'markup',
-				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+				'#markup'=>'<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>',
 			);
 			$title=t('About to start following test');
 			$description=t('The students will be able to view the quest online after the test begins.');
@@ -410,7 +404,7 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			break;
 		case ONLINETEST_STATUS_ONGOING: // Now about to end the test
 			// First to check if students are still performing examination
-			$query=db_select('students_going','sg')->condition('sg.gid',$gid)->condition('sg.status',array(ONLINETEST_STATUS_ABOUT_TO_BEGIN,ONLINETEST_STATUS_ONGOING),'in');
+			$query=db_select('students_going','sg')->condition('sg.gid',$going->gid)->condition('sg.status',array(ONLINETEST_STATUS_ABOUT_TO_BEGIN,ONLINETEST_STATUS_ONGOING),'in');
 			$query->innerJoin('students','s','s.uid=sg.uid');
 			$query->addField('s','name');
 			$query->fields('sg',array('uid','status'));
@@ -433,7 +427,7 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			// Now provides information to start the test
 			$form['info']=array(
 				'#type' => 'markup',
-				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+				'#markup'=>'<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>',
 			);
 			$title=t('About to end the test').' - '.$going->gname;
 			$description=t('The students will be forced to end the test.');
@@ -451,7 +445,7 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			// Now provides information to start the test
 			$form['info']=array(
 				'#type' => 'markup',
-				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+				'#markup'=>'<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>',
 			);
 			// Now fetch the total assigned number of students
 			$total=db_select('students_going','sg')->condition('sg.gid',$going->gid)->fields('sg')->countQuery()->execute()->fetchField();
@@ -467,7 +461,7 @@ function onlinetests_operations($form, $form_state, $gid=NULL) {
 			$title=t('Stop review').' - '.$going->gname;
 			$form['info']=array(
 				'#type' => 'markup',
-				'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>',
+				'#markup'=>'<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>',
 			);
 			$description=t('Stop the reviewing will cause students id showing in score report and the answer files downloading page.');
 			break;
@@ -603,7 +597,7 @@ function onlinetests_file_download($uri) {
 	return NULL;
 }
 
-function onlinetests_myonlinetests_perm($eid=NULL) {
+function onlinetests_myonlinetests_perm() {
 	$query=db_select('vl_exam','e')->condition('e.etype',3);
 	$query->innerJoin('students_going','sg','sg.eid=e.eid');
 	$query->innerJoin('vl_going','g','g.gid=sg.gid');
@@ -841,8 +835,8 @@ function onlinetests_onlinetests_quest_perm($gid=NULL) {
 	return onlinetests_admin_perm() && $query->execute()->fetchField();
 }
 
-function onlinetests_quest_report($gid=NULL) {
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->condition('g.status',ONLINETEST_STATUS_ONGOING)->fields('g');
+function onlinetests_quest_report($going) {
+	$query=db_select('vl_going','g')->condition('g.gid',$going->gid)->condition('g.status',ONLINETEST_STATUS_ONGOING)->fields('g');
 	$query->innerJoin('vl_room','r','g.place=r.rid');
 	$query->addField('r','rname');
 	$query->innerJoin('students_going','sg','sg.gid=g.gid');
@@ -852,7 +846,7 @@ function onlinetests_quest_report($gid=NULL) {
 	$query->distinct();
 	$r=$query->execute();
 
-	if(!$r) { return MENU_ACCESS_DENIED; }
+	if(empty($r)) { return MENU_ACCESS_DENIED; }
 
 	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','onlinetests').'/../tcpdf/tcpdf.php');
@@ -941,56 +935,48 @@ function onlinetests_quest_report($gid=NULL) {
 	$pdf->Output(variable_get('zhaoban_current_year',date('Y')).'_'.$gid.'.pdf', 'I');
 }
 
-function onlinetests_print_score_report($gid=NULL)
+function onlinetests_print_score_report($going)
 {
 	require_once(drupal_get_path('module','going').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','going').'/../tcpdf/tcpdf.php');
 	
-	$query=db_select('vl_going','g')->fields('g')->condition('g.gid',$gid);
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$going=$query->fields('r')->execute()->fetchObject();
 	$exam_ids=explode(', ', $going->valid_exams);
 	
 	set_time_limit(300);
 
 	// Extend the TCPDF class to create custom Header and Footer
 	class MYPDF extends TCPDF {
+		//Page header
+		public function Header() {
+			$this->setHeaderMargin(30);
+			$this->SetX(10);
+			$this->SetY(8);
+			// Set font
+			$this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
+			// Title
+			$header_titles=explode(',', $this->header_title);
+			$this->Cell(0, 10, $header_titles[0], 0, false, 'C', 0, '', 0, false, 'M', 'M');
+			$this->Ln();
+			$this->SetFont('droidsansfallbackfull', 'B', 15, '', true);
+			$this->Cell(60, 5, $header_titles[1], 0, false, 'C', 0, '', 0, false, 'M', 'M');
+			$this->Cell(0, 5, $header_titles[2], 0, false, 'C', 0, '', 0, false, 'M', 'M');
+			$this->SetFont('droidsansfallbackfull', 'B', 12, '', true);
+			$this->Ln();
+			$this->Cell(10, 2, '序号',0, false, 'C');
+			$this->Cell(40, 2, t('考生编号'),0, false, 'C');
+			$this->Cell(30, 2, '专业',0, false, 'C');
+			$this->Cell(55, 2, '成绩',0, false, 'C');
+			$this->Cell(52, 2, '备注',0, false, 'C');
+			$this->Line(6,32,200,32);
+		}
 
-	//Page header
-	public function Header() {
-		$this->setHeaderMargin(30);
-		$this->SetX(10);
-		$this->SetY(8);
-	// Set font
-	$this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
-	// Title
-	$header_titles=explode(',', $this->header_title);
-	$this->Cell(0, 10, $header_titles[0], 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	$this->Ln();
-	$this->SetFont('droidsansfallbackfull', 'B', 15, '', true);
-	$this->Cell(60, 5, $header_titles[1], 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	$this->Cell(0, 5, $header_titles[2], 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	$this->SetFont('droidsansfallbackfull', 'B', 12, '', true);
-	$this->Ln();
-	$this->Cell(10, 2, '序号',0, false, 'C');
-	$this->Cell(40, 2, t('考生编号'),0, false, 'C');
-	$this->Cell(30, 2, '专业',0, false, 'C');
-	$this->Cell(55, 2, '成绩',0, false, 'C');
-	$this->Cell(52, 2, '备注',0, false, 'C');
-	$this->Line(6,32,200,32);
-	}
-
-	// Page footer
-	public function Footer() {
-	// Position at 15 mm from bottom
-	$this->SetY(-13);
-	$this->SetX(5);
-	//$this->Line(5,198,292,198,array('width'=>0.5));
-	// Set font
-	// Page number
-	$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
-	$this->Cell(220,12, '评委签字', 0, false, 'C');
-	}
+		// Page footer
+		public function Footer() {
+			$this->SetY(-13);
+			$this->SetX(5);
+			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
+			$this->Cell(220,12, '评委签字', 0, false, 'C');
+		}
 	}
 	// create new PDF document
 	$pdf = new MYPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
@@ -1002,11 +988,6 @@ function onlinetests_print_score_report($gid=NULL)
 	// set document information
 	$pdf->SetCreator(PDF_CREATOR);
 
-	// Set font
-	// dejavusans is a UTF-8 Unicode font, if you only need to
-	// print standard ASCII chars, you can use core fonts like
-	// helvetica or times to reduce file size.
-	//$pdf->SetFont('droidsansfallback', 'B', 10, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(true);
 
@@ -1019,7 +1000,7 @@ function onlinetests_print_score_report($gid=NULL)
 	//set some language-dependent strings
 	$pdf->setLanguageArray($l);
 	
-	$query=db_select('students_going','sg')->condition('sg.gid',$gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers');
+	$query=db_select('students_going','sg')->condition('sg.gid',$going->gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers');
 	$query->innerJoin('students','s','sg.uid=s.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->groupBy('s.uid')->fields('s',array('uid','name'))->fields('sg',array('uid','gorder','answers'))->fields('p',array('pname'))->orderRandom();
@@ -1057,8 +1038,8 @@ function onlinetests_print_score_report($gid=NULL)
 	
 }
 
-function onlinetests_print_score_report_perm($gid=NULL) {
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->condition('g.status',ONLINETEST_STATUS_INTERVIEWING,'>=')->fields('g');
+function onlinetests_print_score_report_perm($going) {
+	$query=db_select('vl_going','g')->condition('g.gid',$going->gid)->condition('g.status',ONLINETEST_STATUS_INTERVIEWING,'>=')->fields('g');
 	$r=$query->countQuery()->execute()->fetchField();
 	return user_access('print order list') && $r;
 }
@@ -1072,20 +1053,16 @@ function _onlinetests_formatRawSize($bytes) {
 	}
 }
 
-function onlinetests_answer_list($gid=NULL) {
-	$query=db_select('vl_going','g')->condition('gid',$gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$query->fields('r',array('rname'));
-	$going=$query->execute()->fetchObject();
+function onlinetests_answer_list($going) {
 	drupal_set_title(sprintf('%s - %s', t('Download the answers files'), $going->gname));
 	$output='';
 	
-	$output.='<div class="messages">'._going_datetime_to_string($going->time).' / '.$going->gname.' / '.$going->rname.'</div>';
+	$output.='<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>';
 
 	// Now fetch the total assigned number of students
-	$total=db_select('students_going','sg')->condition('sg.gid',$gid)->fields('sg')->countQuery()->execute()->fetchField();
+	$total=db_select('students_going','sg')->condition('sg.gid',$going->gid)->fields('sg')->countQuery()->execute()->fetchField();
 	// Now calculate the valid answers
-	$valid=db_select('students_going','sg')->condition('sg.gid',$gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers')->fields('sg')->countQuery()->execute()->fetchField();
+	$valid=db_select('students_going','sg')->condition('sg.gid',$going->gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers')->fields('sg')->countQuery()->execute()->fetchField();
 	$output.=t('There are @total students in this going in total, while @valid of them has finished their answers.',array('@total'=>$total, '@valid'=>$valid));
 	$header=array(
 		t('No.'),
@@ -1096,7 +1073,7 @@ function onlinetests_answer_list($gid=NULL) {
 	if($going->status==ONLINETEST_STATUS_INTERVIEWING)
 		unset($header[2]);
 	$rows=array();
-	$query=db_select('students_going','sg')->condition('sg.gid',$gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers')->fields('sg')->orderRandom();
+	$query=db_select('students_going','sg')->condition('sg.gid',$going->gid)->condition('sg.status',ONLINETEST_STATUS_ENDED)->isNotNull('sg.answers')->fields('sg')->orderRandom();
 	$query->innerJoin('students','s','sg.uid=s.uid');
 	$query->fields('s',array('name'));
 	$result=$query->execute();
