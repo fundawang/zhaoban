@@ -161,7 +161,7 @@ function signup_menu() {
 		'access callback' => 'signup_access_overview',
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 	);
-	$items['signup/overview/profession/%'] = array(
+	$items['signup/overview/profession/%profession'] = array(
 		'title' => 'By Profession',
 		'description' => "Check the draft of students signup",
 		'page callback' => 'signup_overview_by_profession_detail',
@@ -200,7 +200,7 @@ function signup_menu() {
 		'access callback' => 'signup_2nd_overview',
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 	);
-	$items['signup/2ndround/profession/%'] = array(
+	$items['signup/2ndround/profession/%profession'] = array(
 		'title' => 'By Profession',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_2nd_round_by_profession_detail',
@@ -221,7 +221,7 @@ function signup_menu() {
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'access callback' => 'signup_3rd_overview',
 	);
-	$items['signup/3rdround/profession/%'] = array(
+	$items['signup/3rdround/profession/%profession'] = array(
 		'title' => 'By Profession',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_3rd_round_by_profession_detail',
@@ -273,7 +273,7 @@ function signup_menu() {
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'access callback' => 'signup_ground_overview',
 	);
-	$items['signup/ground/profession/%'] = array(
+	$items['signup/ground/profession/%profession'] = array(
 		'title' => 'By Profession',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_ground_by_profession_detail',
@@ -2840,7 +2840,7 @@ function signup_overview_by_profession() {
 	return $output;
 }
 
-function signup_overview_by_profession_detail($prof=NULL) {
+function signup_overview_by_profession_detail($prof) {
 	$cookie_examplace='1';
 	
 	if(isset($_COOKIE["examplace"])) {
@@ -2856,16 +2856,7 @@ function signup_overview_by_profession_detail($prof=NULL) {
 	
 	drupal_add_js(drupal_get_path('module', 'signup') .'/signup.js');
 
-	$query=db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$prof);
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query=$query->fields('d',array('dname'));
-	$r=$query->execute()->fetchObject();
-	$profession_major = t('!dname!pname', array(
-					'!dname' => $r->dname,
-					'!pname' => $r->pname,
-		));
-
-	drupal_set_title(t('By Profession').' - '.$r->pname);
+	drupal_set_title(t('By Profession').' - '.$prof->pname);
 
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -2873,16 +2864,17 @@ function signup_overview_by_profession_detail($prof=NULL) {
 		$valins="1";
 
 	if($prof)
-		$sql_department_insert = "p.pid='".$prof."'";
+		$sql_department_insert = "p.pid='".$prof->pid."'";
 	else
 		$sql_department_insert = '1';
+
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
 	
 	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
 	$options=array('000000'=>t('All students'));
 	$options+=array((string)($r->cid)=>$r->name);
 
-	$query=db_select('vl_profession_place','p')->condition('p.pid',$prof);
+	$query=db_select('vl_profession_place','p')->condition('p.pid',$prof->pid);
 	$query->innerJoin('vl_city_district','cd','p.examplace=cd.cid');
 	$query=$query->fields('cd',array('cid','name'))->orderBy('cd.cid');
 	$rdbo=$query->execute();
@@ -3270,26 +3262,11 @@ function signup_2nd_round_by_profession() {
 	return $output;
 }
 
-function signup_2nd_round_by_profession_detail($prof=NULL) {
+function signup_2nd_round_by_profession_detail($prof) {
+	drupal_set_title(t('By Profession').' - '.$prof->pname);
 	
-	$query=db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$prof);
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query=$query->fields('d',array('dname'));
-	$r=$query->execute()->fetchObject();
-	$profession_major = t('!dname!pname', array(
-					'!dname' => $r->dname,
-					'!pname' => $r->pname,
-		));
-
-	drupal_set_title(t('By Profession').' - '.$r->pname);
-	
-	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round1_major','0','<>')->countQuery()->execute()->fetchField() >0)
-		$valins="s.validated=1 ";
-	else 
-		$valins="1";
-
 	if($prof)
-		$sql_department_insert = "p.pid='".$prof."'";
+		$sql_department_insert = "p.pid='".$prof->pid."'";
 	else
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
@@ -3307,7 +3284,7 @@ function signup_2nd_round_by_profession_detail($prof=NULL) {
 		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
 	);
 	
-	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof->pid);
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -3315,7 +3292,7 @@ function signup_2nd_round_by_profession_detail($prof=NULL) {
 	$query->addExpression('u.uid', 'sys_uid');
 	$query = $query->fields('c', array('personnel_record_at'))
 		->fields('gk')
-		->where($sql_department_insert)->where($valins)->condition('s.pass_round1_major','0','<>')
+		->where($sql_department_insert)->condition('s.pass_round1_major','0','<>')
 		->extend('TableSort')->orderByHeader($header)
 		->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
@@ -3418,26 +3395,12 @@ function signup_3rd_round_by_profession() {
 	return $output;
 }
 
-function signup_3rd_round_by_profession_detail($prof=NULL) {
+function signup_3rd_round_by_profession_detail($prof) {
 	
-	$query=db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$prof);
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query=$query->fields('d',array('dname'));
-	$r=$query->execute()->fetchObject();
-	$profession_major = t('!dname!pname', array(
-		'!dname' => $r->dname,
-		'!pname' => $r->pname,
-	));
-
-	drupal_set_title(t('By Profession').' - '.$r->pname);
+	drupal_set_title(t('By Profession').' - '.$prof->pname);
 	
-	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_round3_major','0','<>')->countQuery()->execute()->fetchField() >0)
-		$valins="s.validated=1 ";
-	else 
-		$valins="1";
-
 	if($prof)
-		$sql_department_insert = "p.pid='".$prof."'";
+		$sql_department_insert = "p.pid='".$prof->pid."'";
 	else
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
@@ -3455,21 +3418,21 @@ function signup_3rd_round_by_profession_detail($prof=NULL) {
 		array('data' =>t('Province'), 'field'=>'gk.province'),
 	);
 	
-	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof->pid);
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
-	$query->condition('ts.pid',$prof);
+	$query->condition('ts.pid',$prof->pid);
 	$query->addExpression('u.uid', 'sys_uid');
 	$query = $query->fields('c', array('personnel_record_at'))
 		->fields('gk')
 		->fields('ts',array('outrank'))
-		->where($sql_department_insert)->where($valins)->condition('s.pass_round3_major','0','<>')
+		->where($sql_department_insert)->condition('s.pass_round3_major','0','<>')
 		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
 		->extend('PagerDefault')->limit(20);
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+	if(in_array(substr($prof->pid,0,2),array('D5','D6','D7','D8'))) {
 		$query->orderBy('ts.total_rank');
 	} else {
 		$query->orderBy('ts.total_score', 'desc');
@@ -4060,18 +4023,8 @@ function signup_ground_by_profession() {
 	return $output;
 }
 
-function signup_ground_by_profession_detail($prof=NULL) {
-	
-	$query=db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$prof);
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query=$query->fields('d',array('dname'));
-	$r=$query->execute()->fetchObject();
-	$profession_major = t('!dname!pname', array(
-		'!dname' => $r->dname,
-		'!pname' => $r->pname,
-	));
-
-	drupal_set_title(t('By Profession').' - '.$r->pname);
+function signup_ground_by_profession_detail($prof) {
+	drupal_set_title(t('By Profession').' - '.$prof->pname);
 	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->condition('s.pass_roundg_major','0','<>')->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -4079,7 +4032,7 @@ function signup_ground_by_profession_detail($prof=NULL) {
 		$valins="1";
 
 	if($prof)
-		$sql_department_insert = "p.pid='".$prof."'";
+		$sql_department_insert = "p.pid='".$prof->pid."'";
 	else
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
@@ -4099,7 +4052,7 @@ function signup_ground_by_profession_detail($prof=NULL) {
 	
 	//$tablesort = tablesort_sql($header);
 	//var_dump($cookie_examplace);
-	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof);
+	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof->pid);
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -4109,7 +4062,7 @@ function signup_ground_by_profession_detail($prof=NULL) {
 	$query = $query->fields('c', array('personnel_record_at'))
 		->fields('gk')
 		->fields('ts',array('outrank'))
-		->where($sql_department_insert)->where($valins)->condition('s.pass_roundg_major','0','<>')
+		->where($sql_department_insert)->condition('s.pass_roundg_major','0','<>')
 		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
 		->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
