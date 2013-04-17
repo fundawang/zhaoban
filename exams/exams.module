@@ -81,20 +81,20 @@ function exams_menu() {
 		'page arguments' => array('exams_exam_edit'),
 		'type' => MENU_LOCAL_TASK,
 	);
-	$items['definations/exams/edit/%'] = array(
+	$items['definations/exams/edit/%exam'] = array(
 		'title' => 'Edit Exams',
 		'access callback' => 'user_access',
 		'access arguments' => array('administer exams'),
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array('exams_exam_edit'),
+		'page arguments' => array('exams_exam_edit', 3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/exams/delete/%'] = array(
+	$items['definations/exams/delete/%exam'] = array(
 		'title' => 'Delete Exams',
 		'access callback' => 'user_access',
 		'access arguments' => array('administer exams'),
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array('exams_exam_delete'),
+		'page arguments' => array('exams_exam_delete', 3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
 
@@ -123,20 +123,20 @@ function exams_menu() {
 		'page arguments' => array('exams_profession_edit'),
 		'type' => MENU_LOCAL_TASK,
 	);
-	$items['definations/professions/edit/%'] = array(
+	$items['definations/professions/edit/%profession'] = array(
 		'title' => 'Edit Profession',
 		'access callback' => 'user_access',
 		'access arguments' => array('administer exams'),
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array('exams_profession_edit'),
+		'page arguments' => array('exams_profession_edit',3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/professions/delete/%'] = array(
+	$items['definations/professions/delete/%profession'] = array(
 		'title' => 'Delete Profession',
 		'access callback' => 'user_access',
 		'access arguments' => array('administer exams'),
 		'page callback' => 'drupal_get_form',
-		'page arguments' => array('exams_profession_delete'),
+		'page arguments' => array('exams_profession_delete',3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
 
@@ -150,6 +150,31 @@ function exams_definations_perm () {
 		$r=$r||user_access('administer online exams');
 	return $r;
 }
+
+/**
+ * Provides a exam load helper.
+ * @return
+ *    The loaded exam.
+*/
+function exam_load($eid) {
+	return db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
+}
+
+/**
+ * Provides a profession load helper.
+ * @return
+ *    The loaded profession.
+*/
+function profession_load($pid) {
+	$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p')->execute()->fetchObject();
+	if(!empty($prof)) {
+		$exams=unserialize($prof->exams);
+		ksort($exams);
+		$prof->exams=$exams;
+	}
+	return $prof;
+}
+
 /**
  * Provide a single block from the administration menu as a page.
  * This function is often a destination for these blocks.
@@ -258,15 +283,14 @@ function exams_professionlist() {
 	return $output;
 }
 
-function exams_exam_edit() {
-
+function exams_exam_edit($form, $form_state, $exam=NULL) {
 	// if editing existing exam, we'll need to fetch the original values at first.
-	if(!is_null(arg(3))) {
-		$default_values = db_query('SELECT * from {vl_exam} e WHERE e.eid=\''.arg(3).'\'')->fetchObject();
+	if(!empty($exam)) {
+		$default_values = $exam;
 		$form['eidv'] = array(
 			'#type' => 'item',
 			'#title' => t('Exam ID'),
-			'#markup' => arg(3),
+			'#markup' => $exam->eid,
 			'#required' => 'true',
 		);
 	}
@@ -406,9 +430,8 @@ function exams_exam_edit_submit($form, &$form_state) {
 	$form_state['redirect'] = 'definations/exams';
 }
 
-function exams_exam_delete() {
-	$ename = db_query('SELECT e.ename FROM {vl_exam} e WHERE e.eid=:eid', array(':eid'=>arg(3)))->fetchField();
-	$form = confirm_form(NULL, t('Are you sure you want to delete exam @ename?',array('@ename'=>$ename)), 'definations/exams', null, t('Delete'));
+function exams_exam_delete($form, $form_state, $exam) {
+	$form = confirm_form(NULL, t('Are you sure you want to delete exam @ename?',array('@ename'=>$exam->ename)), 'definations/exams', null, t('Delete'));
 
 	return $form;
 }
@@ -427,24 +450,21 @@ function exams_exam_delete_submit($form, &$form_state) {
 	$form_state['redirect'] = 'definations/exams';
 }
 
-function exams_profession_edit() {
+function exams_profession_edit($form, $form_state, $profession=NULL) {
 
 	$form=array();
 
 	// if editing existing profession, we'll need to fetch the original values at first.
-	if(!is_null(arg(3))) {
-		$default_values = db_query('SELECT p.* from {vl_professions} p WHERE p.pid=\''.arg(3).'\'')->fetchObject();
-
-		$defaults=unserialize($default_values->exams);
-		ksort($defaults);
-		$default_values_keys=array_keys($defaults);
-		$default_values_weights=array_values($defaults);
+	if(!empty($profession)) {
+		$default_values = $profession;
+		$default_values_keys=array_keys($profession->exams);
+		$default_values_weights=array_values($profession->exams);
 		$form['pidv'] = array(
 			'#type' => 'item',
 			'#title' => t('Profession ID'),
 			'#required' => 'true',
 			'#disabled' => TRUE,
-			'#markup' => arg(3),
+			'#markup' => $profession->pid,
 		);
 	}
 	else {
@@ -625,9 +645,8 @@ function exams_profession_edit_submit($form, &$form_state) {
 	$form_state['redirect'] = 'definations/professions';
 }
 
-function exams_profession_delete() {
-	$pname = db_query('SELECT p.pname FROM {vl_professions} p WHERE p.pid=:pid', array(':pid'=>arg(3)))->fetchField();
-	$form = confirm_form(NULL, t('Are you sure you want to delete profession @pname??',array('@pname'=>$pname)), 'definations/professions', NULL, t('Delete'));
+function exams_profession_delete($form, $form_state, $profession) {
+	$form = confirm_form(NULL, t('Are you sure you want to delete profession @pname?',array('@pname'=>$profession->pname)), 'definations/professions', NULL, t('Delete'));
 
 	return $form;
 }
