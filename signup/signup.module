@@ -2928,8 +2928,8 @@ function signup_overview_by_profession_detail($prof) {
 			->extend('TableSort')->orderByHeader($header)
 			->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	if($rdbo->rowCount()==0) {
+			return MENU_NOT_FOUND;
 	}
 	else
 	foreach($rdbo as $r) {
@@ -3296,8 +3296,8 @@ function signup_2nd_round_by_profession_detail($prof) {
 		->extend('TableSort')->orderByHeader($header)
 		->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-		$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	if($rdbo->rowCount()==0) {
+			return MENU_NOT_FOUND;
 	}
 	else
 	foreach($rdbo as $r) {
@@ -3439,8 +3439,8 @@ function signup_3rd_round_by_profession_detail($prof) {
 	}
 	$query->orderBy('s.uid');
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	if($rdbo->rowCount()==0) {
+			return MENU_NOT_FOUND;
 	}
 	else
 	foreach($rdbo as $r) {
@@ -4066,8 +4066,8 @@ function signup_ground_by_profession_detail($prof) {
 		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
 		->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	if($rdbo->rowCount()==0) {
+			return MENU_NOT_FOUND;
 	}
 	else
 	foreach($rdbo as $r) {
