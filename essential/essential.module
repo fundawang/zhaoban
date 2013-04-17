@@ -39,9 +39,10 @@ function essential_init() {
 
 
 /**
- * Implementation of hook_menu().
+ * Implementation of province load helper function.
  */
-function essential_menu() {
+function province_load($pid) {
+	return db_select('vl_province','p')->condition('p.pid',$pid)->fields('p')->execute()->fetchObject();
 }
 
 /**
