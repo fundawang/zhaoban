@@ -178,7 +178,7 @@ function signup_menu() {
 		'access arguments'=> array('view draft'),
 	);
 
-	$items['signup/overview/province/%'] = array(
+	$items['signup/overview/province/%province'] = array(
 		'title' => 'By Profession',
 		'description' => "Check the draft of students signup",
 		'page callback' => 'signup_overview_by_province_detail',
@@ -236,7 +236,7 @@ function signup_menu() {
 		'type' => MENU_LOCAL_TASK,
 		'access callback' => 'signup_3rd_overview',
 	);
-	$items['signup/3rdround/province/%'] = array(
+	$items['signup/3rdround/province/%province'] = array(
 		'title' => 'By Province',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_3rd_round_by_province_detail',
@@ -244,7 +244,7 @@ function signup_menu() {
 		'access callback' => 'signup_3rd_overview',
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['signup/3rdround/province/%/download'] = array(
+	$items['signup/3rdround/province/%province/download'] = array(
 		'title' => 'Download database',
 		'description' => "Download standard database for this province",
 		'page callback' => 'signup_3rd_round_by_province_download',
@@ -252,7 +252,7 @@ function signup_menu() {
 		'access callback' => 'signup_3rd_overview',
 		'type' => MENU_CALLBACK,
 	);
-	$items['signup/3rdround/province/%/report'] = array(
+	$items['signup/3rdround/province/%province/report'] = array(
 		'title' => 'Print Report',
 		'description' => "Download printable report for this province",
 		'page callback' => 'signup_3rd_round_by_province_report',
@@ -288,7 +288,7 @@ function signup_menu() {
 		'type' => MENU_LOCAL_TASK,
 		'access callback' => 'signup_ground_overview',
 	);
-	$items['signup/ground/province/%'] = array(
+	$items['signup/ground/province/%province'] = array(
 		'title' => 'By Province',
 		'description' => "Check individual profession",
 		'page callback' => 'signup_ground_by_province_detail',
@@ -296,7 +296,7 @@ function signup_menu() {
 		'access callback' => 'signup_ground_overview',
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['signup/ground/province/%/report'] = array(
+	$items['signup/ground/province/%province/report'] = array(
 		'title' => 'Print Report',
 		'description' => "Download printable report for this province",
 		'page callback' => 'signup_ground_by_province_report',
@@ -3043,12 +3043,8 @@ function signup_overview_by_province() {
 	
 }
 
-function signup_overview_by_province_detail($prov=NULL) {
-	
-	$query=db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$prov);
-	$r=$query->execute()->fetchObject();
-
-	drupal_set_title(t('By Province').' - '.$r->name);
+function signup_overview_by_province_detail($prov) {
+	drupal_set_title(t('By Province').' - '.$prov->name);
 	
 	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
 		$valins="s.validated=1 ";
@@ -3071,7 +3067,7 @@ function signup_overview_by_province_detail($prov=NULL) {
 	if($prov=='000000')
 	$provcondition='s.ucategory = 0';
 	else
-	$provcondition="gk.province='".$prov."'";
+	$provcondition="gk.province='".$prov->pid."'";
 	
 	//$tablesort = tablesort_sql($header);
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
@@ -3087,8 +3083,8 @@ function signup_overview_by_province_detail($prov=NULL) {
 		->extend('TableSort')->orderByHeader($header)
 		->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-		$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	if($rdbo->rowCount()==0) {
+		return MENU_NOT_FOUND;
 	}
 	else
 	foreach($rdbo as $r) {
@@ -3549,19 +3545,8 @@ function signup_3rd_round_by_province() {
 	
 }
 
-function signup_3rd_round_by_province_detail($prov=NULL) {
-	
-	$query=db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$prov);
-	$r=$query->execute()->fetchObject();
-
-	drupal_set_title(t('By Province').' - '.$r->name);
-	
-	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
-		$valins="s.validated=1 ";
-	else 
-		$valins="1";
-	
-	$output = '';
+function signup_3rd_round_by_province_detail($prov) {
+	drupal_set_title(t('By Province').' - '.$prov->name);
 	
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
 	
@@ -3575,13 +3560,9 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 		array('data' =>t('Status'), 'field'=>'s.pass_round3_major'),
 	);
 
-	if($prov=='000000')
-		$provcondition='s.ucategory = 0';
-	else 
-		$provcondition="gk.province='".$prov."'";
-	if($prov=='000000')
+	if($prov->pid=='000000')
 		unset($header[1]);
-	if($prov=='800000')
+	if($prov->pid=='800000')
 		$header[1]=array('data'=>t('Country / Region'), 'field'=>'gk.city_district');
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
@@ -3593,10 +3574,13 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 	$query = $query->fields('c', array('personnel_record_at'))
 		->fields('gk')
 		->fields('p',array('pname','gb_pid','gb_pname'))
-		->where($provcondition)->where($valins)->condition('s.pass_round3_major','0','<>')
+		->condition('gk.province',$prov->pid)
+		->condition('s.pass_round3_major','0','<>')
 		->extend('TableSort')->orderByHeader($header)
 		->extend('PagerDefault')->limit(40);
 	$rdbo=$query->execute();
+	if($rdbo->rowCount()==0)
+		return MENU_NOT_FOUND;
 	foreach($rdbo as $r) {
 		switch($r->ucategory) {
 			case uc_OWN_STUDENT:
@@ -3627,20 +3611,20 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 			),
 			$r->pass_round3_major==1?t('To be determined'):t('Determined'),
 		);
-		if($prov=='000000')
+		if($prov->pid=='000000')
 			unset($rows[count($rows)-1][1]);
-		if($prov=='800000')
+		if($prov->pid=='800000')
 			$rows[count($rows)-1][1]=$province;
 	}
 	if($r->ucategory) {
-		$output .= l('<img src="/'.drupal_get_path('module','signup').'/download.png" style="vertical-align: bottom">'.t('Download database'), 'signup/3rdround/province/'.$prov.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province'))));
+		$output .= l('<img src="/'.drupal_get_path('module','signup').'/download.png" style="vertical-align: bottom">'.t('Download database'), 'signup/3rdround/province/'.$prov->pid.'/download', array('html'=>TRUE,'attributes'=>array('title'=>t('Download standard database for this province'))));
 		$output .= '&nbsp;';
-		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/3rdround/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
+		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/3rdround/province/'.$prov->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
 		$output .= '<p/>';
 		if(module_exists('kuaidi100'))
 			if($r->ucategory==uc_MAINLAND_STUDENT || $r->ucategory==uc_HKTW_STUDENT) {
 				$output .= '<div class="container-inline">';
-				$output .= drupal_render(drupal_get_form('signup_3rd_round_province_delivery', $prov));
+				$output .= drupal_render(drupal_get_form('signup_3rd_round_province_delivery', $prov->pid));
 				$output .= '</div>';
 			}
 	}
@@ -3652,10 +3636,7 @@ function signup_3rd_round_by_province_detail($prov=NULL) {
 }
 
 function signup_3rd_round_by_province_download($prov) {
-	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
-	if(!isset($r) || !($r->name))
-		return FALSE;
-	$provname=$r->simplified_name;
+	$provname=$prov->simplified_name;
 	
 	$def = array(
 		array("KSH",		"C",	14),
@@ -3692,7 +3673,7 @@ function signup_3rd_round_by_province_download($prov) {
 		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and s.profession_major=ss.pid');
 		$query=$query->fields('ss',array('total_score','total_rank','rank'));
 	}
-	$query=$query->condition('sg.province',$prov)
+	$query=$query->condition('sg.province',$prov->pid)
 		->fields('s',array('name','idcard_number','gender'))
 		->fields('sc',array('personnel_record_at'))
 		->fields('sg',array('sid'))
@@ -3701,7 +3682,7 @@ function signup_3rd_round_by_province_download($prov) {
 	$result=$query->execute();
 	
 	// If there is no any record, output 404 error.
-	if($query->countQuery()->execute()->fetchField()==0) {
+	if($result->rowCount()==0) {
 		return MENU_NOT_FOUND;
 	}
 		
@@ -3751,11 +3732,8 @@ function signup_3rd_round_by_province_download($prov) {
 	exit;
 }
 
-function signup_3rd_round_by_province_report($prov=NULL) {
-	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
-	if(!isset($r) || !($r->name))
-		return FALSE;
-	$provname=$r->name;
+function signup_3rd_round_by_province_report($prov) {
+	$provname=$prov->name;
 	
 	$query=db_select('students','s')->condition('s.pass_round3_major','0','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -3766,7 +3744,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and ss.pid=s.profession_major');
 		$query=$query->fields('ss',array('total_score','total_rank','rank'));
 	}
-	$query=$query->condition('sg.province',$prov)
+	$query=$query->condition('sg.province',$prov->pid)
 		->fields('s',array('name','idcard_number','gender'))
 		->fields('sc',array('personnel_record_at'))
 		->fields('sg',array('sid'))
@@ -3776,7 +3754,7 @@ function signup_3rd_round_by_province_report($prov=NULL) {
 	$result=$query->execute();
 	
 	// If there is no any record, output 404 error.
-	if($query->countQuery()->execute()->fetchField()==0) {
+	if($result->rowCount()==0) {
 		return MENU_NOT_FOUND;
 	}
 	
@@ -4177,19 +4155,8 @@ function signup_ground_by_province() {
 	
 }
 
-function signup_ground_by_province_detail($prov=NULL) {
-	
-	$query=db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$prov);
-	$r=$query->execute()->fetchObject();
-
-	drupal_set_title(t('By Province').' - '.$r->name);
-	
-	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
-		$valins="s.validated=1 ";
-	else 
-		$valins="1";
-	
-	$output = '';
+function signup_ground_by_province_detail($prov) {
+	drupal_set_title(t('By Province').' - '.$prov->name);
 	
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
 	
@@ -4203,12 +4170,6 @@ function signup_ground_by_province_detail($prov=NULL) {
 		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
 	);
 
-	if($prov=='000000')
-	$provcondition='s.ucategory = 0';
-	else
-	$provcondition="gk.province='".$prov."'";
-	
-	//$tablesort = tablesort_sql($header);
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s');
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
@@ -4218,12 +4179,13 @@ function signup_ground_by_province_detail($prov=NULL) {
 	$query = $query->fields('c', array('personnel_record_at'))
 					->fields('gk')
 					->fields('p',array('gb_pid','gb_pname','gb_scode','pname'))
-					->where($provcondition)->where($valins)->condition('s.pass_roundg_major','0','<>')
+					->condition('gk.province',$prov->pid)
+					->condition('s.pass_roundg_major','0','<>')
 			->extend('TableSort')->orderByHeader($header)->orderBy('gk.sid')
 			->extend('PagerDefault')->limit(40);
 	$rdbo=$query->execute();
-	if(count($rdbo)==0) {
-			$rows[][] = array('data'=> t('N/A'), 'colspan'=>(string)count($header));
+	if($rdbo->rowCount()==0) {
+		return MENU_NOT_FOUND;
 	}
 	else
 	foreach($rdbo as $r) {
@@ -4261,7 +4223,7 @@ function signup_ground_by_province_detail($prov=NULL) {
 		);
 	}
 	if($r->ucategory) {
-		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/ground/province/'.$prov.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
+		$output .= l('<img src="/'.drupal_get_path('module','signup').'/printer.png" style="vertical-align: bottom">'.t('Print Report'), 'signup/ground/province/'.$prov->pid.'/report', array('html'=>TRUE,'attributes'=>array('title'=>t('Download printable report for this province'))));
 		$output .= '<p/>';
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
@@ -4271,11 +4233,8 @@ function signup_ground_by_province_detail($prov=NULL) {
 	return $output;
 }
 
-function signup_ground_by_province_report($prov=NULL) {
-	$r=db_select('vl_province','p')->fields('p')->condition('p.pid',$prov)->execute()->fetchObject();
-	if(!isset($r) || !($r->name))
-		return FALSE;
-	$provname=$r->name;
+function signup_ground_by_province_report($prov) {
+	$provname=$prov->name;
 	
 	$query=db_select('students','s')->condition('s.pass_roundg_major','0','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -4286,7 +4245,7 @@ function signup_ground_by_province_report($prov=NULL) {
 		$query->innerJoin('students_total_score','ss','s.uid=ss.uid');
 		$query=$query->fields('ss',array('total_score','rank'));
 	}
-	$query=$query->condition('sg.province',$prov)
+	$query=$query->condition('sg.province',$prov->pid)
 		->fields('s',array('name','idcard_number','gender'))
 		->fields('sc',array('personnel_record_at'))
 		->fields('sg',array('sid','score_total','is_math_subjects'))
@@ -4296,7 +4255,7 @@ function signup_ground_by_province_report($prov=NULL) {
 	$result=$query->execute();
 	
 	// If there is no any record, output 404 error.
-	if($query->countQuery()->execute()->fetchField()==0) {
+	if($result->rowCount()==0) {
 		return MENU_NOT_FOUND;
 	}
 	
