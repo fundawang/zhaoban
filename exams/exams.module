@@ -157,7 +157,9 @@ function exams_definations_perm () {
  *    The loaded exam.
 */
 function exam_load($eid) {
-	return db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
+	$query=db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e');
+	$query->addExpression(" CONCAT_WS('',e.ename,e.elevel)",'enamefull');
+	return $query->execute()->fetchObject();
 }
 
 /**
