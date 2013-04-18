@@ -59,7 +59,7 @@ function score_menu() {
 		'access callback' => 'score_input_going_list_check',
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 	);
-	$items['score/input/%'] = array(
+	$items['score/input/%exam'] = array(
 		'title' => 'Input one by one',
 		'weight' => 0,
 		'page callback' => 'drupal_get_form',
@@ -69,14 +69,14 @@ function score_menu() {
 		'access arguments' => array(2),
 	);
 	
-	$items['score/input/%/%'] = array(
+	$items['score/input/%exam/%goingfull'] = array(
 		'title' => 'Input one by one',
 		'weight' => 0,
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('score_input_going_form', 2, 3),
 		'type' => MENU_DEFAULT_LOCAL_TASK,
 		'access callback' => 'score_input_check_access',
-		'access arguments' => array(2),
+		'access arguments' => array(2,3),
 	);
 	$items['score/batch'] = array(
 		'title' => 'Batch upload',
@@ -344,10 +344,12 @@ function score_check_perm_gk() {
 	return (user_access('input gaokao score') || user_access('view gaokao score'))&& $r;
 }
 
-function score_input_check_access($eid=NULL) {
+function score_input_check_access($exam, $going=NULL) {
 	if(!user_access('review my score') && !user_access('input score')) return FALSE;
-	if($eid) {
-		$query=db_select('students_going','sg')->isNotNull('sg.gid')->condition('sg.eid',$eid)->fields('sg');
+	if(!empty($exam)) {
+		$query=db_select('students_going','sg')->isNotNull('sg.gid')->condition('sg.eid',$exam->eid)->fields('sg');
+		if(!empty($going))
+			$query->condition('sg.gid',$going->gid);
 		$r=$query->countQuery()->execute()->fetchField();
 		return $r > 0;
 	} else return TRUE;
@@ -430,41 +432,32 @@ function score_input_going_list() {
 		return '';
 }
 
-function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
+function score_input_going_form($form, $form_state, $exam, $going=NULL) {
 	global $user;
 	
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
-	if(!is_null($gid)) {
-		$query->condition('g.gid',$gid);
-		$query->innerJoin('vl_room','r','g.place=r.rid');
-		$going=$query->fields('r')->execute()->fetchObject();
-	}
-	
-	$query=db_select('vl_exam','e')->condition('e.eid',$eid);
-	$query->addExpression(" CONCAT_WS('',e.ename,e.elevel)",'ename');
-	$ename=$query->execute()->fetchField();
-
 	$query=db_select('students','s');
+	$query->innerJoin('users','u','s.uid=u.name');
+	$query->addExpression('u.uid','uuid');
 	$query->innerJoin('students_going','g','s.uid=g.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->fields('g',array('gorder','eid'));
-	$query=$query->condition('g.eid',$eid)->orderBy('g.gorder');
-	if(!is_null($gid))
-		$query->condition('g.gid',$gid);
+	$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->fields('g',array('gorder','eid','opus'));
+	$query=$query->condition('g.eid',$exam->eid)->orderBy('g.gorder');
+	if(!empty($going))
+		$query->condition('g.gid',$going->gid);
 	else $query->isNotNull('g.gid');
+	$students=$query->execute();
+
+	drupal_set_title(sprintf('%s - %s',t('Score'), $exam->enamefull));
 	
-	if(!is_null($gid))
+	if(!empty($going) && $students->rowCount())
 		$form['info']=array(
-			'#markup'=>'<div class="messages">'._going_datetime_to_string($going->time).' / '.$ename.' / '.$going->rname.'</div>',
+			'#markup'=>'<div class="messages">'.$going->formatTime.' / '.$exam->enamefull.' / '.$going->rname.'</div>',
 		);
-	else
-		drupal_set_title(sprintf('%s - %s',t('Score'), $ename));
 	$text='';
 	$j=1;
 	
-	$students=$query->execute();
 	foreach($students as $student) {
-		$form['uid'][$student->uid]=array('#markup'=>l($student->uid, 'user/'.db_select('users','u')->fields('u',array('uid'))->condition('name',$student->uid)->execute()->fetchField()));
+		$form['uid'][$student->uid]=array('#markup'=>l($student->uid, 'user/'.$student->uuid));
 		$text.=$student->gorder."\t";
 		$text.=$student->uid;
 		$form['eid'][$student->uid]=array('#type'=>'hidden', '#markup'=>$student->eid);
@@ -473,16 +466,16 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 		$text.="\t".$student->name;
 		$form['profession'][$student->uid]=array('#markup'=>$student->pname);
 		$text.="\t".$student->pname."\\n";
-		$op=unserialize(db_select('students_going','sg')->fields('sg',array('opus'))->condition('uid',$student->uid)->condition('eid',$eid)->execute()->fetchField());
-		$should_opus=db_select('vl_exam','e')->fields('e',array('opus'))->condition('eid',$eid)->execute()->fetchField();
+		$op=unserialize($student->opus);
+		$should_opus=$exam->opus;
 		unset($ops);
-		for($i=1;$i<=$should_opus;$i++) {
+		for($i=1;$i<=$exam->opus;$i++) {
 			$ops[]=$op['opus'.$i];
 		}
 		if($should_opus >0 )
-			$form['opus'][$student->uid]=array('#markup'=>implode('<br/>', $ops));
+			$form['opus'][$student->uid]=array('#markup'=>'<ul><li>'.implode('</li><li>', $ops).'</li></ul>');
 		$should_disabled=db_select('students_score','sc')->fields('sc')->condition('uid',$student->uid)->condition('eid',$student->eid)->countQuery()->execute()->fetchField();
-		if($should_disabled || is_null($gid))
+		if($should_disabled || empty($going))
 			$form['score-'.$student->uid]=array('#markup'=>db_select('students_score','sc')->fields('sc',array('score'))->condition('uid',$student->uid)->condition('eid',$student->eid)->execute()->fetchField());
 		else
 			$form['score-'.$student->uid]=array('#type'=>'textfield', '#title'=> t('!name\'s score', array('!name'=>$student->uid)),'#size'=>20, '#required'=>TRUE, '#prefix'=>'<div class="container-inline">', '#suffix'=>'</div>');
@@ -495,14 +488,14 @@ function score_input_going_form($form, $form_state, $eid, $gid=NULL) {
 		'#value'=>t('Save'),
 		'#suffix'=>'<input type="button" id="copytoclip" value="'.t('Copy to clipboard').'" class="form-submit"/><script>ZeroClipboard.setMoviePath(\'/'.drupal_get_path('module','score').'/ZeroClipboard.swf\'); var clip = new ZeroClipboard.Client(); clip.setText(\''.$text.'\'); clip.glue(\'copytoclip\'); clip.addEventListener(\'onComplete\', my_complete ); function my_complete( client, text ) { jQuery().toastmessage({position: \'middle-center\', stayTime: 2000}); jQuery().toastmessage(\'showSuccessToast\', \''.t('Copy Succeeded.').'\');}</script>'
 	);
-	if(is_null($gid)) unset($form['submit']);
+	if(empty($going)) unset($form['submit']);
 	return $form;
 }
 
 function theme_score_input_going_form($variables) {
 	$form=$variables['form'];
 	if(!isset($form['opus'])) $form['opus']=array();
-	if(!is_null(arg(3))) {
+	if(!is_null(arg(3)) && isset($form['info'])) {
 		$warn = '<div class="messages error" id="notification">';
 		$warn.= t('WARNING: The score may be input only once, please keep it correct 100%!');
 		$warn.= '</div>';
