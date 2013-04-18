@@ -79,7 +79,7 @@ function going_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/arrange/empty/%going'] = array(
+	$items['definations/arrange/empty/%goingfull'] = array(
 		'title' => 'Empty Going',
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('going_assign_empty', 3),
@@ -87,7 +87,7 @@ function going_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_VISIBLE_IN_BREADCRUMB,
 	);
-	$items['definations/arrange/printorderlist/%going'] = array(
+	$items['definations/arrange/printorderlist/%goingfull'] = array(
 		'title' => 'Print Order List',
 		'page callback' => 'going_print_orderlist',
 		'page arguments' => array(3),
@@ -95,11 +95,12 @@ function going_menu() {
 		'access arguments' => array(3),
 		'type' => MENU_CALLBACK,
 	);
-	$items['definations/arrange/printscorereport/%going'] = array(
+	$items['definations/arrange/printscorereport/%goingfull'] = array(
 		'title' => 'Print Scroe Report',
 		'page callback' => 'going_print_score_report',
 		'page arguments' => array(3),
 		'access callback' => 'going_print_orderlist_perm',
+		'access arguments' => array(3),
 		'type' => MENU_CALLBACK,
 	);
 
@@ -129,9 +130,22 @@ function going_load($gid)
 	return $going;
 }
 
-function going_menu_assign_modify($gid)
+function goingfull_load($gid)
 {
-	$r=db_select('vl_going', 'g')->fields('g')->condition('g.gid',$gid)->execute()->fetchObject();
+	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$query->fields('r',array('rname'));
+	$subquery=db_select('students_going','sg')->where('sg.gid=g.gid')->fields('sg',array('uid'));
+	$query->exists($subquery);
+	$going=$query->execute()->fetchObject();
+	if(!empty($going))
+		$going->formatTime=_going_datetime_to_string($going->time);
+	return $going;
+}
+
+function going_menu_assign_modify($going)
+{
+	$r=db_select('vl_going', 'g')->fields('g')->condition('g.gid',$going->gid)->execute()->fetchObject();
 	$is_passed=date('YmdHi0000') > $r->time;
 	$query=db_select('students','s')->fields('s');
 	$query->innerJoin('students_going','sg','s.uid=sg.uid');
@@ -142,10 +156,10 @@ function going_menu_assign_modify($gid)
 	$empty_students=$query->countQuery()->execute()->fetchField();
 	return (going_menu_perm() && !$is_passed && $empty_students);
 }
-function going_print_orderlist_perm($gid=NULL)
+function going_print_orderlist_perm($going)
 {
-	if($gid) {
-		$query=db_select('students_going','sg')->condition('sg.gid',$gid)->fields('sg');
+	if(!empty($going)) {
+		$query=db_select('students_going','sg')->condition('sg.gid',$going->gid)->fields('sg');
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 		if(!user_access('administer going'))
@@ -601,7 +615,7 @@ function going_assign_list() {
 			->execute()->fetchField();
 		$exam_ids=explode(', ', $r->valid_exams);
 		if($num)
-			if(going_print_orderlist_perm($r->gid)) {
+			if(going_print_orderlist_perm(goingfull_load($r->gid))) {
 				$tmp_satus=l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Order List').'"/>',"definations/arrange/printorderlist/$r->gid", array('html'=>true));
 				
 				if(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exam_ids[0])->execute()->fetchField()=='2')
@@ -614,7 +628,7 @@ function going_assign_list() {
 
 		if($is_dep_only) {
 			$exam_ids=explode(', ', $r->valid_exams);
-			if(!going_print_orderlist_perm($r->gid) && db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
+			if(!going_print_orderlist_perm(goingfull_load($r->gid)) && db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
 				continue;
 		}
 
@@ -627,7 +641,7 @@ function going_assign_list() {
 			'<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
 		);
 		if(!$is_passed) {
-			if(going_menu_assign_modify($r->gid))
+			if(going_menu_assign_modify(going_load($r->gid)))
 				$rows[count($rows)-1][]='<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>';
 			else
 				$rows[count($rows)-1][]='';
@@ -824,7 +838,7 @@ function going_print_orderlist($going)
 	
 	$exam_ids=explode(', ', $going->valid_exams);
 	$exam_type=db_select('vl_exam','e')->fields('e',array('etype'))->condition('e.eid',$exam_ids[0])->execute()->fetchField();
-	
+
 	set_time_limit(300);
 
 	// create new PDF document
@@ -898,12 +912,12 @@ function going_print_orderlist($going)
 		$pdf->SetFillColor(0,0,0);
 		$pdf->SetDrawColor(255,255,255);
 		
-		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$gid);
+		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$going->gid);
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder')->groupBy('s.uid');
 		$students=$query->execute();
-		if($student->rowCount()==0) return MENU_NOT_FOUND;
+		if($students->rowCount()==0) return MENU_NOT_FOUND;
 		$i=1;
 		foreach($students as $student) {
 			if($student->gorder>31)
@@ -977,12 +991,12 @@ function going_print_orderlist($going)
 		$pdf->Cell(50,10,'姓名',0,1,'C');
 		
 		//$students=db_query('SELECT sg.gorder as gorder, s.uid AS uid, s.name as cname FROM {students_going} sg INNER JOIN {students} s ON s.uid=sg.uid WHERE sg.gid=\'%s\' ORDER BY gorder', $gid);
-		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$gid);
+		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$going->gid);
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder')->groupBy('s.uid');
 		$students=$query->execute();
-		if($student->rowCount()==0) return MENU_NOT_FOUND;
+		if($students->rowCount()==0) return MENU_NOT_FOUND;
 		$i=0;
 		$pdf->SetFontSize(20);
 		foreach($students as $student) {
@@ -1076,7 +1090,7 @@ function going_print_score_report($going)
 	//set some language-dependent strings
 	$pdf->setLanguageArray($l);
 	
-	$query=db_select('students_going','sg')->condition('sg.gid',$gid);
+	$query=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 	$query->innerJoin('students','s','sg.uid=s.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->groupBy('s.uid')->fields('s',array('uid','name'))->fields('sg',array('gorder','opus'))->fields('p',array('pname'))->orderBy('sg.gorder');
