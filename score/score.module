@@ -94,7 +94,7 @@ function score_menu() {
 		'access callback' => 'score_check_perm_view',
 	);
 	
-	$items['score/view/%'] = array(
+	$items['score/view/%exam'] = array(
 		'title' => 'View Scores',
 		'type' => MENU_CALLBACK,
 		'weight' => 2,
@@ -110,7 +110,7 @@ function score_menu() {
 		'access callback' => 'score_check_perm_prepare3rd',
 	);
 
-	$items['score/prepare3rd/%'] = array(
+	$items['score/prepare3rd/%profession'] = array(
 		'title' => 'Prepare for the 3rd round students',
 		'#type' => MENU_CALLBACK,
 		'weight' => 3,
@@ -126,7 +126,7 @@ function score_menu() {
 		'access callback' => 'score_check_perm_gk',
 	);
 
-	$items['score/preparegk/%'] = array(
+	$items['score/preparegk/%profession'] = array(
 		'title' => 'Prepare for the gk round students',
 		'#type' => MENU_CALLBACK,
 		'page callback' => 'score_prepare_gk_detail',
@@ -142,7 +142,7 @@ function score_menu() {
 		'access callback' => 'score_check_perm_inputgk',
 	);
 
-	$items['score/inputgk/%'] = array(
+	$items['score/inputgk/%province'] = array(
 		'title' => 'Input gaokao scores for the students',
 		'#type' => MENU_CALLBACK,
 		'weight' => 4,
@@ -169,7 +169,7 @@ function score_menu() {
 			'page callback' => 'score_transfer_list',
 			'access callback' => 'score_transfer_list_check',
 	);
-	$items['signup/transfer/%'] = array(
+	$items['signup/transfer/%profession'] = array(
 			'title'=>'Transfer students',
 			'type'=>MENU_CALLBACK,
 			'description' => 'Modify the profession of students',
@@ -1237,9 +1237,9 @@ function score_transfer_list() {
 	return $output;
 }
 
-function score_transfer_check($gid) {
+function score_transfer_check($going) {
 	global $user;
-	$query=db_select('vl_going','g')->condition('g.gid',$gid);
+	$query=db_select('vl_going','g')->condition('g.gid',$going->gid);
 	$query->innerJoin('students_going','sg','sg.gid=g.gid');
 	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
 	$query->groupBy('e.uid');
@@ -1250,9 +1250,9 @@ function score_transfer_check($gid) {
 		return TRUE;
 }
 
-function score_transfer($form, $form_state, $gid) {
+function score_transfer($form, $form_state, $going) {
 	global $user;
-	drupal_set_title(t('Transfer students').' - '.db_select('vl_going','g')->condition('g.gid',$gid)->fields('g',array('gname'))->execute()->fetchField());
+	drupal_set_title(t('Transfer students').' - '.$going->gname);
 	$form=array();
 	
 	$header=array(
@@ -1263,21 +1263,16 @@ function score_transfer($form, $form_state, $gid) {
 		'pname'=>array('data'=>t('Current Profession'), 'field'=>'p.pid'),
 	);
 	
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$query->fields('r',array('rname'));
-	$g_info=$query->execute()->fetchObject();
-	
 	$query->innerJoin('students_going','sg','sg.gid=g.gid');
 	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
 	$query->fields('e',array('eid'))->groupBy('e.eid');
 	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)",'ename');
-	$exams=$query->execute()->fetchAll();
+	$exams=$query->execute();
 	foreach($exams as $r) {
 		$header['e'.$r->eid]=array('data'=>$r->ename, 'field'=>'e'.$r->eid, 'sort'=>'desc');
 	}
 	
-	$squery=db_select('students_going','sg')->condition('sg.gid',$gid);
+	$squery=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 	$squery->innerJoin('students','s','s.uid=sg.uid');
 	$squery->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'))->fields('p',array('pname'));
@@ -1316,7 +1311,7 @@ function score_transfer($form, $form_state, $gid) {
 	}
 	
 	$form['desc']=array(
-		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $g_info->gname, $g_info->rname, _going_datetime_to_string($g_info->time)).'</div>',
+		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $going->gname, $going->rname, $going->fomartTimes).'</div>',
 	);
 	
 	$form['students']=array(
@@ -1466,10 +1461,8 @@ function score_view_admin() {
 	return $form;
 }
 
-function score_view_detail($eid) {
-	$query=db_select('vl_exam','e')->condition('eid',$eid);
-	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)");
-	drupal_set_title(t('View Scores').' - '.$query->execute()->fetchField());
+function score_view_detail($exam) {
+	drupal_set_title(t('View Scores').' - '.$exam->enamefull);
 	$header = array(
 		array('data'=>t('No.')),
 		array('data' =>t('Student ID'), 'field'=>'s.uid'),
@@ -1480,7 +1473,7 @@ function score_view_detail($eid) {
 	array('data' =>t('Rank'), 'field'=>'rank', 'sort'=>'asc'),
 	);
 
-	$query=db_select('students_score','c')->fields('c',array('rank'))->condition('eid',$eid)->orderBy('c.rank','desc')->condition('c.rank','1','<>');
+	$query=db_select('students_score','c')->fields('c',array('rank'))->condition('eid',$exam->eid)->orderBy('c.rank','desc')->condition('c.rank','1','<>');
 	$should_show_rank=$query->execute()->fetchField()?1:0;
 
 	if(!$should_show_rank) {
@@ -1493,7 +1486,7 @@ function score_view_detail($eid) {
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->innerJoin('students_score','c','s.uid=c.uid');
-	$query->condition('c.eid',$eid)->fields('s',array('uid','name','gender'))->fields('p',array('pname'));
+	$query->condition('c.eid',$exam->eid)->fields('s',array('uid','name','gender'))->fields('p',array('pname'));
 	$query->addExpression('c.score*1.0','score_real');
 	$query->addExpression('u.uid','uuid');
 	$query->addExpression('ifnull(c.rank,9999)*1','rank');
@@ -1541,14 +1534,13 @@ function score_prepare_3rd_overview() {
 	return $output;
 }
 
-function score_prepare_3rd_detail($prof=NULL) {
+function score_prepare_3rd_detail($profession) {
 	drupal_add_css(
 		'div#sidebar-left { display: none; } '.
 		'.one-sidebar div#content { width: 95%; } ',
 		array('type' => 'inline')
 	);
-	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
-	$profession_exams = unserialize($profession->exams);
+	$profession_exams = $profession->exams;
 	drupal_set_title(t('Prepare for the 3rd round students').' - '.$profession->pname);
 	$output = '<div class=\'messages\'>';
 	$output .= '<p>'.t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
@@ -1560,9 +1552,9 @@ function score_prepare_3rd_detail($prof=NULL) {
 	ksort($profession_exams);
 	$edata='';
 	foreach($profession_exams as $eid => $eweight){
-		$exam = db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e')->execute()->fetchObject();
+		$exam = exam_load($eid);
 		if ($eweight)
-			$edata .= $exam->ename.$exam->elevel.'&times;'.round($eweight*100,1).'%+';
+			$edata .= $exam->enamefull.'&times;'.round($eweight*100,1).'%+';
 	}
 	$output .= substr($edata, 0, strlen($edata)-1);
 	$output .= '</blockquote></div>';
@@ -1578,25 +1570,22 @@ function score_prepare_3rd_detail($prof=NULL) {
 	
 	foreach($profession_exams as $eid => $eweight) {
 		if($eweight!=0||substr($eid,0,1)=='3') {
-			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
-			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
-			$header[]=array('data'=>$query->execute()->fetchField());
+			$exam=exam_load($eid);
+			$header[]=array('data'=>$exam->enamefull);
 			if(in_array($eid, array(321,322,323,324))) {
 				$header[count($header)-1]['data'].='<br/>(';
-				$query=db_select('vl_exam','e')->condition('e.eid',str_replace('32','30',$eid));
-				$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
-				$header[count($header)-1]['data'].=$query->execute()->fetchField();
+				$exam=exam_load(str_replace('32','30',$eid));
+				$header[count($header)-1]['data'].=$exam->enamefull;
 				$header[count($header)-1]['data'].='/';
-				$query=db_select('vl_exam','e')->condition('e.eid',str_replace('32','31',$eid));
-				$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
-				$header[count($header)-1]['data'].=$query->execute()->fetchField();
+				$exam=exam_load(str_replace('32','31',$eid));
+				$header[count($header)-1]['data'].=$exam->enamefull;
 				$header[count($header)-1]['data'].=')';
 			}
 		}
 	}
 		
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		if(in_array(substr($prof,0,2),array('D5','D6','D8')))
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+		if(in_array($profession->did,array('D5','D6','D8')))
 			$header[]=array('data'=>t('Total score'));
 		$header[]=array('data'=>t('Total average rank'), 'field'=>'totsort', 'sort'=>'desc');
 	} else {
@@ -1608,12 +1597,12 @@ function score_prepare_3rd_detail($prof=NULL) {
 	
 	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','profession_major'));
 	// FIXME: HACK FOR CELLA
-	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+	if(in_array($profession->pid, array('D603', 'D604', 'D716','D717'))) {
 		$query->condition('s.pass_round1_major',1);
-		$squery=db_select('students_total_score','sts')->fields('sts',array('total_score'))->condition('sts.pid',$prof)->where('sts.uid=s.uid');
+		$squery=db_select('students_total_score','sts')->fields('sts',array('total_score'))->condition('sts.pid',$profession->pid)->where('sts.uid=s.uid');
 		$query->exists($squery);
 	} else {
-		$query->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
+		$query->condition('s.profession_major',$profession->pid)->condition('s.pass_round1_major',1);
 	}
 	// FIXME: HACK FOR CELLA
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
@@ -1644,16 +1633,16 @@ function score_prepare_3rd_detail($prof=NULL) {
 			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 			$query->addExpression("$neid.score",$neid);
 
-			if(!in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) continue;
+			if(!in_array($profession->did,array('D5','D6','D7','D8'))) continue;
 			$neid='r'.$eid;
 			$query->leftJoin('students_score', $neid, "s.uid=$neid.uid AND $neid.eid=$eid");
 			$query->addExpression("$neid.rank",$neid);
 		}
 	}
 	$query->leftJoin('students_total_score','ts','s.uid=ts.uid');
-	$query->condition('ts.pid',$prof);
+	$query->condition('ts.pid',$profession->pid);
 	$query->addExpression('ts.total_score','total_score');
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')))
+	if(in_array($profession->did,array('D5','D6','D7','D8')))
 	{
 		$query->addExpression('ts.total_rank','total_rank');
 		$query->addExpression('ts.rank','tsrank');
@@ -1665,7 +1654,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {
 		// FIXME: HACKAGE FOR CELLA
-		if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+		if(in_array($profession->pid, array('D603', 'D604', 'D716','D717'))) {
 			if($r['total_score']==0) continue;
 		}
 		// FIXME: HACKAGE FOR CELLA
@@ -1679,7 +1668,7 @@ function score_prepare_3rd_detail($prof=NULL) {
 		$i++;
 		foreach($profession_exams as $eid=>$weight) {
 			if($weight!=0||substr($eid,0,1)=='3') {
-				if(in_array(substr($prof,0,2),array('D5','D6','D7','D8')) && substr($eid,0,1)!='3')
+				if(in_array($profession->did,array('D5','D6','D7','D8')) && substr($eid,0,1)!='3')
 					$rows[count($rows)-1][]=($r['r'.$eid]==999||is_null($r['r'.$eid]))?'0':number_format($r['r'.$eid], 2, '.' ,'');
 				else
 					$rows[count($rows)-1][]=($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
@@ -1692,12 +1681,12 @@ function score_prepare_3rd_detail($prof=NULL) {
 				}
 			}
 		}
-		if(!in_array(substr($prof,0,2),array('D7')))
+		if(!in_array($profession->did,array('D7')))
 			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
-		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+		if(in_array($profession->did,array('D5','D6','D7','D8'))) {
 			$rows[count($rows)-1][]=round($r['total_rank'], 2);
 		}
-		if($r['profession_major']!==$prof)
+		if($r['profession_major']!==$profession->pid)
 			$rows[count($rows)-1][]='* '.t('This is a secondary profession student');
 		else
 			$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
@@ -2118,10 +2107,10 @@ function theme_score_gaokao_province_status_form($variables) {
 }
 
 function score_gaokao_province_detail_form($form, $form_state, $province) {
-	drupal_set_title(t('Input gaokao scores for the students').' - '.db_select('vl_province','p')->condition('pid',$province)->fields('p',array('name'))->execute()->fetchField());
+	drupal_set_title(t('Input gaokao scores for the students').' - '.$province->name);
 	
 	$form=array();
-	$query=db_select('vl_province','p')->condition('p.pid',$province);
+	$query=db_select('vl_province','p')->condition('p.pid',$province->pid);
 	$query->innerJoin('students_gk','sg','p.pid=sg.province');
 	$query->innerJoin('students','s','sg.uid=s.uid');
 	$query->innerJoin('vl_professions','pp','s.profession_major=pp.pid');
@@ -2214,7 +2203,7 @@ function theme_score_gaokao_province_detail_form($variables) {
 		}
 	}
 	drupal_add_css(drupal_get_path('module', 'score') .'/score.css');
-	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output.=theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable students.')));
 	if(!$should_disable_all)
 		$output.=drupal_render($form['submit']).drupal_render($form['coefficient']);
 	else
@@ -2306,13 +2295,12 @@ function score_prepare_gk_overview() {
 	return $output;
 }
 
-function score_prepare_gk_detail($prof=NULL) {
-	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
-		$profession_exams = unserialize($profession->exams);
-		drupal_set_title(t('Prepare for the gk round students').' - '.$profession->pname);
-		$output .= '<div class=\'messages\'>';
-		$output .= t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
-		$output .= '</blockquote></div>';
+function score_prepare_gk_detail($profession) {
+	$profession_exams = $profession->exams;
+	drupal_set_title(t('Prepare for the gk round students').' - '.$profession->pname);
+	$output .= '<div class=\'messages\'>';
+	$output .= t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
+	$output .= '</blockquote></div>';
 
 	drupal_add_css(
 		'div#sidebar-left { display: none; } '.
@@ -2322,14 +2310,13 @@ function score_prepare_gk_detail($prof=NULL) {
 	
 	$header=array(
 		array('data'=>t('No.')),
-		//array('data'=>t('Student ID')),
 		array('data'=>t('Real Name')),
 		array('data'=>' '),
 		array('data'=>t('Round3 situation')),
 		array('data'=>t('Gender')),
 	);
 	
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
 		$header[]=array('data'=>t('Total average rank'), 'field'=>'tsrank', 'sort'=>'asc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
@@ -2343,7 +2330,7 @@ function score_prepare_gk_detail($prof=NULL) {
 	$rows=array();
 	
 	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','pass_round3_major'));
-	$query->condition('s.profession_major',$prof)->condition('s.pass_round3_major',1,'>=');
+	$query->condition('s.profession_major',$profession->pid)->condition('s.pass_round3_major',1,'>=');
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
@@ -2353,31 +2340,31 @@ function score_prepare_gk_detail($prof=NULL) {
 	
 	$totals=array();
 	$query->innerJoin('students_total_score','ts','s.uid=ts.uid');
-	$query->condition('ts.pid',$prof)->fields('ts',array('total_score','total_rank','outrank'));
-	
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
-		$query->orderBy('tsrank','ASC');
+	$query->condition('ts.pid',$profession->pid)->fields('ts',array('total_score','total_rank','outrank'));
+	$query->fields('ts',array('total_score','total_rank'));
+	$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+		$query->orderBy('total_rank','ASC');
 	} else {
-		$query->addExpression('CAST(ts.rank AS DECIMAL)','tsrank');
-		$query->fields('ts',array('total_score'));
 		$query->orderBy('total_score','DESC');
 	}
-	$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
+	$query->orderBy('ts.outrank');
+	//$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
 
 	$rdbo=$query->execute();
 	$i=1;
+	if($rdbo->rowCount()==0) return MENU_NOT_FOUND;
 	while($r=$rdbo->fetchAssoc()) {
 		settype($r['score_chinese'],'float');
 		settype($r['score_languages'],'float');
 		settype($r['score_total'],'float');
 		$rows[]=array(
 			$i++,
-			$r['name'],
+			l($r['name'],'user/'.$r['uuid']),
 			'',
 			$r['pass_round3_major'] == '10' ? t('Determined'):(t('To be determined').'/'.$r['outrank']),
 			$r['gender'] == 1 ? t('Male'): t('Female'),
-			in_array(substr($prof,0,2),array('D5','D6','D7','D8'))?round($r['total_rank'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			in_array($profession->did,array('D5','D6','D7','D8'))?round($r['total_rank'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
 			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_chinese'],
 			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_languages'],
 			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_total'],
