@@ -219,7 +219,7 @@ function score_menu() {
 			'page callback' => 'score_mark_gaokao_round_list',
 			'access callback' => 'score_mark_3rd_round_list_check',
 	);
-	$items['signup/markroundg/%'] = array(
+	$items['signup/markroundg/%profession'] = array(
 			'title'=>'Mark round g students',
 			'type'=>MENU_CALLBACK,
 			'page callback' => 'drupal_get_form',
@@ -1747,20 +1747,18 @@ function score_mark_3rd_round_list() {
 	return $output;
 }
 
-function score_mark_3rd_round_check($pid=NULL) {
+function score_mark_3rd_round_check($profession) {
 	global $user;
 	$query=db_select('students','s')->condition('pass_round1_major',0,'>')->fields('s');
-	if($pid)
-		$query->condition('s.profession_major',$pid);
+	if(!empty($profession))
+		$query->condition('s.profession_major',$profession->pid);
 	$r=$query->countQuery()->execute()->fetchField();
 	return user_access('mark 3rd round students') && $r && $user->uid==3 || $user->uid==1;
 }
 
-function score_mark_3rd_round($form, $form_state, $prof) {
-	drupal_set_title(t('Mark the 3rd round student').' -  '.db_select('vl_professions','p')->condition('p.pid',$prof)->fields('p',array('pname'))->execute()->fetchField());
-	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
+function score_mark_3rd_round($form, $form_state, $profession) {
+	drupal_set_title(t('Mark the 3rd round student').' -  '.$profession->pname);
 	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
-		$profession_exams = unserialize($profession->exams);
 
 	$header=array(
 		array('data'=>t('No.')),
@@ -1770,14 +1768,14 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 		array('data'=>t('Current status'),'field'=>'s.pass_round3_major'),
 	);
 	
-		foreach($profession_exams as $eid => $eweight) {
+	foreach($profession->exams as $eid => $eweight) {
 		if($eweight!=0||substr($eid,0,1)=='3') {
 			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
 			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
 		}
-		}
+	}
 		
-		if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
 		$header[]=array('data'=>t('Total score'), 'field'=>'rank', 'sort'=>'asc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
@@ -1787,15 +1785,15 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 	
 	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','pass_round3_major'));
 	// FIXME: HACK FOR CELLA
-	if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
-		$query->condition('s.validated',1)->condition('ts.pid',$prof);
-		if($prof=='D603' || $prof=='D716') {
+	if(in_array($profession->pid, array('D603','D604','D716','D717'))) {
+		$query->condition('s.validated',1)->condition('ts.pid',$profession->pid);
+		if(in_array($profession->pid, array('D603','D716'))) {
 			$query->where("s.profession_major='D603' OR s.profession_major='D716'");
-		} else if($prof=='D604' || $prof=='D717') {
+		} else if(in_array($profession->pid, array('D604','D717'))) {
 			$query->where("s.profession_major='D604' OR s.profession_major='D717'");
 		}
 	} else {
-		$query->condition('s.profession_major',$prof)->condition('s.pass_round1_major',1);
+		$query->condition('s.profession_major',$profession->pid)->condition('s.pass_round1_major',1);
 	}
 	// FIXME: HACK FOR CELLA
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
@@ -1811,7 +1809,7 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 	$i=1;
 	while($r=$rdbo->fetchAssoc()) {
 		// FIXME: HACKAGE FOR CELLA
-		if($prof=='D603' || $prof=='D604' || $prof=='D716' || $prof=='D717') {
+		if(in_array($profession->pid, array('D603','D604','D716','D717'))) {
 			if($r['total_score']==0) continue;
 		}
 		// FIXME: HACKAGE FOR CELLA
@@ -1821,7 +1819,7 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 			$r['name'],
 			$r['gender'] == 1 ? t('Male'): t('Female'),
 			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined').'/'.$r['outrank']:t('Determined')):t('None'),
-			in_array(substr($prof,0,2),array('D5','D6','D7','D8'))?abs($r['rank']):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			in_array($profession->did,array('D5','D6','D7','D8'))?abs($r['rank']):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
 		);
 		
 	}
@@ -1849,7 +1847,7 @@ function score_mark_3rd_round($form, $form_state, $prof) {
 }
 
 function score_mark_3rd_round_submit($form, $form_state) {
-	$students= array_filter($form_state['values']['students']);
+	$students=array_filter($form_state['values']['students']);
 	foreach($students as $uid=>$u) {
 		db_update('students')->condition('uid',$uid)->fields(array(
 			'pass_round3_major'=>$form_state['values']['status']
@@ -2414,11 +2412,9 @@ function score_mark_gaokao_round_list() {
 	return $output;
 }
 
-function score_mark_gaokao_round($form, $form_state, $prof) {
-	drupal_set_title(t('Mark round g students').' -  '.db_select('vl_professions','p')->condition('p.pid',$prof)->fields('p',array('pname'))->execute()->fetchField());
-	$profession=db_select('vl_professions','p')->condition('pid',$prof)->fields('p')->execute()->fetchObject();
+function score_mark_gaokao_round($form, $form_state, $profession) {
+	drupal_set_title(t('Mark round g students').' -  '.$profession->pname);
 	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
-	$profession_exams = unserialize($profession->exams);
 
 	$header=array(
 		array('data'=>t('No.')),
@@ -2428,15 +2424,15 @@ function score_mark_gaokao_round($form, $form_state, $prof) {
 		array('data'=>t('Current status'),'field'=>'s.pass_round3_major'),
 	);
 	
-	foreach($profession_exams as $eid => $eweight) {
+	foreach($profession->exams as $eid => $eweight) {
 		if($eweight!=0||substr($eid,0,1)=='3') {
 			$query=db_select('vl_exam','e')->condition('e.eid',$eid);
 			$query->addExpression('CONCAT(ename, IFNULL(elevel, \'\'))','ename');
 		}
 	}
 		
-	if(in_array(substr($prof,0,2),array('D5','D6','D7','D8'))) {
-		$header[]=array('data'=>t('Total score'), 'field'=>'rank', 'sort'=>'asc');
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+		$header[]=array('data'=>t('Total average rank'), 'field'=>'total_rank', 'sort'=>'asc');
 	} else {
 		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
@@ -2445,14 +2441,14 @@ function score_mark_gaokao_round($form, $form_state, $prof) {
 	$rows=array();
 	
 	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','pass_round3_major','pass_roundg_major'));
-	$query->condition('s.profession_major',$prof)->condition('s.pass_round3_major',0,'<>');
+	$query->condition('s.profession_major',$profession->pid)->condition('s.pass_round3_major',0,'<>');
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
 	$query->innerJoin('users','u','s.uid=u.name');
 	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
 	$query->fields('sc',array('personnel_record_at'))->fields('sg',array('score_total'));
 	$query->addExpression('u.uid','uuid');
-	$query->innerJoin('students_total_score','ts','ts.uid=s.uid');
-	$query->fields('ts',array('total_score','rank','outrank'));
+	$query->innerJoin('students_total_score','ts','ts.uid=s.uid AND ts.pid=s.profession_major');
+	$query->fields('ts',array('total_score','total_rank','rank','outrank'));
 	
 	$totals=array();
 	$query->extend('TableSort')->orderByHeader($header);
@@ -2468,7 +2464,7 @@ function score_mark_gaokao_round($form, $form_state, $prof) {
 			$r['name'],
 			$r['gender'] == 1 ? t('Male'): t('Female'),
 			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined').'/'.$r['outrank']:t('Determined')):t('None'),
-			in_array(substr($prof,0,2),array('D5','D6','D7','D8'))?abs($r['rank']):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			in_array($profession->did,array('D5','D6','D7','D8'))?round($r['total_rank'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
 			$r['score_total'],
 		);
 		
@@ -2479,7 +2475,7 @@ function score_mark_gaokao_round($form, $form_state, $prof) {
 		'#options' => $rows,
 		'#attributes' => array('class'=>array('assign_students')),
 		'#default_value' => $default_values,
-		'#empty' => t('No students to list.'),
+		'#empty' => t('No suitable students.'),
 	);
 	$form['submit'] = array('#type'=>'submit', '#value'=>t('Submit'));
 	return $form;
