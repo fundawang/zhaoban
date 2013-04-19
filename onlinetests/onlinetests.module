@@ -156,15 +156,15 @@ function onlinetests_onlinetests_list() {
 				case ONLINETEST_STATUS_ABOUT_TO_BEGIN:
 					$tmp_status=t("About to begin"); break;
 				case ONLINETEST_STATUS_ONGOING:
-					$tmp_status=t("Now performing").' '.l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Quest Paper').'"/>',"definations/onlinetests/quest/$r->gid", array('html'=>true));
+					$tmp_status=t("Now performing").' '.l('<img src="'.url(drupal_get_path('module', 'going').'/printer.png').'" title="'.t('Print Quest Paper').'"/>',"definations/onlinetests/quest/$r->gid", array('html'=>true));
 					break;
 				case ONLINETEST_STATUS_ENDED:
 					$tmp_status=t("Ended"); break;
 				case ONLINETEST_STATUS_INTERVIEWING:
-					$tmp_status=t("Now interviewing").' '.l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score sheet').'"/>',"definations/onlinetests/printonlinetestscore/$r->gid", array('html'=>true));
+					$tmp_status=t("Now interviewing").' '.l('<img src="'.url(drupal_get_path('module', 'going').'/calculator.png').'" title="'.t('Print Score sheet').'"/>',"definations/onlinetests/printonlinetestscore/$r->gid", array('html'=>true));
 					break;
 				case ONLINETEST_STATUS_FINISHED:
-					$tmp_status=t("Finished").' '.l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score sheet').'"/>',"definations/onlinetests/printonlinetestscore/$r->gid", array('html'=>true));
+					$tmp_status=t("Finished").' '.l('<img src="'.url(drupal_get_path('module', 'going').'/calculator.png').'" title="'.t('Print Score sheet').'"/>',"definations/onlinetests/printonlinetestscore/$r->gid", array('html'=>true));
 					break;
 			}
 		}
