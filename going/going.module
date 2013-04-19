@@ -616,10 +616,10 @@ function going_assign_list() {
 		$exam_ids=explode(', ', $r->valid_exams);
 		if($num)
 			if(going_print_orderlist_perm(goingfull_load($r->gid))) {
-				$tmp_satus=l('<img src="'.base_path().drupal_get_path('module', 'going').'/printer.png" title="'.t('Print Order List').'"/>',"definations/arrange/printorderlist/$r->gid", array('html'=>true));
+				$tmp_satus=l('<img src="'.url(drupal_get_path('module', 'going').'/printer.png').'" title="'.t('Print Order List').'"/>',"definations/arrange/printorderlist/$r->gid", array('html'=>true));
 				
 				if(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exam_ids[0])->execute()->fetchField()=='2')
-					$tmp_satus.=l('<img src="'.base_path().drupal_get_path('module', 'going').'/calculator.png" title="'.t('Print Score Report').'"/>',"definations/arrange/printscorereport/$r->gid", array('html'=>true));
+					$tmp_satus.=l('<img src="'.url(drupal_get_path('module', 'going').'/calculator.png').'" title="'.t('Print Score Report').'"/>',"definations/arrange/printscorereport/$r->gid", array('html'=>true));
 			}
 			else
 				$tmp_satus='<img src="/misc/watchdog-ok.png"/>';
