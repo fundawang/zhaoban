@@ -187,7 +187,7 @@ function score_menu() {
 			'page callback' => 'score_mark_2nd_round_list',
 			'access callback' => 'score_mark_2nd_round_list_check',
 	);
-	$items['signup/markround2/%'] = array(
+	$items['signup/markround2/%profession'] = array(
 			'title'=>'Mark round 2 students',
 			'type'=>MENU_CALLBACK,
 			'page callback' => 'drupal_get_form',
@@ -203,7 +203,7 @@ function score_menu() {
 			'page callback' => 'score_mark_3rd_round_list',
 			'access callback' => 'score_mark_3rd_round_list_check',
 	);
-	$items['signup/markround3/%'] = array(
+	$items['signup/markround3/%profession'] = array(
 			'title'=>'Mark round 3 students',
 			'type'=>MENU_VISIBLE_IN_BREADCRUMB,
 			'page callback' => 'drupal_get_form',
@@ -902,7 +902,7 @@ function score_mark_2nd_round_list() {
 		$students=db_select('students','s')->fields('s')
 			->condition('s.validated','1')->condition('s.profession_major',$r->pid)->countQuery()->execute()->fetchField();
 		if($students==0) continue;
-		if(!score_mark_2nd_round_check($r->pid)) continue;
+		if(!score_mark_2nd_round_check(profession_load($r->pid))) continue;
 		$output .= '<dt>';
 		$output .= l($r->pname,'signup/markround2/'.$r->pid);
 		$output .= '</dt><dd>';
@@ -924,21 +924,21 @@ function score_mark_2nd_round_list_check() {
 	return (user_access('mark 2nd round students') && $can_students);
 }
 
-function score_mark_2nd_round_check($pid) {
+function score_mark_2nd_round_check($profession) {
 	global $user;
-	$query=db_select('students','s')->fields('s')->condition('s.validated','1')->condition('s.profession_major',$pid);
+	$query=db_select('students','s')->fields('s')->condition('s.validated','1')->condition('s.profession_major',$profession->pid);
 	$can_students=$query->countQuery()->execute()->fetchField();
 	
-	$query=db_select('vl_professions','p')->fields('p')->condition('p.pid',$pid)->condition('p.uid',$user->name)->condition('p.allow_round1','1');
+	$query=db_select('vl_professions','p')->fields('p')->condition('p.pid',$profession->pid)->condition('p.uid',$user->name)->condition('p.allow_round1','1');
 	$can_prof=$query->countQuery()->execute()->fetchField();
 	
 	return ($can_students>=1 && $can_prof==1);
 }
 
-function score_mark_2nd_round($form, $form_state, $pid) {
+function score_mark_2nd_round($form, $form_state, $profession) {
 	global $user;
 	$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p',array('pname'))->execute()->fetchField();
-	drupal_set_title(t('Mark round 2 students').' - '.$prof);
+	drupal_set_title(t('Mark round 2 students').' - '.$profession->pname);
 	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
 
 	$form=array();
@@ -951,7 +951,7 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 		'keyword'=>array('data'=>t('Sorting keyword')),
 	);
 	
-	$sortorders=_score_mark_2nd_round_determine_best_sortorder($pid);
+	$sortorders=_score_mark_2nd_round_determine_best_sortorder($profession);
 	$a=array_keys($sortorders);
 	$saint_default_sort=isset($form_state['values']['sortorder'])?$form_state['values']['sortorder']:$a[0];
 	unset($a);
@@ -964,7 +964,7 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 		'#default_value' => $saint_default_sort,
 	);
 	$options=array();
-	$examplaces=_score_mark_2nd_round_enabled_examplace($pid);
+	$examplaces=_score_mark_2nd_round_enabled_examplace($profession->pid);
 	foreach($examplaces as $examplace) {
 		$options[$examplace]=db_select('vl_city_district','cd')
 			->condition('cd.cid',$examplace)->fields('cd',array('name_simp'))->execute()->fetchField();
@@ -992,7 +992,7 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 		'#submit' => array('score_mark_2nd_round_redraw'),
 	);
 	
-	$query=db_select('students_passthrough','sp')->condition('sp.pid',$pid);
+	$query=db_select('students_passthrough','sp')->condition('sp.pid',$profession->pid);
 	$query->innerJoin('students','s','sp.idcard_number=s.idcard_number');
 	$query=$query->fields('s');
 	$num=$query->countQuery()->execute()->fetchField();
@@ -1001,7 +1001,7 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 			'#markup' => '<div class="messages">'.t('There are !num extra passed through students also.',array('!num'=>$num)).'</div>',
 		);
 	
-	$query=db_select('students','s')->fields('s',array('uid','name','gender'))->condition('s.profession_major',$pid)->groupBy('s.uid');
+	$query=db_select('students','s')->fields('s',array('uid','name','gender'))->condition('s.profession_major',$profession->pid)->groupBy('s.uid');
 	$query->innerJoin('students_going','sg','s.uid=sg.uid');
 	$query=$query->isNotNull('sg.gid');
 
@@ -1009,7 +1009,7 @@ function score_mark_2nd_round($form, $form_state, $pid) {
 	$query=$query->condition('s.examplace',$saint_default_place);
 	
 	// Step 2, filter sortorder
-	$exams = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$pid)->execute()->fetchField());
+	$exams = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$profession->pid)->execute()->fetchField());
 	switch($saint_default_sort) {
 		case 's': // sort by score
 			$header['keyword']['data']=t('Total score');
@@ -1080,8 +1080,8 @@ function score_mark_2nd_round_redraw($form, &$form_state) {
 	$form_state['rebuild']=TRUE;
 }
 
-function _score_mark_2nd_round_determine_best_sortorder($pid=NULL) {
-	$exams = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$pid)->execute()->fetchField());
+function _score_mark_2nd_round_determine_best_sortorder($profession) {
+	$exams = $profession->exams;
 	ksort($exams);
 	$result=array();
 	
