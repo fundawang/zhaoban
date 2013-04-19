@@ -136,6 +136,7 @@ function onlinetests_onlinetests_list() {
 		->orderByHeader($header);
 
 	$result = $query->execute();
+	if($result->rowCount()==0) return MENU_NOT_FOUND;
 
 	$rows=array();
 
@@ -207,12 +208,14 @@ function onlinetests_onlinetests_list() {
 						'data'=>'<nobr>'.l(t('View paper'), "definations/onlinetests/modify/$r->gid").'<br/>'.
 							l(t('View answer files'), "definations/onlinetests/answers/$r->gid").
 							'</nobr>',
+						'colspan'=>2,
 					);
-					$rows[count($rows)-1][]='';
 					break;
 				default:
-					$rows[count($rows)-1][]='<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>';
-					$rows[count($rows)-1][]='';
+					$rows[count($rows)-1][]=array(
+						'data'=>'<nobr>'.l(t('Modify paper'), "definations/onlinetests/modify/$r->gid").'</nobr>',
+						'colspan'=>2,
+					);
 					break;
 			}
 		}
