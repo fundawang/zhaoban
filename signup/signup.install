@@ -63,7 +63,7 @@ function signup_schema() {
 				'score_math' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
 				'score_synthesis' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '1'),
 				'score_total' => array('type' => 'numeric', 'not null' => TRUE, 'default' => 0, 'precision' => '10', 'scale' => '2'),
-				'memory' => array('type' => 'varchar', 'length' => '30', 'not null' => FALSE),
+				'memory' => array('type' => 'varchar', 'length' => '30', 'not null' => TRUE, 'default' => ''),
 				'validated' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '4')
 		),
 		'primary key' => array('uid'),
