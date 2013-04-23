@@ -1111,3 +1111,14 @@ function onlinetests_answer_list($going) {
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No suitable students.')));
 	return $output;
 }
+
+function onlinetests_cron() {
+	$query=db_select('file_managed','f')->fields('f')->condition('f.timestamp',time()-7200,'>');
+	$result=$query->execute();
+	foreach($result as $r) {
+		if(file_load($r->fid))
+			db_update('file_managed')->condition('fid',$r->fid)->fields(array(
+				'filemime' => file_get_mimetype($r->uri)
+			))->execute();
+	}
+}
