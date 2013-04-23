@@ -318,7 +318,10 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		$r=db_select('orders','o')->condition('o.standard',$fee->scid)->condition('o.uid',$user->uid)->fields('o')->countQuery()->execute()->fetchField();
 		if($r==0) {
 			if($fee->period > 1) {
-				$p=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s')->countQuery()->execute()->fetchField();
+				$query=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s');
+				$query->innerJoin('students_going','sg','s.uid=sg.uid');
+				$query->condition('sg.eid','200','>');
+				$p=$query->countQuery()->execute()->fetchField();
 				if(!$p) {
 					$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
 					$query->innerJoin('students_passthrough','sp','sp.idcard_number=s.idcard_number');
@@ -356,6 +359,8 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	);
 	
 	$query=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s');
+	$query->innerJoin('students_going','sg','s.uid=sg.uid');
+	$query->condition('sg.eid','200','>');
 	$query->innerJoin('vl_charging_standard','sc','sc.ucategory=s.ucategory');
 	$query->condition('sc.fee',0,'>')->condition('sc.period',1,'>');
 	$r=$query->countQuery()->execute()->fetchField();
