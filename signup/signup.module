@@ -5085,7 +5085,7 @@ function signup_search_students($citera) {
 }
 
 function signup_weixin($request, $user) {
-	if($user->uid) {
+	if($user->uid && $request->msgtype=='text') {
 		$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
 		$result=$query->execute();
 		if($result->rowCount()) {
