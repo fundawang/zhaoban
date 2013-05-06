@@ -1235,7 +1235,7 @@ function going_weixin($request, $user) {
 			}
 			$result=$query->execute();
 			foreach($result as $r) {
-				$t[]=_going_datetime_to_string($r->time)."\n".sprintf('%s: %s', $r->rname, $r->ename);
+				$t[]=_going_datetime_to_string($r->time)."\n".sprintf('%s: %s', $r->rname, $r->ename.($r->elevel?$r->elevel:''));
 			}
 			if(!empty($t)) return implode($t,"\n====================\n");
 		}
