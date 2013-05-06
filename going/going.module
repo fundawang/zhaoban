@@ -1145,10 +1145,11 @@ function going_print_score_report($going)
 	
 }
 
-function going_mygoing_check() {
-	if($GLOBALS['user']->uid==0) return FALSE;
-	$r=db_select('students_going','sg')->condition('sg.uid',$GLOBALS['user']->name)->isNotNull('sg.gid')->fields('sg')->countQuery()->execute()->fetchField();
-	return user_access('check my going') && $r>0;
+function going_mygoing_check($user=NULL) {
+	if(empty($user)) $user=$GLOBALS['user'];
+	if($user->uid==0) return FALSE;
+	$r=db_select('students_going','sg')->condition('sg.uid',$user->name)->isNotNull('sg.gid')->fields('sg')->countQuery()->execute()->fetchField();
+	return user_access('check my going', $user) && $r>0;
 }
 
 function going_mygoing() {
@@ -1209,4 +1210,34 @@ function going_mygoing() {
 	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
 	
 	return $output;
+}
+
+function going_weixin($request, $user) {
+	if($user->uid && $request->msgtype=='text') {
+		$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
+		$result=$query->execute();
+		if($result->rowCount() && going_mygoing_check($user) && $request->content=='考试安排') {
+			$query=db_select('students_going','sg')->condition('sg.uid',$user->name)->isNotNull('g.time');
+			$query->innerJoin('students','s','sg.uid=s.uid');
+			$query->innerJoin('vl_exam','e','e.eid=sg.eid');
+			$query->leftJoin('vl_going','g','sg.gid=g.gid');
+			$query->leftJoin('vl_room','r','g.place = r.rid');
+			$query->addExpression('r.rname','rname');
+			$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
+			$query->addExpression('w.rname','wname');
+			$query->fields('e',array('eid','ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname'))->fields('s',array('name'));
+			$query->orderBy('g.time')->orderBy('sg.eid');
+			$result=$query->execute();
+			$t=array();
+			if($result->rowCount()) {
+				$r=$result->fetchObject();
+				$t[]=t('The going arrange of @uid @name goes:', array('@uid'=>$r->uid, '@name'=>$r->name));
+			}
+			$result=$query->execute();
+			foreach($result as $r) {
+				$t[]=_going_datetime_to_string($r->time)."\n".sprintf('%s: %s', $r->rname, $r->ename);
+			}
+			if(!empty($t)) return implode($t,"\n====================\n");
+		}
+	}	
 }
