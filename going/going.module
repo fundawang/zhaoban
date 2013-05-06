@@ -1241,3 +1241,5 @@ function going_weixin($request, $user) {
 		}
 	}	
 }
+
+?>
