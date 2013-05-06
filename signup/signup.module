@@ -5084,6 +5084,25 @@ function signup_search_students($citera) {
 	return $output;
 }
 
+function signup_weixin($request, $user) {
+	if($user->uid) {
+		$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
+		$result=$query->execute();
+		if($result->rowCount()) {
+			switch($request->content) {
+				case '重设密码':
+				case '重置密码':
+				case '忘记密码':
+					$account = user_load($user->uid);
+					$newpass = user_password(6);
+					user_save($account, array('pass'=>$newpass));
+					return t('The new password of @username is @pass.',
+						array('@username'=>$user->name, '@pass'=>$newpass));
+			}
+		}
+	}
+}
+
 function signup_simpleoauth($input, $appid=NULL) {
 	$output=array();
 	if(empty($input) || empty($input['sid']) || empty($input['idcard_number'])) {
