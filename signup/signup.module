@@ -4024,12 +4024,9 @@ function signup_ground_by_profession_detail($prof) {
 		array('data' =>t('Student ID'), 'field'=>'s.uid'),
 		array('data' =>t('Real Name')),
 		array('data' =>t('Gender'), 'field'=>'s.gender'),
-		array('data' =>t('Profession'), 'field'=>'s.profession_major'),
 		array('data' =>t('Province'), 'field'=>'gk.province'),
 	);
 	
-	//$tablesort = tablesort_sql($header);
-	//var_dump($cookie_examplace);
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof->pid);
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
@@ -4074,7 +4071,6 @@ function signup_ground_by_profession_detail($prof) {
 			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
 			'<nobr>'.$r->name.'</nobr>',
 			$r->gender == 1 ? t('Male'): t('Female'),
-			l($profession_major, 'signup/ground/profession/'.$r->profession_major, array('title' => t('Click to view the details of @prof', array('@prof' => $profession_major)))),
 			(user_access('signup_3rd_overview'))?l($province, 'signup/ground/province/'.$plink):($province),
 		);
 	}
