@@ -2438,6 +2438,8 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 	$form=array();
 	if(module_exists('kuaidi100')) {
 		$total_num=db_select('students_contact','sc')->fields('sc')->isNotNull('emscode_roundg')->countQuery()->execute()->fetchField();
+		$succeeded_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',3)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
+		$onroad_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',1)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
 		$form['status']=array(
 			'#type' => 'markup',
 			'#markup' =>
