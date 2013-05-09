@@ -10,18 +10,21 @@
 function score_help($path, $arg) {
 	switch ($path) {
 		case 'score/emptyscores':
-			$output = t('Only authorized users have permisison on emptying scores.');
+			$output = '<p>'.t('Only authorized users have permisison on emptying scores.').'</p>';
 			break;
 		case 'signup/transfer':
-			$output = t('Please select the going you would like to operate.');
+			$output = '<p>'.t('Please select the going you would like to operate.').'</p>';
 			break;
 		case 'signup/transfer/%':
 			$output = '<p>'.t('You should first select those students, then select the destination profession below the students list. Click Apply when done. You can do it multiple times for single profession, but only once for single student.').'</p>';
 			$output .= '<p>'.t('Tip: You may want to input score at fisrt, the sort by the scores to decide.').'</p>';
 			break;
+		case 'signup/markroundg/deliver':
+			$output = '<p>'.t('You may upload the deliver order number of studnets who are marked as pass roundg.').'</p>';
+			break;
 	}
 	if (isset($output))
-		return '<p>'.$output.'</p>';
+		return $output;
 }
 
 /**
@@ -219,9 +222,26 @@ function score_menu() {
 			'page callback' => 'score_mark_gaokao_round_list',
 			'access callback' => 'score_mark_3rd_round_list_check',
 	);
+	$items['signup/markroundg/mark'] = array(
+			'title'=>'Mark round g students',
+			'type' => MENU_DEFAULT_LOCAL_TASK,
+			'description' => 'Mark the students who will be enrolled in to gaokao',
+			'weight'=>0,
+			'page callback' => 'score_mark_gaokao_round_list',
+			'access callback' => 'score_mark_3rd_round_list_check',
+	);
+	$items['signup/markroundg/deliver'] = array(
+			'title'=>'Update deliver log',
+			'type' => MENU_LOCAL_TASK,
+			'description' => 'Update deliver log of round g mail',
+			'weight'=>1,
+			'page callback'=>'drupal_get_form',
+			'page arguments' => array('score_mark_gaokao_update_deliver_orderno'),
+			'access callback' => 'score_mark_3rd_round_list_check',
+	);
 	$items['signup/markroundg/%profession'] = array(
 			'title'=>'Mark round g students',
-			'type'=>MENU_CALLBACK,
+			'type'=>MENU_VISIBLE_IN_BREADCRUMB,
 			'page callback' => 'drupal_get_form',
 			'page arguments' => array('score_mark_gaokao_round', 2),
 			'access callback' => 'score_mark_3rd_round_check',
@@ -2411,6 +2431,147 @@ function score_mark_gaokao_round_list() {
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 
 	return $output;
+}
+
+function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
+	drupal_set_title(t('Update deliver log'));
+	$form=array();
+	if(module_exists('kuaidi100')) {
+		$total_num=db_select('students_contact','sc')->fields('sc')->isNotNull('emscode_roundg')->countQuery()->execute()->fetchField();
+		$form['status']=array(
+			'#type' => 'markup',
+			'#markup' =>
+				t('Currently tracking @total orders, while @succeeded of them have been delivered, @onroad on road.',
+					array('@total'=>$total_num, '@succeeded'=>$succeeded_num, '@onroad'=>$onroad_num)
+				),
+		);
+		$db_or=db_or()->condition('dl.status',2)->condition('dl.status',0,'<');
+		$query=db_select('deliverlog','dl')->fields('dl')
+			->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')
+			->condition($db_or);
+		$query->innerJoin('students_contact','sc','dl.orderno=sc.emscode_roundg');
+		$query->innerJoin('students','s','sc.uid=s.uid');
+		$query->innerJoin('users','u','u.name=s.uid');
+		$query->addExpression('u.uid','uuid');
+		$query->fields('s',array('uid','name'));
+		$difficults=$query->orderBy('dl.type')->execute();
+		if($difficults->rowCount()>0) {
+			$form['difficults']=array(
+				'#type' => 'fieldset',
+				'#title' => t('Orders in problem (@num)', array('@num'=>$difficults->rowCount())),
+				'#collapsible' => TRUE,
+				'#collapsed' => TRUE,
+			);
+			$rows=array();
+			foreach($difficults as $order) {
+				$rows[]=array(
+					l($order->uid, 'user/'.$order->uuid),
+					$order->name,
+					sprintf("%s / %s", t($order->com), $order->orderno),
+					kuaidi100_resolve_state_code($order->status),
+					$order->statustext,
+				);
+			}
+			$header=array(
+				t('Student ID'),
+				t('Real Name'),
+				t('Deliver order no'),
+				t('Status'),
+				t('Status Detail')
+			);
+			$form['difficults']['detail']=array(
+				'#type' => 'markup',
+				'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
+			);
+		}
+	} else {
+		$total_num=db_select('students_contact','sc')->fields('sc')->isNotNull('emscode_roundg')->countQuery()->execute()->fetchField();
+		if($total_num==0)
+			$form['status']=array(
+				'#type' => 'markup',
+				'#markup' =>t('Currently not tracking any orders.'),
+			);
+		else
+			$form['status']=array(
+				'#type' => 'markup',
+				'#markup' =>
+					t('Currently tracking @total orders.',
+						array('@total'=>$total_num)
+					),
+			);
+	}
+	if(isset($form['status'])) {
+		$form['status']['#prefix']='<div>';
+		$form['status']['#suffix']='</div>';
+	}
+	$form['massorders']=array(
+		'#type' => 'fieldset',
+		'#title' => t('Update deliver orders'),
+		'#description' => t('If you want to update the deliver orders, please paste them here.'),
+	);
+	$form['massorders']['com']=array(
+		'#type' => 'select',
+		'#title' => t('Deliver by'),
+		'#required' => TRUE,
+		'#options' => array(
+			'shunfeng' => t('SF-Express'),
+			'ems' => t('EMS'),
+		),
+		'#default_value' => 'ems',
+	);
+	$form['massorders']['ordersdetail']=array(
+		'#type' => 'textarea',
+		'#title' => t('Order details'),
+		'#rows' => 20,
+		'#required' => TRUE,
+		'#description' =>
+			t('The details should be in the format of: Student ID &lt;TAB&gt; Order number.').'<br/>'.
+			'<span class="messages error"><strong>'.
+			t('Please note that existing orders will be overwritten by new value.').
+			'</strong></span>',
+	);
+	$form['submit']=array(
+		'#type' => 'submit',
+		'#value' => t('Save')
+	);
+	return $form;
+}
+
+function score_mark_gaokao_update_deliver_orderno_validate($form, $form_state) {
+	$values=explode("\r\n",$form_state['values']['ordersdetail']);
+	$i=0;
+	foreach($values as $line) {
+		$i++;
+		if(empty($line)) continue;
+		$orders=explode("\t",$line);
+		if(count($orders)<>2)
+			form_set_error('ordersdetail',t('The columns of Line @i is @columns, should be 2:<br/>@content', array('@i'=>$i,'@content'=>$line,'@columns'=>count($orders))));
+		else {
+			$student=db_select('students','s')->condition('s.uid',$orders[0])->condition('s.pass_roundg_major',1)
+				->fields('s')->countQuery()->execute()->fetchField();
+			if($student<>1)
+				form_set_error('ordersdetail',
+					t('Could not find suitable student @uid at Line @i.', array('@uid'=>$orders[0], '@i'=>$i))
+				);
+		}
+	}
+}
+
+function score_mark_gaokao_update_deliver_orderno_submit($form, $form_state) {
+	$com=$form_state['values']['com'];
+	$i=0;
+	$values=explode("\n",$form_state['values']['ordersdetail']);
+	foreach($values as $line) {
+		if(empty($line)) continue;
+		$orders=explode("\t",$line);
+		$t=db_update('students_contact')->condition('uid',$orders[0])->fields(array(
+			'emscode_roundg' => trim($orders[1])
+		))->execute();
+		if($t) $i+=$t;
+		if($t && module_exists('kuaidi100')) {
+			kuaidi100_save('score','gaokao,'.$orders[0], $com, $orders[1]);
+		}
+	}
 }
 
 function score_mark_gaokao_round($form, $form_state, $profession) {
