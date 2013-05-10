@@ -55,9 +55,12 @@ function signup_help($path, $arg) {
 		case 'signup/search/%':
 			$output = t('Search students by various citera.');
 			break;
+		case 'weixin':
+			if(is_null($arg))
+				$output=sprintf("* %s:\n%s",t('Reset password'), t('Reset password if you have bounded your weixin account.'));
 	}
 	if (isset($output))
-		return '<p>'.$output.'</p>';
+		return $output;
 }
 
 /**
