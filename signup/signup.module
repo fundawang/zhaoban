@@ -57,7 +57,7 @@ function signup_help($path, $arg) {
 			break;
 		case 'weixin':
 			if(is_null($arg))
-				$output=sprintf("* %s:\n%s",t('Reset password'), t('Reset password if you have bounded your weixin account.'));
+				$output=sprintf("* %s:\n%s",t('Reset password'), t('Reset password if you have bound your weixin account.'));
 	}
 	if (isset($output))
 		return $output;

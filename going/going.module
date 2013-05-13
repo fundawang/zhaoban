@@ -18,6 +18,11 @@ function going_init() {
  * Implementation of hook_help().
  */
 function going_help($path, $arg) {
+	switch ($path) {
+		case 'weixin':
+			if(is_null($arg))
+				return sprintf("* %s:\n%s",t('Exam arrangement'), t('List your examine arrangement if you have bound your weixin account.'));
+	}
 	return;
 }
 
