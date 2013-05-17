@@ -2725,7 +2725,7 @@ function score_weixin($request, $user) {
 	if($request->msgtype !== 'text'||$user->uid==0) return;
 	if($request->content == '查询成绩' || $request->content == '考试结果' || $request->content == '考试成绩' ) {
 		$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
-		if(!$r) return t('You are not allowed to access the score query feature.');
+		if(user_access('check students own scores', $user) || !$r) return t('You are not allowed to access the score query feature.');
 		$query=db_select('students','s')->condition('s.uid',$user->name);
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
 		$query->innerJoin('vl_department', 'd', 'p.did = d.did');
