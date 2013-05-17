@@ -22,6 +22,11 @@ function score_help($path, $arg) {
 		case 'signup/markroundg/deliver':
 			$output = '<p>'.t('You may upload the deliver order number of studnets who are marked as pass roundg.').'</p>';
 			break;
+		case 'weixin':
+			if(is_null($arg))
+				$output = sprintf("* %s:\n%s",t('Query score'), t('List the exam scores, if you have bound your weixin account.'));
+				$output .= "\n\n";
+				$output .= sprintf("* %s:\n%s",t('Roundg result'), t('List the result of roundg, if you have bound your weixin account.'));
 	}
 	if (isset($output))
 		return $output;
@@ -342,7 +347,6 @@ function score_input_going_list_batch_check() {
 }
 
 function score_check_perm_view() {
-	//$r=db_result(db_query('SELECT MAX(gid) FROM {students_going}'));
 	$query=db_select('students_going');
 	$query->addExpression('MAX(gid)', 'g');
 	$r=$query->execute()->fetchField();
@@ -1899,11 +1903,11 @@ function score_myscore_check($user=NULL) {
 		return user_access('signup_3rd_overview') && $r;
 }
 
-function score_myscore_check_roundg() {
-	global $user;
+function score_myscore_check_roundg($user=NULL) {
+	if(is_null($user)) $user=$GLOBALS['user'];
 	if(!$user->uid) return false;
 	$r=db_select('students','s')->fields('s',array('pass_roundg_major'))->condition('uid',$user->name)->execute()->fetchField();
-	return user_access('check students roundg scores') && $r;
+	return user_access('check students roundg scores', $user) && $r;
 }
 
 function score_myscore_title_callback($user) {
@@ -2715,6 +2719,62 @@ function score_myscore_roundg() {
 	).'</p>';
 	
 	return $output;
+}
+
+function score_weixin($request, $user) {
+	if($request->msgtype !== 'text'||$user->uid==0) return;
+	if($request->content == '查询成绩' || $request->content == '考试结果' || $request->content == '考试成绩' ) {
+		$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
+		if(!$r) return t('You are not allowed to access the score query feature.');
+		$query=db_select('students','s')->condition('s.uid',$user->name);
+		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+		$query->innerJoin('vl_department', 'd', 'p.did = d.did');
+		$query->innerJoin('students_total_score','ts','ts.uid=s.uid AND ts.pid=s.profession_major');
+		$query->fields('s',array('uid','name','profession_major','pass_round3_major'))->fields('p',array('pname'))->fields('d',array('did','dname'))->fields('ts',array('rank','outrank'));
+		$student=$query->execute()->fetchObject();
+		$t=t('@uid @name, you have signed up @dep@prof this year.', array(
+			'@uid'=>$student->uid, '@name'=>$student->name,
+			'@dep'=>$student->dname, '@prof'=>$student->pname)
+		);
+		switch($student->pass_round3_major) {
+			case 10:
+				if($student->profession_major=='D301' || $student->profession_major=='DA02')
+					$t .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
+				else 
+					$t .= t('You are marked as planed students.');
+				break;
+			case 1:
+				if($student->profession_major=='D301' || $student->profession_major=='DA02')
+					$t .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
+				else
+					$t .= t('You are marked as unplaned students, and the order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
+				break;
+			case 0:
+				$t .= t('You are marked as unqualified students.');
+				break;
+		}
+
+		$t.=t('And your score goes:');
+		$t.="\n____________________\n";
+		$query=db_select('students_score','sc')->condition('sc.uid',$student->uid)->fields('sc',array('score','rank'));
+		$query->innerJoin('vl_exam','e','sc.eid=e.eid');
+		$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
+		$query->orderBy('sc.eid');
+		$result=$query->execute();
+		$e=array();
+		foreach($result as $r) {
+			$e[]=sprintf("%s: %s%s",$r->enamefull,round(($r->rank)?$r->rank:$r->score,2), ($r->rank)?' *':'');
+		}
+		$t.=implode("\n",$e);
+		if(in_array($student->did,array('D5','D6','D8'))) {
+			$t.="\n____________________\n* ";
+			$t.=t('It is a mean rank, rather than numeric value.');
+		}
+	}
+	if($request->content == '录取结果') {
+		if(!score_myscore_check_roundg($user)) return t('You are not allowed to access the roundg query feature.');
+	}
+	if(isset($t)) return $t;
 }
 
 function score_cron() {
