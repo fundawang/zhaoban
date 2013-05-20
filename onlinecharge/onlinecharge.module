@@ -6,6 +6,25 @@ define('onlinecharge_PAYMENT_FAILED', -1);
 define('onlinecharge_PAYMENT_INVALID', -2);
 
 /**
+ * Implementation of hook_requirements().
+ */
+function onlinecharge_requirements($phase) {
+	$requirements = array();
+
+	if ($phase == 'runtime') {
+		$t = get_t();
+		$num=db_select('orders','o')->fields('o')->countQuery()->execute()->fetchField();
+		$succeeded=db_select('orders','o')->fields('o')->condition('o.status',100)->countQuery()->execute()->fetchField();
+		$requirements['onlinecharge'] = array(
+			'title' => t('Online Charging orders'),
+			'severity' => REQUIREMENT_INFO,
+			'value' => t('@num orders have been created, and @succeeded of them succeeded', array('@num' => number_format($num), '@succeeded'=>number_format($succeeded))),
+		);
+	}
+	return $requirements;
+}
+
+/**
  * Implements hook_help().
  */
 function onlinecharge_help($path, $arg) {
