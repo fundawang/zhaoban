@@ -2054,7 +2054,7 @@ function score_input_gaokao_overview() {
 	return drupal_get_form('score_gaokao_province_status_form');
 }
 
-function score_gaokao_province_status_form() {
+function score_gaokao_province_status_form($form, &$form_state) {
 	$form=array();
 	$query=db_select('vl_province','p');
 	$query->innerJoin('students_gk','sg','p.pid=sg.province');
@@ -2064,74 +2064,209 @@ function score_gaokao_province_status_form() {
 	$query->addExpression('count(*)','num');
 	$query->groupBy('p.pid')->orderBy('p.pid');
 	$rdbo=$query->execute();
-
-	$form['batchupload']=array(
-		'#type'=>'fieldset',
-		'#title'=>t('Batch upload scores'),
-		'#collapsible' => TRUE,
-		'#collapsed' => TRUE,
-	);
-	$form['batchupload']['batchfile']=array(
-		'#type'=>'managed_file',
-		'#title'=>t('Source file'),
-		'#title_display' => 'invisible',
-		'#size' => 10,
-		'#prefix' => '<div class="inline-element-div">',
-		'#progress_indicator' => 'none',
-		'#upload_validators' => array(
-			'file_validate_extensions' => array('dbf')
-		),
-	);
-	$form['batchupload']['upload']=array(
-		'#id'=>'batchupload',
-		'#name'=>'batchupload',
-		'#type'=>'button',
-		'#value'=>t('Continue to proceed'),
-		'#suffix' => '</div>',
-	);
-	foreach($rdbo as $r) {
-		$form['pid'][$r->pid]=array('#type'=>'hidden','#value'=>$r->pid);
-		$form['name'][$r->pid]=array('#markup'=>$r->name);
-		$form['num'][$r->pid]=array('#markup'=>$r->num);
-		
-		$q=db_select('students_gk','sg');
-		$q->innerJoin('students','s','sg.uid=s.uid');
-		$q->condition('s.pass_round3_major',0,'>')->condition('sg.province',$r->pid);
-		$q->addExpression('MIN(sg.validated)');
-		
-		$form['status-'.$r->pid]=array('#type'=>'checkbox',
-			'#default_value'=>$r->isgkenabled,
-			'#disabled'=>$q->execute()->fetchField(),
-			'#title'=>t('Students can input scores themselves'),
+	# if field selection page should be displayed.
+	if(isset($form_state['storage']['batchfileobj'])) {
+		drupal_set_title(t('Input gaokao scores for the students').' - '.t('Batch upload'));
+		$file=$form_state['storage']['batchfileobj'];
+		$fname=tempnam(sys_get_temp_dir(),'').'.dbf';
+		file_unmanaged_copy($file->uri, $fname);
+		$dbfile=dbase_open($fname,0);
+		$tmp_fields=dbase_get_header_info($dbfile);
+		$fields=array();
+		foreach($tmp_fields as $field) {
+			$fields[]=mb_convert_encoding($field['name'], 'UTF-8', 'GBK');
+		}
+		unset($tmp_fields);
+		// Fetch first two record
+		$record=array(
+			dbase_get_record($dbfile,1),
+			dbase_get_record($dbfile,2)
 		);
-		$form['op'][$r->pid]=$r->isgkenabled?'':array('#markup'=>l(t('Input myself'),'score/inputgk/'.$r->pid));
+		dbase_close($dbfile);
+		file_unmanaged_delete($fname);
+
+		// Forms sample grid.
+		$header=array(
+			t('Field name'),
+			t('Sample value 1'),
+			t('Sample value 2')
+		);
+		$rows=array();
+		$i=0;
+		foreach($fields as $field) {
+			$rows[]=array(
+				$field,
+				mb_convert_encoding($record[0][$i], 'UTF-8', 'GBK'),
+				mb_convert_encoding($record[1][$i++], 'UTF-8', 'GBK')
+			);
+		}
+		$form['description']=array(
+			'#type' => 'fieldset',
+			'#title' => t('Database summary'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['description']['samplegrid']=array(
+			'#type'=>'markup',
+			'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
+		);
+		$form['instruction']=array(
+			'#type' => 'item',
+			'#title' => t('Please select relationship between scores and database'),
+			'#required' => TRUE,
+			'#suffix' => '<div class="inline-element-div">',
+		);
+
+		$fieldoptions=array();
+		foreach($fields as $field) {
+			$fieldoptions[$field]=$field;
+		}
+		$fieldoptions+=array('00'=>t('N/A'));
+		$form['idcard_number']=array(
+			'#type' => 'select',
+			'#title' => t('IDCard number'),
+			'#options' => $fieldoptions,
+			'#default_value' => 'SFZH',
+			'#required' => TRUE,
+		);
+		$form['scores_ksh']=array(
+			'#type' => 'select',
+			'#title' => t('Gaokao SID'),
+			'#options' => $fieldoptions,
+			'#default_value' => 'KSH',
+			'#required' => TRUE,
+			'#suffix' => '<br/><br/>',
+		);
+		$form['scores_yw']=array(
+			'#type' => 'select',
+			'#title' => t('Chinese'),
+			'#options' => $fieldoptions,
+			'#default_value' => 'YW',
+			'#required' => TRUE,
+		);
+		$form['scores_sx']=array(
+			'#type' => 'select',
+			'#title' => t('Math'),
+			'#options' => $fieldoptions,
+			'#default_value' => 'SX',
+			'#required' => TRUE,
+		);
+		$form['scores_wy']=array(
+			'#type' => 'select',
+			'#title' => t('Foreign language'),
+			'#options' => $fieldoptions,
+			'#default_value' => 'WY',
+			'#required' => TRUE,
+		);
+		$form['scores_zh']=array(
+			'#type' => 'select',
+			'#name' => 'scoreszh',
+			'#title' => t('Synthesis subject'),
+			'#options' => $fieldoptions,
+			'#default_value' => 'ZH',
+			'#required' => TRUE,
+			'#suffix' => '<br/><br/>',
+		);
+		$form['total_score']=array(
+			'#type' => 'item',
+			'#markup' => t('Total score will be multiplicated with 1.67 (750/450).'),
+			'#states' => array(
+				'visible' => array(
+					'select[name="scoreszh"]' => array('value' =>'00'),
+				),
+			),
+		);
+		$form['submit']=array(
+			'#type' => 'submit',
+			'#value' => t('Proceed'),
+			'#prefix' => '</div>',
+		);
+	} else {
+		$form['batchupload']=array(
+			'#type'=>'fieldset',
+			'#title'=>t('Batch upload scores'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['batchupload']['batchfile']=array(
+			'#type'=>'file',
+			'#title'=>t('Source file'),
+			//'#title_display' => 'invisible',
+			'#size' => 10,
+			'#prefix' => '<div class="inline-element-div">',
+		);
+		$form['batchupload']['upload']=array(
+			'#id'=>'batchupload',
+			'#name'=>'batchupload',
+			'#type'=>'button',
+			'#value'=>t('Continue to proceed'),
+			'#suffix' => '</div>',
+		);
+		foreach($rdbo as $r) {
+			$form['pid'][$r->pid]=array('#type'=>'hidden','#value'=>$r->pid);
+			$form['name'][$r->pid]=array('#markup'=>$r->name);
+			$form['num'][$r->pid]=array('#markup'=>$r->num);
+			
+			$q=db_select('students_gk','sg');
+			$q->innerJoin('students','s','sg.uid=s.uid');
+			$q->condition('s.pass_round3_major',0,'>')->condition('sg.province',$r->pid);
+			$q->addExpression('MIN(sg.validated)');
+			
+			$form['status-'.$r->pid]=array('#type'=>'checkbox',
+				'#default_value'=>$r->isgkenabled,
+				'#disabled'=>$q->execute()->fetchField(),
+				'#title'=>t('Students can input scores themselves'),
+			);
+			$form['op'][$r->pid]=$r->isgkenabled?'':array('#markup'=>l(t('Input myself'),'score/inputgk/'.$r->pid));
+		}
+		
+		$form['submit']=array('#type'=>'submit','#value'=>t('Update'));
 	}
-	
-	$form['submit']=array('#type'=>'submit','#value'=>t('Update'));
 	return $form;
 
 }
 
-function score_gaokao_province_status_form_submit($form, &$form_state) {
-	$form_values=$form_state['values'];
-	$keys=array_keys($form_values);
-	$values=array_values($form_values);
-	foreach($keys as $key) {
-		if(strpos($key, 'status')!==FALSE) {
-			$p=substr($key, 7);
-			db_update('vl_province')->fields(array(
-				'isgkenabled' => $form_values[$key]
-			))->condition('pid',$p)->execute();
+function score_gaokao_province_status_form_validate($form, &$form_state) {
+	if($_FILES['files']['size']['batchfile']==0) return;
+	$file = file_save_upload('batchfile', array(
+    	'file_validate_extensions' => array('dbf'))
+	);
+	if($file) {
+		$fname=tempnam(sys_get_temp_dir(),'').'.dbf';
+		file_unmanaged_copy($file->uri, $fname);
+		$dbfile=dbase_open($fname,0);
+		if($dbfile) {
+			$form_state['storage']['batchfileobj']=$file;
+			dbase_close($dbfile);
 		}
+		else
+			form_set_error('batchfile', t('The file you have uploaded is not a valid dbase file.'));
+		file_unmanaged_delete($fname);
 	}
-	drupal_set_message(t('Settings have been saved.'));
+}
+
+function score_gaokao_province_status_form_submit($form, &$form_state) {
+	if($form_state['triggering_element']['#id']=='batchupload') {
+	} else {
+		$form_values=$form_state['values'];
+		$keys=array_keys($form_values);
+		$values=array_values($form_values);
+		foreach($keys as $key) {
+			if(strpos($key, 'status')!==FALSE) {
+				$p=substr($key, 7);
+				db_update('vl_province')->fields(array(
+					'isgkenabled' => $form_values[$key]
+				))->condition('pid',$p)->execute();
+			}
+		}
+		drupal_set_message(t('Settings have been saved.'));
+	}
 }
 
 
 function theme_score_gaokao_province_status_form($variables) {
 	$form=$variables['form'];
 	$output = '';
-	$output=drupal_render($form['batchupload']);
 	$rows=array();
 	$header=array(
 		array('data'=>t('Province')),
@@ -2148,7 +2283,22 @@ function theme_score_gaokao_province_status_form($variables) {
 			drupal_render($form['op'][$p]),
 		);
 	}
-	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
+
+	if(count($rows)) {
+		$output.=drupal_render($form['batchupload']);
+		$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
+	} else {
+		$output.=drupal_render($form['instruction']);
+		$output.=drupal_render($form['idcard_number']);
+		$output.=drupal_render($form['scores_ksh']);
+		$output.=drupal_render($form['scores_yw']);
+		$output.=drupal_render($form['scores_sx']);
+		$output.=drupal_render($form['scores_wy']);
+		$output.=drupal_render($form['scores_zh']);
+		$output.=drupal_render($form['total_score']);
+		$output.=drupal_render($form['description']);
+		//$output.=drupal_render($form['samplegrid']);
+	}
 	$output.=drupal_render($form['submit']);
 	$output.=drupal_render_children($form);
 
