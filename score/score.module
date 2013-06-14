@@ -24,9 +24,9 @@ function score_help($path, $arg) {
 			break;
 		case 'weixin':
 			if(is_null($arg))
-				$output = sprintf("* %s:\n%s",t('Query score'), t('List the exam scores, if you have bound your weixin account.'));
+				$output = sprintf("%s:\n%s",t('Query score'), t('List the exam scores, if you have bound your weixin account.'));
 				$output .= "\n\n";
-				$output .= sprintf("* %s:\n%s",t('Roundg result'), t('List the result of roundg, if you have bound your weixin account.'));
+				$output .= sprintf("%s:\n%s",t('Roundg result'), t('List the result of roundg, if you have bound your weixin account.'));
 	}
 	if (isset($output))
 		return $output;
