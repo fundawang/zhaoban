@@ -2065,6 +2065,30 @@ function score_gaokao_province_status_form() {
 	$query->groupBy('p.pid')->orderBy('p.pid');
 	$rdbo=$query->execute();
 
+	$form['batchupload']=array(
+		'#type'=>'fieldset',
+		'#title'=>t('Batch upload scores'),
+		'#collapsible' => TRUE,
+		'#collapsed' => TRUE,
+	);
+	$form['batchupload']['batchfile']=array(
+		'#type'=>'managed_file',
+		'#title'=>t('Source file'),
+		'#title_display' => 'invisible',
+		'#size' => 10,
+		'#prefix' => '<div class="inline-element-div">',
+		'#progress_indicator' => 'none',
+		'#upload_validators' => array(
+			'file_validate_extensions' => array('dbf')
+		),
+	);
+	$form['batchupload']['upload']=array(
+		'#id'=>'batchupload',
+		'#name'=>'batchupload',
+		'#type'=>'button',
+		'#value'=>t('Continue to proceed'),
+		'#suffix' => '</div>',
+	);
 	foreach($rdbo as $r) {
 		$form['pid'][$r->pid]=array('#type'=>'hidden','#value'=>$r->pid);
 		$form['name'][$r->pid]=array('#markup'=>$r->name);
@@ -2107,6 +2131,7 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 function theme_score_gaokao_province_status_form($variables) {
 	$form=$variables['form'];
 	$output = '';
+	$output=drupal_render($form['batchupload']);
 	$rows=array();
 	$header=array(
 		array('data'=>t('Province')),
@@ -2123,7 +2148,7 @@ function theme_score_gaokao_province_status_form($variables) {
 			drupal_render($form['op'][$p]),
 		);
 	}
-	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
 	$output.=drupal_render($form['submit']);
 	$output.=drupal_render_children($form);
 
