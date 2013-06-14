@@ -3165,7 +3165,7 @@ function signup_overview_set_validated() {
 
 function signup_overview_set_validated_submit($form, $form_state) {
 	if(module_exists('onlinecharge')) {
-		if($form_state['clicked_button']['#name']=='setvalidate') {
+		if($form_state['triggering_element']['#name']=='setvalidate') {
 			$students=db_select('users','u')->where('u.name={students}.uid')->fields('u',array('uid'));
 			$students->innerJoin('orders','o','u.uid=o.uid');
 			$students->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
@@ -3187,7 +3187,7 @@ function signup_overview_set_validated_submit($form, $form_state) {
 			}
 		}
 		
-		if($form_state['clicked_button']['#name']=='setinactive') {
+		if($form_state['triggering_element']['#name']=='setinactive') {
 			$students=db_select('students','s')->where('{users}.name=s.uid')->condition('s.validated',0)->fields('s',array('uid'));
 			$query=db_update('users')->fields(array('status'=>0))->exists($students);
 			//var_dump($query->__toString()); exit;
@@ -3883,7 +3883,7 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 		'#collapsible' => TRUE,
 		'#collapsed' => TRUE,
 	);
-	if($_SERVER['REQUEST_METHOD']=='POST' && isset($form_state['clicked_button']) && $form_state['clicked_button']['#name'] == 'refresh') {
+	if($_SERVER['REQUEST_METHOD']=='POST' && isset($form_state['triggering_element']) && $form_state['triggering_element']['#name'] == 'refresh') {
 		$r=kuaidi100_get_status('signup','3rdround,'.$prov); 
 		if($r) {
 			kuaidi100_update_status($r->com, $r->orderno);

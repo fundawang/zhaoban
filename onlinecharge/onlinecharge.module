@@ -530,7 +530,7 @@ function onlinecharge_generate_random_orderno() {
 }
 
 function onlinecharge_user_orders_validate($form, $form_state) {
-	$i=substr($form_state['clicked_button']['#name'],-1);
+	$i=substr($form_state['triggering_element']['#name'],-1);
 	$query=db_select('orders','o')->fields('o',array('status'))->condition('o.orderno',$form_state['values']['orderno'.$i]);
 	$r=$query->execute()->fetchObject();
 	if($r->status != 0)
@@ -539,7 +539,7 @@ function onlinecharge_user_orders_validate($form, $form_state) {
 
 function onlinecharge_user_orders_submit($form, $form_state) {
 	$_form_state=array();
-	$i=substr($form_state['clicked_button']['#name'],-1);
+	$i=substr($form_state['triggering_element']['#name'],-1);
 	$time=time();
 	db_update('orders')->condition('orderno',$form_state['values']['orderno'.$i])->fields(array(
 		'ordertime' => $time,
@@ -938,7 +938,7 @@ function theme_onlinecharge_log_form($variables) {
 }
 
 function onlinecharge_log_form_submit($form, &$form_state) {
-	switch($form_state['clicked_button']['#name']) {
+	switch($form_state['triggering_element']['#name']) {
 	case 'search':
 		user_cookie_save(array(
 			'user_uid' => trim($form_state['values']['uid']),
@@ -956,8 +956,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 		}
 		break;
 	default:
-		if(preg_match('/^payoffline/', $form_state['clicked_button']['#name'])) {
-			$orderno=substr($form_state['clicked_button']['#name'],-20);
+		if(preg_match('/^payoffline/', $form_state['triggering_element']['#name'])) {
+			$orderno=substr($form_state['triggering_element']['#name'],-20);
 			db_update('orders')->condition('orderno',$orderno)->fields(array(
 				'gateway' => 'offline',
 				'gatewaytransactionno' => NULL,
@@ -979,8 +979,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			user_cookie_delete('orders_gateway');
 			user_cookie_delete('orders_status');
 		}
-		if(preg_match('/^setfail/', $form_state['clicked_button']['#name'])) {
-			$orderno=substr($form_state['clicked_button']['#name'],-20);
+		if(preg_match('/^setfail/', $form_state['triggering_element']['#name'])) {
+			$orderno=substr($form_state['triggering_element']['#name'],-20);
 			db_update('orders')->condition('orderno',$orderno)->fields(array(
 				'gateway' => NULL,
 				'gatewaytransactionno' => NULL,
@@ -1006,8 +1006,8 @@ function onlinecharge_log_form_submit($form, &$form_state) {
 			user_cookie_delete('orders_gateway');
 			user_cookie_delete('orders_status');
 		}
-		if(preg_match('/^requery/', $form_state['clicked_button']['#name'])) {
-			$orderno=substr($form_state['clicked_button']['#name'],-20);
+		if(preg_match('/^requery/', $form_state['triggering_element']['#name'])) {
+			$orderno=substr($form_state['triggering_element']['#name'],-20);
 			$r=db_select('orders','o')->condition('o.orderno',$orderno)->fields('o')->execute()->fetchObject();
 			$t=module_invoke($r->gateway, 'querystatus', $orderno, $r->ordertime);
 			if(is_array($t)) {

@@ -781,7 +781,7 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 		drupal_set_message(t('Online tests started.'));
 	} else {
 		$eid=db_select('vl_going','g')->condition('gid',$form_state['values']['gid'])->fields('g',array('valid_exams'))->execute()->fetchField();
-		switch($form_state['clicked_button']['#id']) {
+		switch($form_state['triggering_element']['#id']) {
 			case 'edit-submit':
 			case 'edit-save':
 				// Let's upload all new files into file_managed
@@ -816,7 +816,7 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 						'answers' => implode(', ', $files),
 					))->execute();
 				}
-				if($form_state['clicked_button']['#id']=='edit-submit') {
+				if($form_state['triggering_element']['#id']=='edit-submit') {
 					$i=1;
 					$answers=explode(', ',db_select('students_going','sg')->condition('uid',$GLOBALS['user']->name)->condition('gid',$form_state['values']['gid'])->condition('status',2)->fields('sg',array('answers'))->execute()->fetchField());
 					foreach($answers as $answer) {
@@ -833,7 +833,7 @@ function onlinetests_myonlinetests_for_students_submit($form, $form_state) {
 					))->execute();
 				}
 		}
-		if($form_state['clicked_button']['#id']=='edit-save') drupal_set_message(t('File saved.'));
+		if($form_state['triggering_element']['#id']=='edit-save') drupal_set_message(t('File saved.'));
 		else {
 			drupal_set_message(t('Online tests ended.'));
 		}
