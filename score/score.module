@@ -2074,7 +2074,7 @@ function score_gaokao_province_status_form($form, &$form_state) {
 		$tmp_fields=dbase_get_header_info($dbfile);
 		$fields=array();
 		foreach($tmp_fields as $field) {
-			$fields[]=mb_convert_encoding($field['name'], 'UTF-8', 'GBK');
+			$fields[]=strtoupper(mb_convert_encoding($field['name'], 'UTF-8', 'GBK'));
 		}
 		unset($tmp_fields);
 		// Fetch first two record
@@ -2165,7 +2165,7 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			'#options' => $fieldoptions,
 			'#default_value' => in_array('ZH', $fields)?'ZH':'00',
 			'#required' => TRUE,
-			'#suffix' => '<br/><br/>',
+			'#prefix' => '<br/><br/>',
 		);
 		$form['total_score']=array(
 			'#type' => 'item',
@@ -2252,7 +2252,20 @@ function score_gaokao_province_status_form_validate($form, &$form_state) {
 }
 
 function score_gaokao_province_status_form_submit($form, &$form_state) {
-	if($form_state['triggering_element']['#id']=='batchupload') {
+	if($form_state['triggering_element']['#id']=='batchuploadproceed') {
+		$file=$form_state['storage']['batchfileobj'];
+		$fname=tempnam(sys_get_temp_dir(),'').'.dbf';
+		file_unmanaged_copy($file->uri, $fname);
+		$dbfile=dbase_open($fname,0);
+		$tmp_fields=dbase_get_header_info($dbfile);
+		$fields=array();
+		foreach($tmp_fields as $field) {
+			$fields[]=mb_convert_encoding($field['name'], 'UTF-8', 'GBK');
+		}
+		unset($tmp_fields);
+		$query=db_update('students_gk');
+		dbase_close($dbfile);
+		file_unmanaged_delete($fname);
 	} else {
 		$form_values=$form_state['values'];
 		$keys=array_keys($form_values);
