@@ -2121,22 +2121,6 @@ function score_gaokao_province_status_form($form, &$form_state) {
 		foreach($fields as $field) {
 			$fieldoptions[$field]=$field;
 		}
-		$fieldoptions+=array('00'=>t('N/A'));
-		$form['idcard_number']=array(
-			'#type' => 'select',
-			'#title' => t('IDCard number'),
-			'#options' => $fieldoptions,
-			'#default_value' => in_array('SFZH', $fields)?'SFZH':'00',
-			'#required' => TRUE,
-		);
-		$form['scores_ksh']=array(
-			'#type' => 'select',
-			'#title' => t('Gaokao SID'),
-			'#options' => $fieldoptions,
-			'#default_value' => in_array('KSH', $fields)?'KSH':'00',
-			'#required' => TRUE,
-			'#suffix' => '<br/><br/>',
-		);
 		$form['scores_yw']=array(
 			'#type' => 'select',
 			'#title' => t('Chinese'),
@@ -2158,6 +2142,22 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			'#default_value' => in_array('WY', $fields)?'WY':'00',
 			'#required' => TRUE,
 		);
+		$fieldoptions+=array('00'=>t('N/A'));
+		$form['idcard_number']=array(
+			'#type' => 'select',
+			'#title' => t('IDCard number'),
+			'#options' => $fieldoptions,
+			'#default_value' => in_array('SFZH', $fields)?'SFZH':'00',
+			'#required' => TRUE,
+		);
+		$form['scores_ksh']=array(
+			'#type' => 'select',
+			'#title' => t('Gaokao SID'),
+			'#options' => $fieldoptions,
+			'#default_value' => in_array('KSH', $fields)?'KSH':'00',
+			'#required' => TRUE,
+			'#suffix' => '<br/><br/>',
+		);
 		$form['scores_zh']=array(
 			'#type' => 'select',
 			'#name' => 'scoreszh',
@@ -2177,6 +2177,7 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			),
 		);
 		$form['submit']=array(
+			'#id' => 'batchuploadproceed',
 			'#type' => 'submit',
 			'#value' => t('Proceed'),
 			'#prefix' => '</div>',
@@ -2191,7 +2192,6 @@ function score_gaokao_province_status_form($form, &$form_state) {
 		$form['batchupload']['batchfile']=array(
 			'#type'=>'file',
 			'#title'=>t('Source file'),
-			//'#title_display' => 'invisible',
 			'#size' => 10,
 			'#prefix' => '<div class="inline-element-div">',
 		);
@@ -2227,21 +2227,27 @@ function score_gaokao_province_status_form($form, &$form_state) {
 }
 
 function score_gaokao_province_status_form_validate($form, &$form_state) {
-	if($_FILES['files']['size']['batchfile']==0) return;
-	$file = file_save_upload('batchfile', array(
-    	'file_validate_extensions' => array('dbf'))
-	);
-	if($file) {
-		$fname=tempnam(sys_get_temp_dir(),'').'.dbf';
-		file_unmanaged_copy($file->uri, $fname);
-		$dbfile=dbase_open($fname,0);
-		if($dbfile) {
-			$form_state['storage']['batchfileobj']=$file;
-			dbase_close($dbfile);
+	if($_FILES['files']['size']['batchfile']) {
+		$file = file_save_upload('batchfile', array(
+			'file_validate_extensions' => array('dbf'))
+		);
+		if($file) {
+			$fname=tempnam(sys_get_temp_dir(),'').'.dbf';
+			file_unmanaged_copy($file->uri, $fname);
+			$dbfile=dbase_open($fname,0);
+			if($dbfile) {
+				$form_state['storage']['batchfileobj']=$file;
+				dbase_close($dbfile);
+			}
+			else
+				form_set_error('batchfile', t('The file you have uploaded is not a valid dbase file.'));
+			file_unmanaged_delete($fname);
 		}
-		else
-			form_set_error('batchfile', t('The file you have uploaded is not a valid dbase file.'));
-		file_unmanaged_delete($fname);
+		return;
+	}
+	if($form_state['triggering_element']['#id']=='batchuploadproceed') {
+		if($form_state['values']['idcard_number'] =='00' && $form_state['values']['scores_ksh']=='00')
+			form_set_error('scores_ksh',t('IDCard number and Student Gaokao SID cannot be both N/A.'));
 	}
 }
 
@@ -2297,7 +2303,6 @@ function theme_score_gaokao_province_status_form($variables) {
 		$output.=drupal_render($form['scores_zh']);
 		$output.=drupal_render($form['total_score']);
 		$output.=drupal_render($form['description']);
-		//$output.=drupal_render($form['samplegrid']);
 	}
 	$output.=drupal_render($form['submit']);
 	$output.=drupal_render_children($form);
