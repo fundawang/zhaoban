@@ -2126,14 +2126,14 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			'#type' => 'select',
 			'#title' => t('IDCard number'),
 			'#options' => $fieldoptions,
-			'#default_value' => 'SFZH',
+			'#default_value' => in_array('SFZH', $fields)?'SFZH':'00',
 			'#required' => TRUE,
 		);
 		$form['scores_ksh']=array(
 			'#type' => 'select',
 			'#title' => t('Gaokao SID'),
 			'#options' => $fieldoptions,
-			'#default_value' => 'KSH',
+			'#default_value' => in_array('KSH', $fields)?'KSH':'00',
 			'#required' => TRUE,
 			'#suffix' => '<br/><br/>',
 		);
@@ -2141,21 +2141,21 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			'#type' => 'select',
 			'#title' => t('Chinese'),
 			'#options' => $fieldoptions,
-			'#default_value' => 'YW',
+			'#default_value' => in_array('YW', $fields)?'YW':'00',
 			'#required' => TRUE,
 		);
 		$form['scores_sx']=array(
 			'#type' => 'select',
 			'#title' => t('Math'),
 			'#options' => $fieldoptions,
-			'#default_value' => 'SX',
+			'#default_value' => in_array('SX', $fields)?'SX':'00',
 			'#required' => TRUE,
 		);
 		$form['scores_wy']=array(
 			'#type' => 'select',
 			'#title' => t('Foreign language'),
 			'#options' => $fieldoptions,
-			'#default_value' => 'WY',
+			'#default_value' => in_array('WY', $fields)?'WY':'00',
 			'#required' => TRUE,
 		);
 		$form['scores_zh']=array(
@@ -2163,7 +2163,7 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			'#name' => 'scoreszh',
 			'#title' => t('Synthesis subject'),
 			'#options' => $fieldoptions,
-			'#default_value' => 'ZH',
+			'#default_value' => in_array('ZH', $fields)?'ZH':'00',
 			'#required' => TRUE,
 			'#suffix' => '<br/><br/>',
 		);
