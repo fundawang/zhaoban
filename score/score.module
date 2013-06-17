@@ -2263,9 +2263,47 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 			$fields[]=mb_convert_encoding($field['name'], 'UTF-8', 'GBK');
 		}
 		unset($tmp_fields);
-		$query=db_update('students_gk');
+		$num_updated=0;
+		$scores_idcard_number=mb_convert_encoding($form_state['values']['idcard_number'], 'GBK', 'UTF-8');
+		$scores_ksh=mb_convert_encoding($form_state['values']['scores_ksh'], 'GBK', 'UTF-8');
+		$scores_yw=mb_convert_encoding($form_state['values']['scores_yw'], 'GBK', 'UTF-8');
+		$scores_sx=mb_convert_encoding($form_state['values']['scores_sx'], 'GBK', 'UTF-8');
+		$scores_wy=mb_convert_encoding($form_state['values']['scores_wy'], 'GBK', 'UTF-8');
+		$scores_zh=mb_convert_encoding($form_state['values']['scores_zh'], 'GBK', 'UTF-8');
+		for($i=1;$i<=dbase_numrecords($dbfile);$i++) {
+			$record=dbase_get_record_with_names($dbfile, $i);
+			$record=array_change_key_case($record, CASE_UPPER);
+			$query=db_select('students','s')->fields('s',array('uid'));
+			if($scores_idcard_number!='00')
+				$query->condition('s.idcard_number',$record[$scores_idcard_number]);
+			else {
+				$query->innerJoin('students_gk','sg','s.uid=sg.uid');
+				$query->condition('sg.sid',$record[$scores_ksh]);
+			}
+			$student=$query->execute()->fetchField();
+			if($student) {
+				$update_fields=array();
+				$query=db_update('students_gk')->condition('uid',$student);
+				if($scores_idcard_number!='00')
+					$update_fields+=array('sid'=>$record[$scores_ksh]);
+				$update_fields+=array('score_chinese'=>$record[$scores_yw]);
+				$update_fields+=array('score_math'=>$record[$scores_sx]);
+				$update_fields+=array('score_languages'=>$record[$scores_wy]);
+				if($form_state['values']['scores_zh']!=='00') {
+					$update_fields+=array('score_synthesis'=>$record[$scores_zh]);
+					$update_fields+=array(
+						'score_total'=>($record[$scores_yw]+$record[$scores_sx]+$record[$scores_wy]+$record[$scores_zh])*1.67
+					);
+				}
+				$num_updated+=$query->fields($update_fields)->execute();
+			}
+		}
 		dbase_close($dbfile);
 		file_unmanaged_delete($fname);
+		if($num_updated)
+			drupal_set_message(t('Proceeded @count records, @num of them have been updated.', array('@count'=>$i,'@num'=>$num_updated)));
+		else
+			drupal_set_message(t("Proceeded @count records, none of them has been updated.", array('@count'=>$i)));
 	} else {
 		$form_values=$form_state['values'];
 		$keys=array_keys($form_values);
