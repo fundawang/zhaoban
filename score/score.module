@@ -2291,9 +2291,12 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 				$update_fields+=array('score_languages'=>$record[$scores_wy]);
 				if($form_state['values']['scores_zh']!=='00') {
 					$update_fields+=array('score_synthesis'=>$record[$scores_zh]);
-					$update_fields+=array(
-						'score_total'=>($record[$scores_yw]+$record[$scores_sx]+$record[$scores_wy]+$record[$scores_zh])*1.67
-					);
+					$update_fields+=array('score_total'=>$record[$scores_yw]+$record[$scores_sx]+$record[$scores_wy]+$record[$scores_zh]);
+				} else {
+						$update_fields+=array(
+							'score_total'=>
+							($record[$scores_yw]+$record[$scores_sx]+$record[$scores_wy]+$record[$scores_zh])*1.67
+						);
 				}
 				$num_updated+=$query->fields($update_fields)->execute();
 			}
