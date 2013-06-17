@@ -2227,7 +2227,7 @@ function score_gaokao_province_status_form($form, &$form_state) {
 }
 
 function score_gaokao_province_status_form_validate($form, &$form_state) {
-	if($_FILES['files']['size']['batchfile']) {
+	if($_FILES && isset($_FILES['files']) && isset($_FILES['files']['size']['batchfile'])) {
 		$file = file_save_upload('batchfile', array(
 			'file_validate_extensions' => array('dbf'))
 		);
@@ -2332,14 +2332,15 @@ function theme_score_gaokao_province_status_form($variables) {
 		array('data'=>t('Operations')),
 	);
 	
-	foreach(element_children($form['pid']) as $p) {
-		$rows[]=array(
-			drupal_render($form['name'][$p]),
-			drupal_render($form['num'][$p]),
-			drupal_render($form['status-'.$p]),
-			drupal_render($form['op'][$p]),
-		);
-	}
+	if(isset($form['pid']))
+		foreach(element_children($form['pid']) as $p) {
+			$rows[]=array(
+				drupal_render($form['name'][$p]),
+				drupal_render($form['num'][$p]),
+				drupal_render($form['status-'.$p]),
+				drupal_render($form['op'][$p]),
+			);
+		}
 
 	if(count($rows)) {
 		$output.=drupal_render($form['batchupload']);
