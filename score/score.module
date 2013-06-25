@@ -2150,7 +2150,6 @@ function score_gaokao_province_status_form($form, &$form_state) {
 		);
 		$form['scores_zh']=array(
 			'#type' => 'select',
-			'#name' => 'scoreszh',
 			'#title' => t('Synthesis subject'),
 			'#options' => $fieldoptions,
 			'#default_value' => in_array('ZH', $fields)?'ZH':'00',
@@ -2162,7 +2161,7 @@ function score_gaokao_province_status_form($form, &$form_state) {
 			'#markup' => t('Total score will be multiplicated with 1.67 (750/450).'),
 			'#states' => array(
 				'visible' => array(
-					'select[name="scoreszh"]' => array('value' =>'00'),
+					':input[name="scores_zh"]' => array('value' =>'00'),
 				),
 			),
 		);
@@ -2257,12 +2256,6 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 		$fname=tempnam(sys_get_temp_dir(),'').'.dbf';
 		file_unmanaged_copy($file->uri, $fname);
 		$dbfile=dbase_open($fname,0);
-		$tmp_fields=dbase_get_header_info($dbfile);
-		$fields=array();
-		foreach($tmp_fields as $field) {
-			$fields[]=mb_convert_encoding($field['name'], 'UTF-8', 'GBK');
-		}
-		unset($tmp_fields);
 		$num_updated=0;
 		$scores_idcard_number=mb_convert_encoding($form_state['values']['idcard_number'], 'GBK', 'UTF-8');
 		$scores_ksh=mb_convert_encoding($form_state['values']['scores_ksh'], 'GBK', 'UTF-8');
