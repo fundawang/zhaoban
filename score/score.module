@@ -2100,16 +2100,6 @@ function score_gaokao_province_status_form($form, &$form_state) {
 				mb_convert_encoding($record[1][$i++], 'UTF-8', 'GBK')
 			);
 		}
-		$form['description']=array(
-			'#type' => 'fieldset',
-			'#title' => t('Database summary'),
-			'#collapsible' => TRUE,
-			'#collapsed' => TRUE,
-		);
-		$form['description']['samplegrid']=array(
-			'#type'=>'markup',
-			'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
-		);
 		$form['instruction']=array(
 			'#type' => 'item',
 			'#title' => t('Please select relationship between scores and database'),
@@ -2176,11 +2166,21 @@ function score_gaokao_province_status_form($form, &$form_state) {
 				),
 			),
 		);
+		$form['description']=array(
+			'#type' => 'fieldset',
+			'#title' => t('Database summary'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+			'#prefix' => '</div>',
+		);
+		$form['description']['samplegrid']=array(
+			'#type' => 'markup',
+			'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
+		);
 		$form['submit']=array(
 			'#id' => 'batchuploadproceed',
 			'#type' => 'submit',
 			'#value' => t('Proceed'),
-			'#prefix' => '</div>',
 		);
 	} else {
 		$form['batchupload']=array(
@@ -2282,9 +2282,9 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 			}
 			$student=$query->execute()->fetchField();
 			if($student) {
-				$update_fields=array();
+				$update_fields=array('validated'=>1);
 				$query=db_update('students_gk')->condition('uid',$student);
-				if($scores_idcard_number!='00')
+				if($scores_ksh!='00')
 					$update_fields+=array('sid'=>$record[$scores_ksh]);
 				$update_fields+=array('score_chinese'=>$record[$scores_yw]);
 				$update_fields+=array('score_math'=>$record[$scores_sx]);
