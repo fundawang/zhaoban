@@ -20,7 +20,7 @@ function score_help($path, $arg) {
 			$output .= '<p>'.t('Tip: You may want to input score at fisrt, the sort by the scores to decide.').'</p>';
 			break;
 		case 'signup/markroundg/deliver':
-			$output = '<p>'.t('You may upload the deliver order number of studnets who are marked as pass roundg.').'</p>';
+			$output = '<p>'.t('You may upload the deliver order number of students who are marked as pass roundg.').'</p>';
 			break;
 		case 'weixin':
 			if(is_null($arg))
