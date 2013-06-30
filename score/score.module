@@ -2423,7 +2423,7 @@ function theme_score_gaokao_province_detail_form($variables) {
 		array('data'=>t('Math')),
 		array('data'=>t('Foreign language')),
 		array('data'=>t('Synthesis subject')),
-		array('data'=>t('Total score')),
+		array('data'=>t('Overall')),
 		array('data'=>t('Memory')),
 	);
 	
