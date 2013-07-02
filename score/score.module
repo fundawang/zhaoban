@@ -2528,7 +2528,13 @@ function score_gaokao_province_detail_form_submit($form, &$form_state) {
 		))->execute();
 	}
 	drupal_set_message(t('Scores have been saved.'));
-	$form_state['redirect']='score/inputgk'; 
+	$query=db_select('students_gk','sg');
+	$query->innerJoin('students','s','sg.uid=s.uid');
+	$query->addExpression('MIN(sg.validated)');
+	$query->condition('s.pass_round3_major',0,'>')->condition('sg.province',arg(2));
+	$count=$query->execute()->fetchField();
+	if($count==1)
+		$form_state['redirect']='score/inputgk';
 }
 
 function score_prepare_gk_overview() {
