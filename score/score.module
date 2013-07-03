@@ -2395,8 +2395,8 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 		$form['memory-'.$r->uid]=array('#type'=>'textfield','#default_value'=>$r->memory,'#size'=>10,'#maxlength'=>6,'#states'=>array('enabled'=>array('input[name="validated-'.$r->uid.'"]' => array('checked' => FALSE))));
 	}
 
-	$form['submit']=array('#type'=>'submit', '#value'=>t('Save, and caculate total score with coefficient:'), '#prefix' => '<div class="inline-element-div">');
-	$form['coefficient']=array('#type'=>'textfield','#default_value'=>'1', '#size'=>8, '#suffix' => '</div>');
+	$form['submit']=array('#type'=>'submit', '#value'=>t('Save, and caculate total score with full marks at:'), '#prefix' => '<div class="inline-element-div">');
+	$form['coefficient']=array('#type'=>'textfield','#default_value'=>'750', '#size'=>8, '#suffix' => '</div>');
 	$form['pager']=array('#markup'=>theme('pager'));
 	
 	return $form;
@@ -2522,7 +2522,7 @@ function score_gaokao_province_detail_form_submit($form, &$form_state) {
 			'score_languages' => $form_values['_slg-'.$key],
 			'score_math' => $form_values['_smt-'.$key],
 			'score_synthesis' => $form_values['_sst-'.$key],
-			'score_total' => ($form_values['_sch-'.$key]+$form_values['_slg-'.$key]+$form_values['_smt-'.$key]+$form_values['_sst-'.$key])*$form_values['coefficient'],
+			'score_total' => ($form_values['_sch-'.$key]+$form_values['_slg-'.$key]+$form_values['_smt-'.$key]+$form_values['_sst-'.$key])*750/$form_values['coefficient'],
 			'validated' => (isset($form_values['validated-'.$key]) && $form_values['validated-'.$key]==='1')?1:0,
 			'memory' => $form_values['memory-'.$key]
 		))->execute();
