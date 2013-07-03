@@ -4241,15 +4241,15 @@ function signup_ground_by_province_report($prov) {
 	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
 	$query->leftJoin('vl_city_district','c','sg.city_district=c.cid');
 	if(db_table_exists('students_total_score')) {
-		$query->innerJoin('students_total_score','ss','s.uid=ss.uid');
-		$query=$query->fields('ss',array('total_score','rank'));
+		$query->innerJoin('students_total_score','ss','s.uid=ss.uid AND s.profession_major=ss.pid');
+		$query=$query->fields('ss',array('total_score','total_rank','rank'));
 	}
 	$query=$query->condition('sg.province',$prov->pid)
 		->fields('s',array('name','idcard_number','gender'))
 		->fields('sc',array('personnel_record_at'))
 		->fields('sg',array('sid','score_total','is_math_subjects'))
 		->fields('c',array('name_simp'))
-		->fields('p',array('pname','gb_pid','gb_pname','years'))
+		->fields('p',array('did','pname','gb_pid','gb_pname','years'))
 		->orderBy('sg.sid')->orderBy('s.idcard_number');
 	$result=$query->execute();
 	
@@ -4278,7 +4278,7 @@ function signup_ground_by_province_report($prov) {
 			$this->SetX(1);
 			$this->SetY(18);
 			$this->Cell(10, 2, '序号',0, false, 'C');
-			$this->Cell(30, 2, '考生号',0, false, 'C');
+			$this->Cell(30, 2, '考生号↑',0, false, 'C');
 			$this->Cell(40, 2, '身份证号码',0, false, 'C');
 			$this->Cell(20, 2, '姓名',0, false, 'C');
 			$this->Cell(5, 2, '性别',0, false, 'C');
@@ -4362,7 +4362,7 @@ function signup_ground_by_province_report($prov) {
 		$pdf->Cell(33,2,$r->gb_pname, 0, false, 'L');
 		$pdf->Cell(22,2,$r->pname, 0, false, 'L');
 		$pdf->Cell(25,2,$r->score_total.($r->is_math_subjects?'/理':''), 0, false, 'C');
-		$pdf->Cell(12,2,$r->total_score<=0?('['.abs(round($r->total_score,2)).']'):number_format($r->total_score,2));
+		$pdf->Cell(12,2,in_array($r->did,array('D5','D6','D7','D8'))?sprintf('[%s]',round($r->total_rank,2)):sprintf('%.2f',$r->total_score));
 		$pdf->LN();
 		$pdf->setY($pdf->getY()+3);
 	}
