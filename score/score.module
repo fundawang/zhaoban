@@ -2396,7 +2396,7 @@ function score_gaokao_province_detail_form($form, $form_state, $province) {
 	}
 
 	$form['submit']=array('#type'=>'submit', '#value'=>t('Save, and caculate total score with coefficient:'), '#prefix' => '<div class="inline-element-div">');
-	$form['coefficient']=array('#type'=>'textfield','#default_value'=>'1', '#size'=>3, '#suffix' => '</div>');
+	$form['coefficient']=array('#type'=>'textfield','#default_value'=>'1', '#size'=>8, '#suffix' => '</div>');
 	$form['pager']=array('#markup'=>theme('pager'));
 	
 	return $form;
@@ -2579,7 +2579,7 @@ function score_prepare_gk_detail($profession) {
 	
 	$header=array(
 		array('data'=>t('No.')),
-		array('data'=>t('Student ID')),
+		//array('data'=>t('Student ID')),
 		array('data'=>t('Real Name')),
 		array('data'=>' '),
 		array('data'=>t('Round3 situation')),
@@ -2628,7 +2628,7 @@ function score_prepare_gk_detail($profession) {
 		settype($r['score_total'],'float');
 		$rows[]=array(
 			$i++,
-			l($r['uid'],'user/'.$r['uuid']),
+			//l($r['uid'],'user/'.$r['uuid']),
 			$r['name'],
 			'',
 			$r['pass_round3_major'] == '10' ? t('Determined'):(t('To be determined').'/'.$r['outrank']),
