@@ -2963,11 +2963,16 @@ function score_myscore_roundg() {
 
 	$output .='<p>'.t('We\'ve sent out the papaer via EMS, whith its access code as !emscode. You could query the status via Tel 11183 or via <a href="http://www.ems.com.cn">www.ems.com.cn</a>.',
 		array(
-			'!emscode'=>$r->emscode_roundg,
+			'!emscode'=>'<span class="messages error">'.$r->emscode_roundg.'</span>',
 		)
 	).t('If students gk number is required, then you might want to provide your gk number !scode',
 		array('!scode'=>$r->sid)
 	).'</p>';
+
+	$d=kuaidi100_get_status('score','gaokao,'.$r->uid); 
+
+	$output .= '<p><dl><dt>'.t('The latest deliver log of your paper goes:').'</dt><dd>'.
+		format_date($d->timestamp).' '.$d->statustext.'</dd></dl>';
 	
 	return $output;
 }
