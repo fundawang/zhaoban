@@ -2692,7 +2692,7 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 	if(module_exists('kuaidi100')) {
 		$total_num=db_select('students_contact','sc')->fields('sc')->isNotNull('emscode_roundg')->countQuery()->execute()->fetchField();
 		$succeeded_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',3)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
-		$onroad_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',1)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
+		$onroad_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',0)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
 		$form['status']=array(
 			'#type' => 'markup',
 			'#markup' =>
@@ -2823,8 +2823,11 @@ function score_mark_gaokao_update_deliver_orderno_submit($form, $form_state) {
 			'emscode_roundg' => trim($orders[1])
 		))->execute();
 		if($t) $i+=$t;
-		if($t && module_exists('kuaidi100')) {
-			kuaidi100_save('score','gaokao,'.$orders[0], $com, $orders[1]);
+		if(module_exists('kuaidi100')) {
+			if($t)
+				kuaidi100_save('score','gaokao,'.$orders[0], $com, trim($orders[1]));
+			else
+				kuaidi100_update_status($com, trim($orders[1]));
 		}
 	}
 }
