@@ -2700,6 +2700,44 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 					array('@total'=>$total_num, '@succeeded'=>$succeeded_num, '@onroad'=>$onroad_num)
 				),
 		);
+		if($onroad_num >0 && $onroad_num <=20 ) {
+			$query=db_select('deliverlog','dl')->fields('dl')
+				->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')
+				->condition('dl.status','0');
+			$query->innerJoin('students_contact','sc','dl.orderno=sc.emscode_roundg');
+			$query->innerJoin('students','s','sc.uid=s.uid');
+			$query->innerJoin('users','u','u.name=s.uid');
+			$query->addExpression('u.uid','uuid');
+			$query->fields('s',array('uid','name'));
+			$onroads=$query->execute();
+			$form['difficults']=array(
+				'#type' => 'fieldset',
+				'#title' => t('Orders onroad (@num)', array('@num'=>$onroad_num)),
+				'#collapsible' => TRUE,
+				'#collapsed' => TRUE,
+			);
+			$rows=array();
+			foreach($onroads as $order) {
+				$rows[]=array(
+					l($order->uid, 'user/'.$order->uuid),
+					$order->name,
+					sprintf("%s / %s", t($order->com), $order->orderno),
+					format_date($order->timestamp),
+					$order->statustext,
+				);
+			}
+			$header=array(
+				t('Student ID'),
+				t('Real Name'),
+				t('Deliver order no'),
+				t('Date'),
+				t('Status Detail')
+			);
+			$form['difficults']['detail']=array(
+				'#type' => 'markup',
+				'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
+			);
+		}
 		$db_or=db_or()->condition('dl.status',2)->condition('dl.status',0,'<');
 		$query=db_select('deliverlog','dl')->fields('dl')
 			->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')
@@ -2710,7 +2748,7 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 		$query->addExpression('u.uid','uuid');
 		$query->fields('s',array('uid','name'));
 		$difficults=$query->orderBy('dl.type')->execute();
-		if($difficults->rowCount()>0) {
+		if($difficults->rowCount()>0 && ($onroad_num > 10 || $onroad_num ==0)) {
 			$form['difficults']=array(
 				'#type' => 'fieldset',
 				'#title' => t('Orders in problem (@num)', array('@num'=>$difficults->rowCount())),
@@ -2968,9 +3006,8 @@ function score_myscore_roundg() {
 	).t('If students gk number is required, then you might want to provide your gk number !scode',
 		array('!scode'=>$r->sid)
 	).'</p>';
-
-	$d=kuaidi100_get_status('score','gaokao,'.$r->uid); 
-
+	
+	$d=kuaidi100_get_status('score','gaokao,'.$r->uid);
 	$output .= '<p><dl><dt>'.t('The latest deliver log of your paper goes:').'</dt><dd>'.
 		format_date($d->timestamp).' '.$d->statustext.'</dd></dl>';
 	
