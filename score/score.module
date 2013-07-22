@@ -319,6 +319,9 @@ function score_permission() {
 		'check students roundg scores' => array(
 			'title' => t('Review my roundg status'),
 		),
+		'mark 3rd round students' => array(
+			'title' => t('Mark enrolled students')
+		),
 	);
 }
 
@@ -2690,9 +2693,9 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 	drupal_set_title(t('Update deliver log'));
 	$form=array();
 	if(module_exists('kuaidi100')) {
-		$total_num=db_select('students_contact','sc')->fields('sc')->isNotNull('emscode_roundg')->countQuery()->execute()->fetchField();
-		$succeeded_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',3)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
-		$onroad_num=db_select('deliverlog','dl')->fields('dl')->condition('dl.status',0)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
+		$total_num=(int)db_select('students_contact','sc')->fields('sc')->isNotNull('emscode_roundg')->countQuery()->execute()->fetchField();
+		$succeeded_num=(int)db_select('deliverlog','dl')->fields('dl')->condition('dl.status',3)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
+		$onroad_num=(int)db_select('deliverlog','dl')->fields('dl')->condition('dl.status',0)->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')->countQuery()->execute()->fetchField();
 		$form['status']=array(
 			'#type' => 'markup',
 			'#markup' =>
@@ -2700,7 +2703,17 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 					array('@total'=>$total_num, '@succeeded'=>$succeeded_num, '@onroad'=>$onroad_num)
 				),
 		);
-		if($onroad_num >0 && $onroad_num <=20 ) {
+		$db_or=db_or()->condition('dl.status',2)->condition('dl.status',0,'<');
+		$query=db_select('deliverlog','dl')->fields('dl')
+			->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')
+			->condition($db_or);
+		$query->innerJoin('students_contact','sc','dl.orderno=sc.emscode_roundg');
+		$query->innerJoin('students','s','sc.uid=s.uid');
+		$query->innerJoin('users','u','u.name=s.uid');
+		$query->addExpression('u.uid','uuid');
+		$query->fields('s',array('uid','name'));
+		$difficults=$query->orderBy('dl.type')->execute();
+		if($difficults->rowCount() ==0 && $onroad_num >0 && $onroad_num <= 20) {
 			$query=db_select('deliverlog','dl')->fields('dl')
 				->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')
 				->condition('dl.status','0');
@@ -2748,7 +2761,7 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 		$query->addExpression('u.uid','uuid');
 		$query->fields('s',array('uid','name'));
 		$difficults=$query->orderBy('dl.type')->execute();
-		if($difficults->rowCount()>0 && ($onroad_num > 10 || $onroad_num ==0)) {
+		if($difficults->rowCount()>0) {
 			$form['difficults']=array(
 				'#type' => 'fieldset',
 				'#title' => t('Orders in problem (@num)', array('@num'=>$difficults->rowCount())),
