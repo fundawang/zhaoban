@@ -2713,7 +2713,7 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 		$query->addExpression('u.uid','uuid');
 		$query->fields('s',array('uid','name'));
 		$difficults=$query->orderBy('dl.type')->execute();
-		if($difficults->rowCount() ==0 && $onroad_num >0 && $onroad_num <= 20) {
+		if($onroad_num >0 && $onroad_num <= 20) {
 			$query=db_select('deliverlog','dl')->fields('dl')
 				->condition('dl.module','score')->condition('dl.type','gaokao,%','LIKE')
 				->condition('dl.status','0');
@@ -2723,7 +2723,7 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 			$query->addExpression('u.uid','uuid');
 			$query->fields('s',array('uid','name'));
 			$onroads=$query->execute();
-			$form['difficults']=array(
+			$form['onroad']=array(
 				'#type' => 'fieldset',
 				'#title' => t('Orders onroad (@num)', array('@num'=>$onroad_num)),
 				'#collapsible' => TRUE,
@@ -2746,7 +2746,7 @@ function score_mark_gaokao_update_deliver_orderno($form, $form_state) {
 				t('Date'),
 				t('Status Detail')
 			);
-			$form['difficults']['detail']=array(
+			$form['onroad']['detail']=array(
 				'#type' => 'markup',
 				'#markup' => theme('table', array('header'=>$header, 'rows'=>$rows)),
 			);
