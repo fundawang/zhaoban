@@ -38,11 +38,6 @@ function _signup_determine_period($user) {
 	if($result->profession_major == '0' || $result->examplace=='' )
 		return signup_progress_PROFESSION; // One must fill in profession at first.
 
-	// Determine whether you have selected the professor
-	$result = db_select('vl_teachers','t')->fields('t')->condition('t.major_profession',$result->profession_major)->countQuery()->execute()->fetchField();
-	if(($result>0) && (db_select('students','s')->fields('s',array('chosen_professor'))->condition('s.uid',$user->name)->execute()->fetchField()==''))
-		return signup_progress_PROFESSION; // One must select his profesor.
-
 	// Determine whether you have filled up exams
 	$query = db_select('students_going','sg')->condition('sg.uid',$user->name);
 	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
