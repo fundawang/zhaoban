@@ -485,7 +485,11 @@ function signup_user_goto($user) {
 }
 
 function signup_form_user_login_alter(&$form, &$form_state) {
-	$form['name']['#attributes']['placeholder']=variable_get('zhaoban_current_year',date('Y')).'BXXXX';
+	$form['name']['#attributes']['placeholder']=array(variable_get('zhaoban_current_year',date('Y')).'BXXXX');
+}
+
+function signup_form_user_login_block_alter(&$form, &$form_state) {
+	$form['name']['#attributes']['placeholder']=array(variable_get('zhaoban_current_year',date('Y')).'BXXXX');
 }
 
 function signup_form_user_register_form_alter(&$form, &$form_state) {
@@ -1200,7 +1204,7 @@ function signup_form_user_pass_alter(&$form, &$form_state) {
 		'#type' => 'textfield',
 		'#size' => '60',
 		'#weight' => 3,
-		'#attributes'=>array('placeholder'=>variable_get('zhaoban_current_year',date('Y')).'BXXXX'),
+		'#attributes'=>array('placeholder'=>array(variable_get('zhaoban_current_year',date('Y')).'BXXXX')),
 		'#states' => array(
 			'visible' => array(
 				'input[name="condselect"]' => array('value' =>'1'),
