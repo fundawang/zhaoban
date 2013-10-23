@@ -346,28 +346,27 @@ function signup_check_access() {
 }
 
 function signup_2nd_overview() {
-	$r=db_select('students', 's')->fields('s')->condition('pass_round1_major','0','<>')->countQuery()->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major<>:val)', array(':val'=>0))->fetchField();
 	return (user_access('view passround1') || user_access('view own passround1'))&& $r;
 }
 
 function signup_3rd_overview() {
-	$r=db_select('students', 's')->fields('s')->condition('pass_round3_major','0','<>')->countQuery()->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round3_major<>:val)', array(':val'=>0))->fetchField();
 	return user_access('view passround3') && $r;
 }
 
 function signup_ground_overview() {
-	$r=db_select('students', 's')->fields('s')->condition('pass_roundg_major','0','<>')->countQuery()->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_roundg_major<>:val)', array(':val'=>0))->fetchField();
 	return user_access('view passroundg') && $r;
 }
 
-function signup_report_perm($uid) {
-	return user_access('print user report') && db_select('students', 's')->fields('s')->condition('uid', $uid->name)->countQuery()->execute()->fetchField();
+function signup_report_perm($user) {
+	return user_access('print user report') && db_query('SELECT EXISTS(SELECT * FROM {students} WHERE uid=:uid)', array(':uid'=>$user->name))->fetchField();
 }
 
 function signup_picture_perm($user,$md5=NULL) {
 	if(!user_view_access($user)) return FALSE;
-	$query=db_select('students','s')->fields('s',array('picture'))->condition('uid', $user->name);
-	$img_tmp=$query->execute()->fetchField();
+	$img_tmp=db_query('SELECT picture FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 	if(substr(md5($img_tmp), 0,4)!=$md5) return FALSE;
 	if($img_tmp)
 		$test=imagecreatefromstring(base64_decode($img_tmp));
@@ -423,9 +422,8 @@ function signup_get_random_mail_address(){
 }
 
 function signup_user_load($users) {
-	$uids=array_keys($users);
-	foreach($uids as $uid) {
-		$users[$uid]->ucategory=db_select('students','s')->fields('s',array('ucategory'))->condition('uid',$users[$uid]->name)->execute()->fetchField();
+	foreach($users as $uid => $user) {
+		$users[$uid]->ucategory=db_query('SELECT ucategory FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 	}
 }
 
@@ -542,9 +540,8 @@ function signup_form_user_register_form_submit($form, &$form_state) {
 	// Now generating the ID number of the student
 	do {
 		$sid=sprintf('%sB%04d', variable_get('zhaoban_current_year',date('Y')), mt_rand(1,9999));
-		$query=db_select('users','u')->condition('u.name', $sid)->fields('u');
-		$cancontinue=$query->countQuery()->execute()->fetchField();
-	} while ($cancontinue>=1);
+		$cancontinue=db_query('SELECT EXISTS(SELECT * FROM users WHERE name=:name)', array(':name'=>$sid))->fetchField();
+	} while ($cancontinue);
 	$data['name']=$sid;
 	$data['contact']=false;
 	
@@ -638,10 +635,11 @@ function signup_user_account_form($form, $form_state) {
 		// we don't want the administer do anything, but it's fine if one has such permission.
 		if($GLOBALS['user']->uid=='1') return;
 		if(!$is_student) return;
-			$isvalidated=db_select('students', 's')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
-			$query=db_select('students','s')->condition('s.uid',$user->name);
-			$query->innerjoin('students_gk','sg','s.uid=sg.uid');
-			$default_values=$query->fields('s')->fields('sg',array('province','city_district'))->execute()->fetchObject();
+			$isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
+			$default_values=db_query('SELECT s.*, sg.provice, sg.city_district FROM {students} s '.
+				'INNER JOIN {students_gk} sg ON s.uid=sg.uid WHERE s.uid=:uid',
+				array(':uid'=>$user->name)
+			)->fetchObject();
 			
 		$form['personal'] = array(
 			'#type' => 'fieldset',
@@ -716,7 +714,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_select('vl_province','p')->fields('p')->condition('p.ucategory',$user->ucategory)->execute();
+				$dbo = db_query('SELECT * FROM {vl_province} WHERE ucategory=:ucategory', array(':ucategory'=>$user->category));
 				foreach ($dbo as $result)
 				{
 					$r = array($result->pid => $result->name);
@@ -729,7 +727,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_select('vl_nationality', 'n')->fields('n')->execute();
+				$dbo = db_query('SELECT * FROM {vl_nationality}');
 				foreach($dbo as $result)
 				{
 					$r = array($result->nid => $result->name);
@@ -743,7 +741,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_select('vl_politics_features', 'p')->fields('p')->execute();
+				$dbo = db_query('SELECT * FROM {vl_politics_features}');
 				foreach($dbo as $result)
 				{
 					$r = array($result->pid => $result->name);
@@ -791,7 +789,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_select('vl_province', 'p')->fields('p')->condition('p.ucategory',$user->ucategory)->execute();
+				$dbo = db_query('SELECT * FROM {vl_province} WHERE ucategory=:ucategory', array(':ucategory'=>$user->category));
 				foreach ($dbo as $result)
 				{
 					$r = array($result->pid => $result->name);
@@ -804,7 +802,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_select('vl_nationality','n')->fields('n')->execute();
+				$dbo = db_query('SELECT * FROM {vl_nationality}');
 				foreach ($dbo as $result)
 				{
 					$r = array($result->nid => $result->name);
@@ -822,7 +820,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_select('vl_city_district','c')->fields('c')->condition('c.pid','800000')->execute();
+				$dbo = db_query('SELECT * FROM {vl_city_district} WHERE pid=:pid', array(':pid'=>'800000'));
 				foreach ($dbo as $result)
 				{
 					$r = array($result->cid => $result->name);
@@ -909,13 +907,15 @@ function signup_user_account_form_validate($form, $form_state) {
 	$user=$form_state['user'];
 	$edit=$form_state['values'];
 	
-	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
+	$isvalidated=db_query('SELECT validated FROM {students} uid=:uid', array(':uid'=>$user->name))->fetchField();
 	if($isvalidated) return;
 	
 	switch($user->ucategory) {
 		case uc_OWN_STUDENT:
 			if ($edit['idnumber']) {
-				$r=db_select('students','s')->fields('s')->condition('s.idcard_number',$edit['idnumber'])->condition('s.uid', $user->name, '<>')->countQuery()->execute()->fetchField();
+				$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE idcard_number=:idnumber AND uid<>:uid)',
+					array(':idnumber'=>$edit['idnumber'], ':uid'=>$user->name)
+				)->fetchField();
 					if ($r) {
 						form_set_error('idnumber', t('The student ID has already been registerd.').' '.
 							t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
@@ -924,7 +924,9 @@ function signup_user_account_form_validate($form, $form_state) {
 			}
 			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
 				db_set_active('xjinfo');
-				$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->condition('sfyxj','是')->countQuery()->execute()->fetchField();
+				$r=db_query('SELECT EXISTS(SELECT * FROM {XS_XJB} WHERE XH=:xh AND XM=:xm AND sfyxj=:yes)',
+					array(':xh'=>strtoupper($edit['idnumber']), ':xm'=>trim($edit['truename']), ':yes'=>'是')
+				)->fetchField();
 				db_set_active('default');
 			} else $r=1;
 					if (isset($edit['idnumber']) && $r != 1)
@@ -932,7 +934,9 @@ function signup_user_account_form_validate($form, $form_state) {
 			break;
 		case uc_MAINLAND_STUDENT:
 			if ($edit['idnumber']) {
-				$r=db_select('students','s')->fields('s')->condition('s.idcard_number',$edit['idnumber'])->condition('s.uid', $user->name, '<>')->countQuery()->execute()->fetchField();
+				$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE idcard_number=:idnumber AND uid<>:uid)',
+					array(':idnumber'=>$edit['idnumber'], ':uid'=>$user->name)
+				)->fetchField();
 				if ($r) {
 					form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
 						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
@@ -945,7 +949,9 @@ function signup_user_account_form_validate($form, $form_state) {
 			break;
 		case uc_HKTW_STUDENT:
 			if ($edit['idnumber']) {
-				$r=db_select('students','s')->fields('s')->condition('s.idcard_number',$edit['idnumber'])->condition('s.uid', $user->name, '<>')->countQuery()->execute()->fetchField();
+				$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE idcard_number=:idnumber AND uid<>:uid)',
+					array(':idnumber'=>$edit['idnumber'], ':uid'=>$user->name)
+				)->fetchField();
 				if ($r) {
 					form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
 						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
@@ -976,7 +982,9 @@ function signup_user_account_form_validate($form, $form_state) {
 			break;
 		case uc_OVERSEA_STUDENT:
 			if ($edit['idnumber']) {
-				$r=db_select('students','s')->fields('s')->condition('s.idcard_number',$edit['idnumber'])->condition('s.uid', $user->name, '<>')->countQuery()->execute()->fetchField();
+				$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE idcard_number=:idnumber AND uid<>:uid)',
+					array(':idnumber'=>$edit['idnumber'], ':uid'=>$user->name)
+				)->fetchField();
 				if ($r) {
 					form_set_error('idnumber', t('The ID Card number has already been registerd.').' '.
 						t('If you\'ve lost your password, please <a href="@url">click here to reset it</a>.', array('@url'=>'/user/logout?destination=user/password')));
@@ -1001,7 +1009,8 @@ function signup_user_account_form_save($form, &$form_state) {
 		user_save($user, $data);
 	}
 
-	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
+	$isvalidated=db_query('SELECT validated FROM {students} uid=:uid', array(':uid'=>$user->name))->fetchField();
+
 	if($isvalidated) return;
 
 	if(isset($edit['dateofbirth'])) $edit['dobtosave']=sprintf("%04d%02d%02d",$edit['dateofbirth']['year'], $edit['dateofbirth']['month'], $edit['dateofbirth']['day']);
@@ -1010,7 +1019,9 @@ function signup_user_account_form_save($form, &$form_state) {
 		case uc_OWN_STUDENT:
 			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
 				db_set_active('xjinfo');
-				$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',strtoupper($edit['idnumber']))->condition('XM',trim($edit['truename']))->execute()->fetchAssoc();
+				$r=db_query('SELECT xb FROM {XS_XJB} WHERE XH=:xh AND XM=:xm',
+					array(':xm'=>strtoupper($edit['idnumber']), ':xm'=>trim($edit['truename']))
+				)->fetchAssoc();
 				db_set_active('default');
 			} else {
 				$r=array('xb'=>'男');
@@ -1050,23 +1061,15 @@ function signup_user_account_form_save($form, &$form_state) {
 				'politics_feature' => $edit['political'],
 			))->execute();
 			// Fetch original province
-			$orig_province=db_select('students_gk','sg')
-				->condition('sg.uid',$user->name)
-				->fields('sg',array('province'))
-				->execute()->fetchField();
+			$orig_province=db_query('SELECT province FROM {students_gk} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 			// Fetch profession
-			$orig_prof=db_select('students','s')
-				->condition('uid',$user->name)
-				->fields('s',array('profession_major'))
-				->execute()->fetchField();
+			$orig_prof=db_query('SELECT profession_major FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 			// Check if the combile of profession and province affects examplaces
-			$query=db_select('vl_profession_place','p')
-				->condition('p.pid',$orig_prof)
-				->condition('p.status','1');
-			$query->innerJoin('vl_city_district','cd','p.examplace=cd.cid');
-			$citera=db_or()->condition('cd.pid',$orig_province)->condition('cd.pid',$edit['province']);
-			$query=$query->condition($citera)->fields('p')->countQuery();
-			$test=$query->execute()->fetchField();
+			$test=db_query('SELECT EXISTS(SELECT * FROM {vl_profession_place} p '.
+				'INNER JOIN {vl_city_district} cd ON p.examplace=cd.cid '.
+				'WHERE (cd.pid=:orig OR cd.pid=:pid) AND p.pid=:origprof AND p.status=1)',
+				array(':orig'=>$orig_province, ':pid'=>$edit['province'], ':origprof'=>$orig_prof)
+			)->fetchField();
 			// which means examplace will be affected
 			if($test > 0) {
 				db_update('students')->condition('uid',$user->name)->fields(array(
@@ -1079,7 +1082,7 @@ function signup_user_account_form_save($form, &$form_state) {
 				->fields(array(
 					'province' => $edit['province'],
 				))->execute();
-			$city=db_select('students_gk', 'sg')->fields('sg',array('city_district'))->condition('uid', $user->name)->execute()->fetchField();
+			$city=db_query('SELECT city_district FROM {students_gk} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 			if(substr($city,0,2)!==substr($edit['province'],0,2))
 				db_update('students_gk')->condition('uid',$user->name)->fields(array(
 					'city_district' => $edit['province'],
@@ -1239,26 +1242,20 @@ function signup_form_user_pass_validate($form, &$form_state) {
 	
 	if($form_state['values']['condselect']==1) {
 		// We will detect users based on ones ExamID and his IDCard number.
-		$query = db_select('users', 'u');
-		$query->innerjoin('students', 's', 'u.name=s.uid');
-		$query = $query
-			->fields('u',array('uid'))
-			->condition('s.uid', $form_state['values']['sid'])
-			->condition('s.idcard_number', $form_state['values']['idnumber']);
-		$result=$query->execute()->fetchField();
+		$result=db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid '.
+			'WHERE s.uid=:uid AND s.idcard_number=:idnumber',
+			array(':uid'=>$form_state['values']['sid'], ':idnumber'=>$form_state['values']['idnumber'])
+		)->fetchField();
 		if(!$result) {
 			form_set_error('sid', t('Sorry, the ExamID and the IDCard number do not meet our records.'));
 			return;
 		}
 	} else {
 		// We will detect users based on one's IDCard number and his realname.
-		$query = db_select('users', 'u');
-		$query->innerjoin('students', 's', 'u.name=s.uid');
-		$query = $query
-			->fields('u',array('uid'))
-			->condition('s.idcard_number', $form_state['values']['idnumber'])
-			->condition('s.name', $form_state['values']['name']);
-		$result=$query->execute()->fetchField();
+		$result=db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid '.
+			'WHERE s.name=:name AND s.idcard_number=:idnumber',
+			array(':name'=>$form_state['values']['name'], ':idnumber'=>$form_state['values']['idnumber'])
+		)->fetchField();
 		if(!$result) {
 					form_set_error('name', t('Sorry, the Name and the IDCard number do not meet our records.'));
 					return;
@@ -1275,13 +1272,11 @@ function signup_form_user_pass_submit($form, &$form_state) {
 //	var_dump($form_state);
 
 	// We will detect users based on one's IDCard number and his realname.
-	$query = db_select('users', 'u');
-	$query->innerjoin('students', 's', 'u.name=s.uid');
-	$query = $query
-		->fields('u',array('uid'))
-		->condition('s.idcard_number', $form_state['values']['idnumber']);
-	$uid=$query->execute()->fetchField();
-	$account = user_load($query->execute()->fetchField());
+	$uid=db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid '.
+		'WHERE s.idcard_number=:idnumber',
+		array(':idnumber'=>$form_state['values']['idnumber'])
+	)->fetchField();
+	$account = user_load($uid);
 	$newpass = user_password(6);
 
 	user_save($account, array('pass'=>$newpass));
@@ -1369,13 +1364,13 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 				->fields('s',array('idcard_number', 'name'))
 				->condition('s.uid',$user->name)
 				->execute()->fetchObject();
-					if(!($result->idcard_number) || !($result->name)) return FALSE;
-						else return TRUE;
-				case 'exam':
-					$result = db_select('students','s')
-						->fields('s',array('profession_major','examplace'))
-						->condition('s.uid',$user->name)
-						->execute()->fetchObject();
+			if(!($result->idcard_number) || !($result->name)) return FALSE;
+			else return TRUE;
+		case 'exam':
+			$result = db_select('students','s')
+				->fields('s',array('profession_major','examplace'))
+				->condition('s.uid',$user->name)
+				->execute()->fetchObject();
 			if($result->profession_major == '0' || $result->examplace == '') return FALSE;
 			else return TRUE;
 		case 'contact':
@@ -1396,9 +1391,9 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 				->fields('sc',array('contact_phone'))
 				->condition('sc.uid',$user->name)
 				->execute()->fetchField();
-					if(!$result) return FALSE;
-					else if(_signup_user_tab_access($user, 'contact')) return TRUE;
-					else return FALSE;
+			if(!$result) return FALSE;
+			else if(_signup_user_tab_access($user, 'contact')) return TRUE;
+			else return FALSE;
 		default: return FALSE;
 	}
 	return TRUE;
