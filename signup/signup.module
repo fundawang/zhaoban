@@ -1655,6 +1655,10 @@ function signup_user_professions_form($form, $form_state, $user) {
 			'#description' => t('You can only participate exam at here.'),
 		);
 	} else {
+		$default_values['examplace']=db_select('students','s')
+			->condition('s.uid',$user->name)
+			->fields('s',array('examplace'))
+			->execute()->fetchField();
 		$form['pidcontainer']['examplace']['examplace']=array(
 			'#type' => 'select',
 			'#options' => $examplaces,
