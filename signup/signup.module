@@ -578,18 +578,7 @@ function signup_form_user_profile_form_alter(&$form, $form_state) {
 		$form['account']['name']['#disabled']=TRUE;
 	if(user_access('administer users')) return $form;
 	if(in_array('5',array_keys($form['#user']->roles)))
-	switch(arg(3)) {
-		case signup_user_PROFESSION:
-			$form=signup_user_professions_form($form, $form_state); break;
-		case signup_user_EXAM:
-			$form=signup_user_examinations_form($form, $form_state); break;
-		case signup_user_CONTACT:
-			$form=signup_user_contact_form($form, $form_state); break;
-		case signup_user_GAOKAO:
-			$form=signup_user_gaokao_form($form, $form_state); break;
-		default:
-			$form=signup_user_account_form($form, $form_state);
-	}
+	$form=signup_user_account_form($form, $form_state);
 	return $form;
 }
 
@@ -1346,12 +1335,24 @@ function signup_menu_alter(&$callbacks) {
 	$callbacks['user/%user_category/edit/'.signup_user_PROFESSION]['access callback'] = '_signup_user_tab_access';
 	$callbacks['user/%user_category/edit/'.signup_user_PROFESSION]['access arguments'] = array(1, signup_user_PROFESSION);
 
+	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['page callback'] = 'drupal_get_form';
+	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['page arguments'] = array('signup_user_examinations_form', 1);
+	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['module'] = 'signup';
+	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['file'] = 'signup.module';
 	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['access callback'] = '_signup_user_tab_access';
 	$callbacks['user/%user_category/edit/'.signup_user_EXAM]['access arguments'] = array(1, signup_user_EXAM);
 
+	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['page callback'] = 'drupal_get_form';
+	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['page arguments'] = array('signup_user_contact_form', 1);
+	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['module'] = 'signup';
+	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['file'] = 'signup.module';
 	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['access callback'] = '_signup_user_tab_access';
 	$callbacks['user/%user_category/edit/'.signup_user_CONTACT]['access arguments'] = array(1, signup_user_CONTACT);
 
+	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['page callback'] = 'drupal_get_form';
+	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['page arguments'] = array('signup_user_gaokao_form', 1);
+	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['module'] = 'signup';
+	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['file'] = 'signup.module';
 	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['access callback'] = '_signup_user_tab_access';
 	$callbacks['user/%user_category/edit/'.signup_user_GAOKAO]['access arguments'] = array(1, signup_user_GAOKAO);
 }
@@ -1685,7 +1686,7 @@ function signup_user_professions_form($form, $form_state, $user) {
 	$form['save'] = array(
 		'#type' => 'submit',
 		'#value' => t('Save'),
-		'#weight' => 5,
+		'#weight' => 50,
 	);
 	$form['#validate']=array('signup_user_professions_form_validate');
 	$form['#submit']=array('signup_user_professions_form_save');
@@ -1876,14 +1877,8 @@ function signup_user_professions_form_save($form, $form_state) {
 	return;
 }
 
-function signup_user_examinations_form($form, $form_state) {
-		$user=$form['#user'];
-	$r = _signup_determine_period($user);
-
-	if($r==0)
-		drupal_goto('user/'.$user->uid.'/edit');
-	else if($r==1)
-		drupal_goto('user/'.$user->uid.'/edit/profession');
+function signup_user_examinations_form($form, $form_state, $user) {
+	$form['#user']=$user;
 
 	// Check if the student is marked as passthrough.
 	$query=db_select('students','s')->condition('s.uid',$user->name);
@@ -1974,6 +1969,11 @@ function signup_user_examinations_form($form, $form_state) {
 			}
 		}
 	}
+	$form['save'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		'#weight' => 50,
+	);
 
 	$form['#submit'][]='signup_user_examinations_form_save';
 	return $form;
@@ -2022,9 +2022,8 @@ function signup_user_examinations_form_save($form, $form_state) {
 	signup_user_goto($user);
 }
 
-function signup_user_contact_form($form, $form_state) {
-	$user=$form['#user'];
-	
+function signup_user_contact_form($form, $form_state, $user) {
+	$form['#user']=$user;
 	// Fetch default values
 	$default_values=array();
 	$query=db_select('students_contact','sc')->fields('sc')->condition('sc.uid', $user->name);
@@ -2200,6 +2199,11 @@ function signup_user_contact_form($form, $form_state) {
 		unset($form['contact_roundg']);
 		unset($form['contact_school']);
 	}
+	$form['save'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		'#weight' => 50,
+	);
 	$form['#submit'][]='signup_user_contact_form_save';
 	return $form;
 }
@@ -2253,8 +2257,8 @@ function signup_user_contact_form_save($form, $form_state) {
 	signup_user_goto($user);
 }
 
-function signup_user_gaokao_form($form, $form_state) {
-	$user=$form['#user'];
+function signup_user_gaokao_form($form, $form_state, $user) {
+	$form['#user']=$user;
 	$ucategory=$user->ucategory;
 
 	// Genereates default values.
@@ -2354,6 +2358,11 @@ function signup_user_gaokao_form($form, $form_state) {
 		unset($form['score']['score_synthesis']);
 	}
 	
+	$form['save'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		'#weight' => 50,
+	);
 	$form['#validate'][]='signup_user_gaokao_form_validate';
 	$form['#submit'][]='signup_user_gaokao_form_save';
 	return $form;
@@ -2414,48 +2423,12 @@ function signup_user_gaokao_form_validate($form, $form_state) {
 			form_set_error('score_synthesis', t('The score you\'ve entered is not valid.'));
 }
 
-function signup_user_login_block($form) {
-	$form['#action'] = url($_GET['q'], array('query' => drupal_get_destination()));
-	$form['#validate'] = user_login_default_validators();
-	$form['#id'] = 'user-login-form';
-	$form['#submit'][] = 'user_login_submit';
-	$form['name'] = array('#type' => 'textfield',
-		'#title' => t('Username/ID Number'),
-		'#maxlength' => USERNAME_MAX_LENGTH,
-		'#size' => 15,
-		'#required' => TRUE,
-		'#attributes' => array('placeholder'=>variable_get('zhaoban_current_year',date('Y')).'BXXXX'),
-	);
-	$form['pass'] = array('#type' => 'password',
-		'#title' => t('Password'),
-		'#maxlength' => 60,
-		'#size' => 15,
-		'#required' => TRUE,
-	);
-	$form['actions'] = array('#type' => 'actions');
-	$form['actions']['submit'] = array('#type' => 'submit',
-		'#value' => t('Log in'),
-	);
-	$items = array();
-	if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)) {
-		$items[] = l(t('Begin signup'), 'user/register');
-	}
-	$items[] = l(t('Request new password'), 'user/password');
-	$form['links'] = array('#markup' => theme('item_list', array('items' => $items)));
-	return $form;
-}
-
 /**
  * Implements hook_block_info().
  */
 function signup_block_info() {
 	$result=array();
 	
-	$result['loginlocal'] = array(
-		'info' => t('User login (Local version)'),
-		'cache' => DRUPAL_CACHE_GLOBAL,
-	);
-
 	$result['progress'] = array(
 		'info' => t('Signup Progress'),
 		'cache' => DRUPAL_NO_CACHE
@@ -2479,14 +2452,6 @@ function signup_block_view($delta = '') {
 	global $user;
 	$block = array();
 	switch ($delta) {
-		case 'loginlocal':
-			// For usability's sake, avoid showing two login forms on one page.
-			if (!$user->uid && !(arg(0) == 'user' && !is_numeric(arg(1)))) {
-				$block['subject'] = t('User login');
-				$block['content'] = drupal_get_form('signup_user_login_block');
-			}
-			return $block;
-			break;
 		case 'progress':
 			if($user->uid && db_select('students','s')->fields('s')->condition('s.uid',$user->name)->countQuery()->execute()->fetchField()>0)
 				return signup_block_content_PROGRESS();
