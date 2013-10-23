@@ -1639,13 +1639,26 @@ function signup_user_professions_form($form, $form_state, $user) {
 			'SELECT examplace FROM {students} WHERE uid=:uid', array(':uid'=>$user->name)
 		)->fetchField();
 		$form['pidcontainer']['examplace']['examplace']=array(
+			'#id' => 'examplaceselect',
 			'#type' => 'select',
 			'#options' => $examplaces,
 			'#required' => TRUE,
 			'#title' => t('Exam Place'),
 			'#default_value' => isset($form_state['values']['examplace']) ? $form_state['values']['examplace'] : $default_values['examplace'],
 			'#description' => '<span id="infodesc">'.t('Please note that you could select various examing place here.').'</span>',
+			'#attributes' => array('onChange' => ''.
+				'jQuery("#infodesc").html(jQuery("#placedesc"+jQuery("#examplaceselect").val()).val());'.
+			''),
 		);
+		foreach($examplaces as $cid => $cname) {
+			$memo=db_query('SELECT memo FROM {vl_profession_place} WHERE pid=:pid AND examplace=:cid',
+				array(':pid'=>$prof, ':cid'=>$cid))->fetchField();
+			$form['pidcontainer']['examplace']['placedesc'.$cid]=array(
+				'#attributes' => array('id' => 'placedesc'.$cid),
+				'#type' => 'hidden',
+				'#value' => !empty($memo)?($memo):'',
+			);
+		}
 	}
 
 	$form['pidcontainer']['examplace']['secondary_profession'] = array(
