@@ -1360,37 +1360,25 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 	if(!$is_student = array_key_exists('5',$user->roles)) return FALSE;
 	switch($sec) {
 		case 'profession':
-			$result = db_select('students','s')
-				->fields('s',array('idcard_number', 'name'))
-				->condition('s.uid',$user->name)
-				->execute()->fetchObject();
+			$result = db_query('SELECT idcard_number, name FROM {students} WHERE uid=:uid',
+				array(':uid'=>$user->name)
+			)->fetchObject();
 			if(!($result->idcard_number) || !($result->name)) return FALSE;
 			else return TRUE;
 		case 'exam':
-			$result = db_select('students','s')
-				->fields('s',array('profession_major','examplace'))
-				->condition('s.uid',$user->name)
-				->execute()->fetchObject();
+			$result = db_query('SELECT profession_major, examplace FROM {students} WHERE uid=:uid',
+				array(':uid'=>$user->name)
+			)->fetchObject();
 			if($result->profession_major == '0' || $result->examplace == '') return FALSE;
 			else return TRUE;
 		case 'contact':
-			$query=db_select('students_going','sg');
-			$query->addExpression('MAX(sg.opus)');
-			$result = $query
-				->condition('sg.uid',$user->name)
-				->execute()->fetchField();
+			$result = db_query('SELECT MAX(opus) FROM {students_going} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 			if(!$result) return FALSE;
 			else return TRUE;
 		case 'gaokao':
-			$ucategory=db_select('students','s')
-				->fields('s',array('ucategory'))
-				->condition('s.uid',$user->name)
-				->execute()->fetchField();
+			$ucategory=db_query('SELECT ucategory FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 			if(($ucategory == 0 ) || ($ucategory == 3)) return FALSE;
-			$result=db_select('students_contact','sc')
-				->fields('sc',array('contact_phone'))
-				->condition('sc.uid',$user->name)
-				->execute()->fetchField();
+			$result=db_query('SELECT contact_phone FROM {students_contact} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 			if(!$result) return FALSE;
 			else if(_signup_user_tab_access($user, 'contact')) return TRUE;
 			else return FALSE;
@@ -1404,7 +1392,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 	if(!array_key_exists('5', $user->roles)) return;
 
 	// Personal information section
-	$result = db_select('students','s')->fields('s')->condition('s.uid', $user->name)->execute()->fetchObject();
+	$result=db_query('SELECT * FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchObject();
 	$user->content['pi'] = array(
 		'#type' => 'user_profile_category',
 		'#title' => t('Personal information'),
@@ -1418,7 +1406,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 	);
 
 	if(db_table_exists('users_weixin') && module_exists('weixin')) {
-		$r=db_select('users_weixin','u')->fields('u')->condition('u.uid',$user->uid)->condition('u.status',1)->countQuery()->execute()->fetchField();
+		$r=db_query('SELECT EXISTS(SELECT * FROM {users_weixin} WHERE uid=:uid AND status=1)', array(':uid'=>$user->uid))->fetchField();
 		if($r)
 			$user->content['pi']['name']['#markup'].='<img src="/'.drupal_get_path('module', 'weixin') . '/weixin_16.png" title="'.t('Bound with weixin').'"/>';
 	}
@@ -1438,7 +1426,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 	);
 	
 	// Contact
-	$r = db_select('students_contact','sc')->fields('sc')->condition('sc.uid',$user->name)->execute()->fetchObject();
+	$r=db_query('SELECT * FROM {students_contact} WHERE uid=:uid', array(':uid'=>$user->name))->fetchObject();
 	if($r) {
 		$item = array('title' => t('Phone number during examination'), 'value'=> isset($r->contact_phone)?$r->contact_phone:'');
 		$user->content['contact']=array(
@@ -1473,19 +1461,18 @@ function signup_user_view($user, $view_mode, $langcode) {
 
 		}
 	// Professions
-	$query = db_select('vl_professions', 'p');
-	$query->innerJoin('vl_department', 'd', 'p.did = d.did');
-	$query = $query->fields('d',array('dname'))->fields('p',array('pname'))->condition('p.pid', $result->profession_major);
-	$rdbo = $query->execute()->fetchObject();
+	$rdbo=db_query('SELECT d.dname, p.pname FROM {vl_department} d INNER JOIN {vl_professions} p ON d.did=p.did '.
+		'WHERE p.pid=:pid', array(':pid'=>$result->profession_major)
+	)->fetchObject();
 
 	if($rdbo)
 		$r = t('Department !dname Profession !pname', array('!dname'=>$rdbo->dname, '!pname'=>$rdbo->pname));
 
 	if(user_access('view passround3')) {
-		$query=db_select('students','s')->fields('s',array('pass_round1_major','pass_round3_major','pass_roundg_major'))->condition('s.uid',$user->name);
-		$query->innerJoin('students_total_score','ts','s.uid=ts.uid AND s.profession_major=ts.pid');
-		$query->fields('ts',array('outrank'));
-		$q=$query->execute()->fetchObject();
+		$q=db_query('SELECT s.pass_round1_major, s.pass_round3_major, s.pass_roundg_major, ts.outrank FROM {students} s '.
+			'INNER JOIN {students_total_score} ts ON s.uid=ts.uid AND s.profession_major=ts.pid '.
+			'WHERE s.uid=:uid', array(':uid'=>$user->name)
+		)->fetchObject();
 		if($q)
 			switch($q->pass_round3_major) {
 				case 10: $r .= ' ('.t('Determined').')'; break;
@@ -1504,10 +1491,9 @@ function signup_user_view($user, $view_mode, $langcode) {
 		'#title' => t('Profession and Examinations'),
 		'#weight' => 10,
 	);
-	$query = db_select('students','s')->condition('s.uid',$user->name);
-	$query->innerJoin('vl_city_district','cd','s.examplace=cd.cid');
-	$query = $query->fields('cd',array('name_simp'));
-	$examplace = $query->execute()->fetchField();
+	$examplace = db_query('SELECT cd.name_simp FROM {vl_city_district} cd INNER JOIN {students} s ON s.examplace=cd.cid '.
+		'WHERE s.uid=:uid', array(':uid'=>$user->name)
+	)->fetchField();
 	if($r)
 		if(!empty($examplace))
 			$proftext = $r.' / '.$examplace;
@@ -1526,10 +1512,9 @@ function signup_user_view($user, $view_mode, $langcode) {
 
 	// Examinations
 	$ex_section = t('Examinations');
-	$query = db_select('students_going','sg');
-	$query->innerJoin('vl_exam','e', 'sg.eid=e.eid');
-	$query = $query->fields('e',array('eid','ename','elevel'))->fields('sg',array('opus'))->condition('sg.uid',$user->name)->orderBy('sg.eid');
-	$rdbo = $query->execute();
+	$rdbo = db_query('SELECT e.eid, e.ename, e.elevel, sg.opus FROM {students_going} sg INNER JOIN {vl_exam} e ON sg.eid=e.eid '.
+		'WHERE sg.uid=:uid ORDER BY sg.eid', array(':uid'=>$user->name)
+	);
 	foreach ($rdbo as $r) {
 		$item = array('title' => $r->ename.$r->elevel, 'class'=>'exam', 'value' => '');
 		if($r->opus) {
@@ -1554,11 +1539,12 @@ function signup_user_view($user, $view_mode, $langcode) {
 function signup_user_professions_form($form, $form_state, $user) {
 	$form['#user']=$user;
 	
-	$user->isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
+	$user->isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 
 	$default_values=array();
 
-	if($default_profession=db_select('students','s')->fields('s',array('profession_major'))->condition('s.uid',$user->name)->execute()->fetchField()) {
+	if($default_profession=db_query('SELECT profession_major FROM {students} WHERE uid=:uid', 
+		array(':uid'=>$user->name))->fetchField()) {
 		$default_values['did_1'] = substr($default_profession,0,2);
 		$default_values['pid_1'] = $default_profession;
 	}
@@ -1572,18 +1558,16 @@ function signup_user_professions_form($form, $form_state, $user) {
 	
 
 	// Check if the student is marked as passthrough.
-	$query=db_select('students','s')->condition('s.uid',$user->name);
-	$query->innerJoin('students_passthrough','sp','s.idcard_number=sp.idcard_number');
-	$query=$query->fields('sp');
-	$r=$query->execute()->fetchObject();
+	$r=db_query('SELECT s.profession_major FROM {students} s WHERE EXISTS('.
+		'SELECT * FROM {students_passthrough} sp WHERE s.idcard_number=sp.idcard_number)')->fetchField();
 	if($r)
-		$passthroughcondition="p.pid='".$r->pid."'";
+		$passthroughcondition="p.pid='".$r."'";
 	else
 		$passthroughcondition='1';
 
-	$query=db_select('vl_department','d')->fields('d')->orderBy('d.did')->condition('p.enabled',1)->where($passthroughcondition);
-	$query->innerJoin('vl_professions','p','p.did=d.did');
-	$dbo = $query->execute();
+	$dbo=db_query('SELECT d.did, d.dname FROM {vl_department} d WHERE EXISTS('.
+		'SELECT * FROM {vl_professions} p WHERE p.did=d.did AND p.enabled=1 AND '.$passthroughcondition.') ORDER BY d.did'
+	);
 	$departments = array();
 	foreach($dbo as $r) {
 		$departments += array(($r->did) => ($r->dname));
@@ -1607,7 +1591,7 @@ function signup_user_professions_form($form, $form_state, $user) {
 	);
 	
 	$prof=isset($form_state['values']['pid']) ? $form_state['values']['pid'] : $default_values['pid_1'];
-	$options=_signup_user_professions_form_profession_options($dep);
+	$options=_signup_user_professions_form_profession_options($dep, $user);
 	if(!array_key_exists($prof, $options))
 		$prof=key($options);
 	$form['pidcontainer']=array(
@@ -1651,10 +1635,9 @@ function signup_user_professions_form($form, $form_state, $user) {
 			'#description' => t('You can only participate exam at here.'),
 		);
 	} else {
-		$default_values['examplace']=db_select('students','s')
-			->condition('s.uid',$user->name)
-			->fields('s',array('examplace'))
-			->execute()->fetchField();
+		$default_values['examplace']=db_query(
+			'SELECT examplace FROM {students} WHERE uid=:uid', array(':uid'=>$user->name)
+		)->fetchField();
 		$form['pidcontainer']['examplace']['examplace']=array(
 			'#type' => 'select',
 			'#options' => $examplaces,
@@ -1693,11 +1676,16 @@ function _signup_user_professions_form_department_select_callback($form, $form_s
 	return $form['pidcontainer'];
 }
 
-function _signup_user_professions_form_profession_options($did) {
-	$query=db_query('SELECT pid, pname FROM {vl_professions} WHERE did=:did AND enabled=1 ', array(':did'=>$did));
+function _signup_user_professions_form_profession_options($did, $user) {
+	$query=db_query('SELECT pid, pname, extracondition FROM {vl_professions} WHERE did=:did AND enabled=1 ', array(':did'=>$did));
 	$professions=array();
 	foreach($query as $r) {
-		$professions[$r->pid]=$r->pname;
+		if(!empty($r->extracondition)) {
+			if(db_query('SELECT EXISTS(SELECT * FROM {students} s WHERE '.$r->extracondition.')')->fetchField())
+				$professions[$r->pid]=$r->pname;
+		}
+		else
+			$professions[$r->pid]=$r->pname;
 	}
 	return $professions;
 }
