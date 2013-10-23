@@ -1557,8 +1557,6 @@ function signup_user_view($user, $view_mode, $langcode) {
 
 function signup_user_professions_form($form, $form_state, $user) {
 	$form['#user']=$user;
-	if(!isset($form_state['rebuild_info']['need_rebuild']))
-		$form_state['rebuild_info']['need_rebuild']=0;
 	
 	$user->isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
 
@@ -1595,45 +1593,9 @@ function signup_user_professions_form($form, $form_state, $user) {
 		$departments += array(($r->did) => ($r->dname));
 	}
 	
-	// Construct the professions list
-	$dbo = db_select('vl_professions','p')->fields('p')->condition('p.enabled',1)->where($passthroughcondition)->orderBy('p.pid')->execute();
-	$professions = array();
-	$professions_plain = '';
-	foreach($dbo as $r) {
-		$c=1;
-		if($r->extracondition) {
-			$query=db_select('students','s')->fields('s')->condition('s.uid',$user->name);
-			$query->innerjoin('students_gk','sg','s.uid=sg.uid');
-			$query=$query->where($r->extracondition)->fields('s')->countQuery();
-			$c=$query->execute()->fetchField();
-		}
-		if($c) {
-			$professions += array(($r->pid) => $r->pname);
-			$professions_plain .= $r->pid.$r->pname.',';
-		}
-	}
-	
-	$form['professionlist'] = array(
-		'#type'=>'hidden',
-		'#value'=> $professions_plain,
-		'#weight'=>1,
-	);
-
-	//	return array();
-	$form['pframe'] = array(
-		'#type' => 'fieldset',
-		'#title' => t('The wanted profession'),
-		'#collapsible' => TRUE,
-		'#weight'=>2,
-	);
-
-	if($default_profession) {
-		$form['pframe']['#title'] = t('Change my profession'); 
-		$form['pframe']['#collapsible']=TRUE;
-		$form['pframe']['#collapsed']=FALSE;
-	}
 	// Let's build the department select and profession select
-	$form['pframe']['did'] = array(
+	$dep = isset($form_state['values']['did'])?$form_state['values']['did']:$default_values['did_1'];
+	$form['did'] = array(
 		'#type' => 'select',
 		'#title' => t('The department you like'),
 		'#required' => TRUE,
@@ -1641,150 +1603,97 @@ function signup_user_professions_form($form, $form_state, $user) {
 		'#multiple' => FALSE,
 		'#ajax' => array(
 			'callback' => '_signup_user_professions_form_department_select_callback',
-			'wrapper' => 'dropdown-pid-replace',
+			'wrapper' => 'edit-pidcontainer',
 		),
-		'#default_value' => isset($form_state['values']['did']) ? $form_state['values']['did'] : $default_values['did_1'],
-		'#disabled' => ($user->isvalidated) || $form_state['rebuild_info']['need_rebuild'],
+		'#default_value' => $dep,
+		'#disabled' => $user->isvalidated,
 		'#weight' => 1,
 	);
-	$dep = isset($form_state['values']['did'])?$form_state['values']['did']:$default_values['did_1'];
-	$form['pframe']['pid'] = array(
+	
+	$prof=isset($form_state['values']['pid']) ? $form_state['values']['pid'] : $default_values['pid_1'];
+	$options=_signup_user_professions_form_profession_options($dep);
+	if(!array_key_exists($prof, $options))
+		$prof=key($options);
+	$form['pidcontainer']=array(
+		'#type' => 'container',
+		'#id' => 'edit-pidcontainer',
+		'#weight' => 2,
+	);
+	$form['pidcontainer']['pid'] = array(
 		'#type' => 'select',
 		'#title' => t('The profession you like'),
 		'#required' => TRUE,
 		'#multiple' => FALSE,
-		'#prefix' => '<div id="dropdown-pid-replace">',
-		'#suffix' => '</div>',
-		'#options' => _signup_user_professions_form_profession_options(isset($form_state['values']['did']) ? $form_state['values']['did'] : $default_values['did_1']),
-		'#default_value' => isset($form_state['values']['pid']) ? $form_state['values']['pid'] : $default_values['pid_1'],
-		'#disabled' => ($user->isvalidated) || $form_state['rebuild_info']['need_rebuild'],
+		'#options' => _signup_user_professions_form_profession_options($dep),
+		'#default_value' => $prof,
+		'#ajax' => array(
+			'callback' => '_signup_user_professions_form_profession_select_callback',
+			'wrapper' => 'edit-examplace',
+		),
+		'#disabled' => $user->isvalidated,
 		'#weight' => 2,
 	);
-	
-	unset($form['actions']['submit']);
+
+	$examplaces=_signup_user_professions_form_examplaces_options($prof, $user);
+	$form['pidcontainer']['examplace']=array(
+		'#type' => 'container',
+		'#id' => 'edit-examplace',
+		'#weight' => 3,
+	);
+	if(count($examplaces)==1) {
+		$citys=array_keys($examplaces);
+		$citynames=array_values($examplaces);
+		$form['pidcontainer']['examplace']['examplace']=array(
+			'#type' => 'hidden',
+			'#value' => $citys[0],
+		);
+		$form['pidcontainer']['examplace']['text']=array(
+			'#type' => 'item',
+			'#title' => t('Exam Place'),
+			'#required' => TRUE,
+			'#markup' => $citynames[0],
+			'#description' => t('You can only participate exam at here.'),
+		);
+	} else {
+		$form['pidcontainer']['examplace']['examplace']=array(
+			'#type' => 'select',
+			'#options' => $examplaces,
+			'#required' => TRUE,
+			'#title' => t('Exam Place'),
+			'#default_value' => isset($form_state['values']['examplace']) ? $form_state['values']['examplace'] : $default_values['examplace'],
+			'#description' => '<span id="infodesc">'.t('Please note that you could select various examing place here.').'</span>',
+		);
+	}
+
+	$form['pidcontainer']['examplace']['secondary_profession'] = array(
+		'#type' => 'radios',
+		'#required' => TRUE,
+		'#title' => t('Secondary profession'),
+		'#description' => t('Please note that if you select to signup a secondary profession, you will need to take part in all the exams. We may enroll you under the secondary profession.'),
+		'#options' => array(
+			'1' => t('I DO NOT want to signup a secondary profession listed in registration guide'),
+			'2' => t('I DO  want to signup a secondary profession listed in registration guide'),
+		),
+		'#default_value' => NULL,
+		'#access' => in_array($prof, array('D716', 'D717', 'D603', 'D604')),
+		'#weight' => 5,
+	);
 	$form['save'] = array(
 		'#type' => 'submit',
 		'#value' => t('Save'),
 		'#weight' => 5,
 	);
-	//if(isset($form_state['rebuild_info']['need_rebuild'])&&$form_state['rebuild_info']['need_rebuild']==1) {
-	/*
-	if(0) {
-		$form['pframe']['#collapsed']=TRUE;
-		$form['pframe']['#title']=t('My profession');
-		$form['extrainfo'] = array(
-			'#type' => 'fieldset',
-			'#title' => t('Extra Info'),
-			'#weight'=> 3,
-		);
-		$places=_signup_user_professions_examplace_alter($form_state['values']['pid'], $user->name);
-		if(count($places) ==1) {
-			$cityids=array_keys($places);
-			$citynames=array_values($places);
-			$form['extrainfo']['examplacedesc'] = array(
-				'#type' => 'item',
-				'#title' => t('Exam Place'),
-				'#markup' => $citynames[0],
-				'#description' => t('You can only participate exam at here.'),
-			);
-			$form['extrainfo']['examplace'] = array(
-				'#type' => 'hidden',
-				'#value' => $cityids[0],
-			);
-		} else {
-			$default_values['examplace']=db_select('students','s')
-				->condition('s.uid',$user->name)
-				->fields('s',array('examplace'))
-				->execute()->fetchField();
-			$form['extrainfo']['examplace'] = array(
-				'#type' => 'select',
-				'#title' => t('Exam Place'),
-				'#description' => '<span id="infodesc">'.t('Please note that you could select various examing place here.').'</span>',
-				'#options' => $places,
-				'#default_value' => isset($form_state['values']['examplace']) ? $form_state['values']['examplace'] : $default_values['examplace'],
-				'#attributes' => array('onChange' => ''.
-					'jQuery("#infodesc").html(jQuery("#placedesc"+jQuery("#edit-examplace").val()).val());'.
-				''),
-				'#weight'=> 3,
-			);
-			foreach($places as $cid => $cname) {
-				$query=db_select('vl_profession_place','pp')
-					->fields('pp')
-					->condition('pp.examplace',$cid)
-					->condition('pp.pid',$form_state['values']['pid']);
-				if($query->countQuery()->execute()->fetchField()>0) {
-					$r=$query->execute()->fetchObject();
-					$form['extrainfo']['placedesc'.$cid] = array(
-						'#attributes' => array('id' => 'placedesc'.$cid),
-						'#type' => 'hidden',
-						'#value' => ($r->memo)?($r->memo):'',
-					);
-				} else {
-					$form['extrainfo']['placedesc'.$cid] = array(
-						'#attributes' => array('id' => 'placedesc'.$cid),
-						'#type' => 'hidden',
-						'#value' => '',
-					);
-				}
-			}
-		}
-		$prof=$form_state['values']['pid'];
-		if($prof == 'D716' || $prof == 'D717' || $prof == 'D603' || $prof == 'D604')
-			$form['extrainfo']['secondary_profession'] = array(
-				'#type' => 'radios',
-				'#title' => t('Secondary profession'),
-				'#description' => t('Please note that if you select to signup a secondary profession, you will need to take part in all the exams. We may enroll you under the secondary profession.'),
-				'#options' => array(
-					'1' => t('I DO NOT want to signup a secondary profession listed in registration guide'),
-					'2' => t('I DO  want to signup a secondary profession listed in registration guide'),
-				),
-				'#default_value' => NULL,
-				'#weight' => 5,
-			);
-	} else {
-		$form['save']['#submit'] = array('_signup_user_professions_fake_save');
-	}*/
-	
-	/*
-	drupal_add_js(
-		'jQuery(document).ready(function(){'.
-			's=jQuery("#edit-pid").val();'.
-			'jQuery("#edit-did").change();'.
-			'jQuery("#edit-pid").val(s);'.
-			'jQuery("#edit-pid").change();'.
-			"if(jQuery('#edit-did').val() == 'D4') ".
-				"jQuery('#edit-descnote').show(); ".
-			"else ".
-				"jQuery('#edit-descnote').hide(); ".
-			'});'.
-			'',
-		'inline'
-	);
-	*/
-	
 	$form['#validate']=array('signup_user_professions_form_validate');
 	$form['#submit']=array('signup_user_professions_form_save');
 	
-		return $form;
+	return $form;
 }
 
-function _signup_user_professions_form_department_select_callback(&$form, &$form_state) {
-	watchdog('signup',
-		'form !content received.', array(
-			'!content'=>serialize($form),
-			),
-		WATCHDOG_INFO
-	);
-	return $form['pframe']['pid'];
+function _signup_user_professions_form_department_select_callback($form, $form_state) {
+	return $form['pidcontainer'];
 }
 
 function _signup_user_professions_form_profession_options($did) {
-	watchdog('signup',
-		'!did received.', array(
-			'!did'=>$did,
-			),
-		WATCHDOG_INFO
-	);
 	$query=db_query('SELECT pid, pname FROM {vl_professions} WHERE did=:did AND enabled=1 ', array(':did'=>$did));
 	$professions=array();
 	foreach($query as $r) {
@@ -1793,37 +1702,8 @@ function _signup_user_professions_form_profession_options($did) {
 	return $professions;
 }
 
-/*
-
-function _signup_professions_department_onchange(&$form, $form_state) {
-	$user=$form['#user'];
-	$query=db_select('students','s')->condition('s.uid',$user->name);
-	$query->innerJoin('vl_professions', 'p', 's.profession_major=p.pid');
-	$query=$query->fields('p',array('did','pid'));
-	$r=$query->execute()->fetchObject();
-	if (!is_null($form_state['values']['pid']) && $r && $form_state['values']['did'] == $r->did)
-		$form['pframe']['pid']['#default_value']=$r->pid;
-	else
-		$form['pframe']['pid']['#default_value']=NULL;
-	return $form['pframe']['pid'];
-}
-
-function _signup_professions_profession_onchange($form, $form_state) {
-	return $form['pframe']['examplace'];
-}
-
-function _signup_user_professions_profession_alter($dep='') {
-	$dbo = db_select('vl_professions','p')->fields('p')->condition('p.enabled',1)->orderBy('p.pid')->execute();
-	$professions=array();
-	foreach($dbo as $r) {
-		if(!isset($professions[$r->did])) $professions[$r->did]=array();
-		$professions[$r->did] += array($r->pid => $r->pname);
-	}
-	return $professions[$dep];
-}*/
-
-function _signup_user_professions_examplace_alter($pid='', $uid=NULL) {
-	$query=db_select('vl_profession_place','pp')->condition('pp.status','1')->condition('pp.pid',$pid);
+function _signup_user_professions_form_examplaces_options($pid='', $user) {
+	$query=db_select('vl_profession_place','pp')->condition('pp.status',1)->condition('pp.pid',$pid);
 	$query->innerJoin('vl_professions','p','p.pid=pp.pid');
 	$query->innerJoin('vl_city_district','cd','cd.cid=pp.examplace');
 	$query=$query->fields('cd',array('cid','name'))->groupBy('cd.cid')->distinct();
@@ -1833,8 +1713,7 @@ function _signup_user_professions_examplace_alter($pid='', $uid=NULL) {
 	$options=array($r->cid=>$r->name);
 	foreach($dbo as $r) {
 		unset($options[$r->cid]);
-		
-		$query=db_select('students','s')->condition('s.uid',$uid)->fields('s');
+		$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
 		$query->leftJoin('students_gk','sg','s.uid=sg.uid');
 		$condition=db_select('vl_profession_place','pp')->fields('pp',array('cond'))
 			->condition('pp.pid',$pid)->condition('pp.examplace',$r->cid)
@@ -1845,6 +1724,10 @@ function _signup_user_professions_examplace_alter($pid='', $uid=NULL) {
 			$options[$r->cid] = $r->name;
 	}
 	return $options;
+}
+
+function _signup_user_professions_form_profession_select_callback($form, $form_state) {
+	return $form['pidcontainer']['examplace'];
 }
 
 function signup_user_professions_form_validate($form, $form_state) {
@@ -1858,11 +1741,6 @@ function signup_user_professions_form_validate($form, $form_state) {
 			if(!$form_state['values']['secondary_profession'])
 				form_set_error('secondary_profession', t('You must select if you want sign up a secondary profession.'));
 	
-}
-
-function _signup_user_professions_fake_save($form, &$form_state) {
-	$form_state['rebuild_info']['need_rebuild']=1;
-	$form_state['rebuild']=TRUE;
 }
 
 function signup_user_professions_form_save($form, $form_state) {
