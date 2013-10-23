@@ -603,7 +603,7 @@ function signup_user_update(&$edit, $account, $category) {
 }
 
 function signup_user_account_form($form, $form_state) {
-	
+
 	$user=$form['#user'];
 	
 	$form['account']['#type']='fieldset';
@@ -636,7 +636,7 @@ function signup_user_account_form($form, $form_state) {
 		if($GLOBALS['user']->uid=='1') return;
 		if(!$is_student) return;
 			$isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
-			$default_values=db_query('SELECT s.*, sg.provice, sg.city_district FROM {students} s '.
+			$default_values=db_query('SELECT s.*, sg.province, sg.city_district FROM {students} s '.
 				'INNER JOIN {students_gk} sg ON s.uid=sg.uid WHERE s.uid=:uid',
 				array(':uid'=>$user->name)
 			)->fetchObject();
@@ -714,7 +714,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_query('SELECT * FROM {vl_province} WHERE ucategory=:ucategory', array(':ucategory'=>$user->category));
+				$dbo = db_query('SELECT * FROM {vl_province} WHERE ucategory=:ucategory', array(':ucategory'=>$user->ucategory));
 				foreach ($dbo as $result)
 				{
 					$r = array($result->pid => $result->name);
@@ -907,7 +907,7 @@ function signup_user_account_form_validate($form, $form_state) {
 	$user=$form_state['user'];
 	$edit=$form_state['values'];
 	
-	$isvalidated=db_query('SELECT validated FROM {students} uid=:uid', array(':uid'=>$user->name))->fetchField();
+	$isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 	if($isvalidated) return;
 	
 	switch($user->ucategory) {
@@ -1009,7 +1009,7 @@ function signup_user_account_form_save($form, &$form_state) {
 		user_save($user, $data);
 	}
 
-	$isvalidated=db_query('SELECT validated FROM {students} uid=:uid', array(':uid'=>$user->name))->fetchField();
+	$isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 
 	if($isvalidated) return;
 
