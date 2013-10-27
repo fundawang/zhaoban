@@ -469,7 +469,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 	foreach($gateways as $k => $v) {
 		if(module_hook($k, 'submit_form_submit'))
 			if(is_array($v))
-				$options[$k]='<img src="/'.$v['payment'].'"/>';
+				$options[$k]=sprintf('<img src="/%s" alt="%s" title="%s"/>', $v['payment'], $v['name'], $v['name']);
 			else
 				$options[$k]='<img src="/'.$v.'"/>';
 	}
@@ -739,7 +739,7 @@ function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
 	$gateways=module_invoke_all('paymentgatewayinfo');
 	foreach($gateways as $k => $v) {
 		if(module_hook($k, 'submit_form_submit'))
-			$options[$k]=t($k);
+			$options[$k]=$v['name'];
 	}
 	$form['orders']['ordergateway']=array(
 		'#type' => 'select',
@@ -839,7 +839,7 @@ function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
 			'#markup' => sprintf("%s (&yen;%s)", $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')), $r->amount),
 		);
 		$form['orderlist'][$r->orderno]['gateway']=array(
-			'#markup' => $r->gateway=='offline'?t('Offline'):$r->gateway,
+			'#markup' => $r->gateway=='offline'?t('Offline'):$gateways[$r->gateway]['name'],
 		);
 		$form['orderlist'][$r->orderno]['gatewaytransactionno']=array(
 			'#markup' => $r->gatewaytransactionno,
