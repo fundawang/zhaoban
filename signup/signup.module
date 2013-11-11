@@ -1634,6 +1634,10 @@ function signup_user_professions_form($form, $form_state, $user) {
 			'#markup' => $citynames[0],
 			'#description' => t('You can only participate exam at here.'),
 		);
+		$memo=db_query('SELECT memo FROM {vl_profession_place} WHERE pid=:pid AND examplace=:cid',
+				array(':pid'=>$prof, ':cid'=>$citys[0]))->fetchField();
+		if(!empty($memo))
+			$form['pidcontainer']['examplace']['text']['#description']=$memo.'<br/>'.$form['pidcontainer']['examplace']['text']['#description'];
 	} else {
 		$default_values['examplace']=db_query(
 			'SELECT examplace FROM {students} WHERE uid=:uid', array(':uid'=>$user->name)
