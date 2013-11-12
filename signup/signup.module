@@ -922,15 +922,17 @@ function signup_user_account_form_validate($form, $form_state) {
 						break;
 					}
 			}
-			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
-				db_set_active('xjinfo');
-				$r=db_query('SELECT EXISTS(SELECT * FROM {XS_XJB} WHERE XH=:xh AND XM=:xm AND sfyxj=:yes)',
+			if(!is_null(Database::getConnectionInfo('jiaowu'))) {
+				db_set_active('jiaowu');
+				$r=db_query('SELECT EXISTS(SELECT * FROM {xs_xjb} WHERE XH=:xh AND XM=:xm AND sfyxj=:yes)',
 					array(':xh'=>strtoupper($edit['idnumber']), ':xm'=>trim($edit['truename']), ':yes'=>'是')
 				)->fetchField();
 				db_set_active('default');
-			} else $r=1;
-					if (isset($edit['idnumber']) && $r != 1)
-							form_set_error('idnumber', t('The Student ID you\'ve entered is not valid.'));
+				if(!$r) {
+					form_set_error('idnumber', t('The Student ID and the name could not be found in jiaowu database.'));
+					form_set_error('truename');
+				}
+			}
 			break;
 		case uc_MAINLAND_STUDENT:
 			if ($edit['idnumber']) {
@@ -1017,10 +1019,10 @@ function signup_user_account_form_save($form, &$form_state) {
 	
 	switch($user->ucategory) {
 		case uc_OWN_STUDENT:
-			if(!is_null(Database::getConnectionInfo('xjinfo'))) {
-				db_set_active('xjinfo');
-				$r=db_query('SELECT xb FROM {XS_XJB} WHERE XH=:xh AND XM=:xm',
-					array(':xm'=>strtoupper($edit['idnumber']), ':xm'=>trim($edit['truename']))
+			if(!is_null(Database::getConnectionInfo('jiaowu'))) {
+				db_set_active('jiaowu');
+				$r=db_query('SELECT xb FROM {xs_xjb} WHERE XH=:xh AND XM=:xm',
+					array(':xh'=>strtoupper($edit['idnumber']), ':xm'=>trim($edit['truename']))
 				)->fetchAssoc();
 				db_set_active('default');
 			} else {
@@ -1558,10 +1560,14 @@ function signup_user_professions_form($form, $form_state, $user) {
 	
 
 	// Check if the student is marked as passthrough.
-	$r=db_query('SELECT s.profession_major FROM {students} s WHERE EXISTS('.
-		'SELECT * FROM {students_passthrough} sp WHERE s.idcard_number=sp.idcard_number)')->fetchField();
-	if($r)
+	$r=db_query('SELECT sp.pid FROM {students_passthrough} sp WHERE EXISTS('.
+		'SELECT * FROM {students} s WHERE s.idcard_number=sp.idcard_number AND s.uid=:uid)',
+		array(':uid'=>$user->name))->fetchField();
+	if($r) {
 		$passthroughcondition="p.pid='".$r."'";
+		$default_values['pid_1'] = $r;
+		$default_values['did_1'] = substr($default_values['pid_1'],0,2);
+	}
 	else
 		$passthroughcondition='1';
 
@@ -1572,7 +1578,7 @@ function signup_user_professions_form($form, $form_state, $user) {
 	foreach($dbo as $r) {
 		$departments += array(($r->did) => ($r->dname));
 	}
-	
+
 	// Let's build the department select and profession select
 	$dep = isset($form_state['values']['did'])?$form_state['values']['did']:$default_values['did_1'];
 	$form['did'] = array(
@@ -1604,7 +1610,7 @@ function signup_user_professions_form($form, $form_state, $user) {
 		'#title' => t('The profession you like'),
 		'#required' => TRUE,
 		'#multiple' => FALSE,
-		'#options' => _signup_user_professions_form_profession_options($dep),
+		'#options' => _signup_user_professions_form_profession_options($dep, $user),
 		'#default_value' => $prof,
 		'#ajax' => array(
 			'callback' => '_signup_user_professions_form_profession_select_callback',
@@ -1694,7 +1700,16 @@ function _signup_user_professions_form_department_select_callback($form, $form_s
 }
 
 function _signup_user_professions_form_profession_options($did, $user) {
-	$query=db_query('SELECT pid, pname, extracondition FROM {vl_professions} WHERE did=:did AND enabled=1 ', array(':did'=>$did));
+	$pid=db_query('SELECT sp.pid FROM {students_passthrough} sp WHERE EXISTS('.
+		'SELECT * FROM {students} s WHERE s.idcard_number=sp.idcard_number AND s.uid=:uid)',
+		array(':uid'=>$user->name))->fetchField();
+	if($pid) {
+		$query=db_query('SELECT pid, pname, extracondition FROM {vl_professions} WHERE pid=:pid', array(':pid'=>$pid));
+	}
+	else {
+		$query=db_query('SELECT pid, pname, extracondition FROM {vl_professions} WHERE did=:did AND enabled=1 ', array(':did'=>$did));
+		$professions=array($did=>$did);
+	}
 	$professions=array();
 	foreach($query as $r) {
 		if(!empty($r->extracondition)) {
@@ -1881,13 +1896,11 @@ function signup_user_examinations_form($form, $form_state, $user) {
 	$form['#user']=$user;
 
 	// Check if the student is marked as passthrough.
-	$query=db_select('students','s')->condition('s.uid',$user->name);
-	$query->innerJoin('students_passthrough','sp','s.idcard_number=sp.idcard_number');
-	$query=$query->fields('sp');
-	$r=$query->execute()->fetchObject();
-	$ispassthrough=$r?TRUE:FALSE;
+	$ispassthrough=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} sp WHERE s.idcard_number=sp.idcard_number) '.
+		'FROM {students} s WHERE s.uid=:uid',
+		array(':uid'=>$user->name))->fetchField();
 
-	$isvalidated=db_select('students','s')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
+	$isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 	if(!$isvalidated)
 		$isvalidated=$ispassthrough;
 	// Let's fetch the examinations of the user at first
@@ -1994,7 +2007,7 @@ function signup_user_examinations_form_save($form, $form_state) {
 			$should_disabled=FALSE;
 	if($should_disabled) return;
 
-		$opus_to_save = array();
+	$opus_to_save = array();
 
 	$edit=$form_state['values'];
 	foreach($edit as $fid => $fvalue) {
@@ -2215,11 +2228,11 @@ function signup_user_contact_form_save($form, $form_state) {
 	// If is our own students, lets fill in some more information automatically
 	if($user->ucategory==0) {
 		$sid=db_select('students','s')->fields('s',array('idcard_number'))->condition('uid',$user->name)->execute()->fetchField();
-		if(!is_null(Database::getConnectionInfo('xjinfo'))) {
-			db_set_active('xjinfo');
-			$r=db_select('XS_XJB','xj')->fields('xj')->condition('XH',$sid)->execute()->fetchObject();
+		if(!is_null(Database::getConnectionInfo('jiaowu'))) {
+			db_set_active('jiaowu');
+			$r=db_query('SELECT xm, xsh FROM {xs_xjb} WHERE XH=:xh', array(':xh'=>$sid))->fetchObject();
 			db_set_active('default');
-		} else $r='';
+		} else $r=(object)array('xsh'=>'','xm'=>'');
 		$depname=db_select('vl_department','d')->fields('d',array('dname'))->condition('did_exchange',$r->xsh)->execute()->fetchField();
 
 		$edit['address_round3'] = '中央音乐学院'.$depname;
@@ -2680,7 +2693,7 @@ function signup_overview_by_profession() {
 		$valins="s.validated=1 ";
 	else 
 		$valins="1";
-		
+
 	// Compute total number of registered students.
 	$total_students=db_select('students','s')
 		->fields('s')
