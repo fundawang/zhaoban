@@ -1395,6 +1395,7 @@ function signup_user_view($user, $view_mode, $langcode) {
 
 	// Personal information section
 	$result=db_query('SELECT * FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchObject();
+	if(empty($result->idcard_number)) return;
 	$user->content['pi'] = array(
 		'#type' => 'user_profile_category',
 		'#title' => t('Personal information'),
@@ -1447,12 +1448,6 @@ function signup_user_view($user, $view_mode, $langcode) {
 			'#title' => t('Phone nubmer off examination'),
 			'#markup' => isset($r->phone_roundg)?$r->phone_roundg:'',
 			'#weight' => '0',
-		);
-		$user->content['contact']['address_round3'] = array(
-			'#type' => 'user_profile_item',
-			'#title' => t('Address of Round 3'),
-			'#markup' => (isset($r->address_round3)?$r->address_round3:'').' / '.(isset($r->zip_round3)?$r->zip_round3:'').' / '.t('To !rec',array('!rec'=>isset($r->recipient_round3)?$r->recipient_round3:'')),
-			'#weight' => '1',
 		);
 		$user->content['contact']['address_roundg'] = array(
 			'#type' => 'user_profile_item',
@@ -2084,6 +2079,7 @@ function signup_user_contact_form($form, $form_state, $user) {
 		'#collapsible' => 'true',
 		'#collapsed' => 0,
 		'#weight' => 0,
+		'#access' => FALSE,
 	);
 	$form['contact_round3']['address_round3'] = array(
 		'#type' => 'textfield',
@@ -2199,7 +2195,6 @@ function signup_user_contact_form($form, $form_state, $user) {
 		'#type' => 'textfield',
 		'#title' => t('The organization which holds your personal record'),
 		'#description' => t('This should be high school for students.'),
-//		'#autocomplete_path' => 'signup/schools_autocompletion',
 		'#maxlength' => 20,
 		'#required' => 'true',
 		'#default_value' => $default_values['personnel_record_at'],
@@ -4365,7 +4360,7 @@ function signup_preset_passthrough_validate($form, &$form_state) {
 	
 	$new_idnumber=strtoupper(trim($form_state['values']['idcardnumber']));
 	
-	if(!is_idcardn_validate($new_idnumber)) {
+	if(!empty($new_idnumbe)&&!is_idcardn_validate($new_idnumber)) {
 		form_set_error('idcardnumber',t('The ID Card number you\'ve entered is not valid.'));
 		return;
 	}
@@ -4569,13 +4564,6 @@ function signup_report($account) {
 	$pdf->Cell(120,7,isset($result_contact->contact_phone)?$result_contact->contact_phone:'',1,0,'L',false);
 	$pdf->Cell(20,7,'乘车区间',1,0,'C',true);
 	$pdf->Cell(25,7,isset($result_contact->terminus_of_train)?$result_contact->terminus_of_train:'',1,1,'L',false);
-	
-	$pdf->Cell(35,7,'文考通知书邮寄地址',1,0,'C',true);
-	$pdf->Cell(150,7,isset($result_contact->address_round3)?$result_contact->address_round3:'',1,1,'L',false);
-	$pdf->Cell(10,7,'邮编',1,0,'C',true);
-	$pdf->Cell(25,7,isset($result_contact->zip_round3)?$result_contact->zip_round3:'',1,0,'L',false);
-	$pdf->Cell(15,7,'收件人',1,0,'C',true);
-	$pdf->Cell(100,7,isset($result_contact->recipient_round3)?$result_contact->recipient_round3:'',1,1,'L',false);
 	
 	$pdf->Cell(35,7,'录取通知书邮寄地址',1,0,'C',true);
 	$pdf->Cell(150,7,isset($result_contact->address_roundg)?$result_contact->address_roundg:'',1,1,'L',false);
