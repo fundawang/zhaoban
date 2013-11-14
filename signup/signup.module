@@ -1787,7 +1787,7 @@ function signup_user_professions_form_save($form, $form_state) {
 	
 	// Now, let's compute the exam.
 	
-	$exams_major = $profession->$exams;
+	$exams_major = $profession->exams;
 	
 	$exams_student = array();
 	// Seperate sofa to so and fa
