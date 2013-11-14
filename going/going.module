@@ -126,26 +126,25 @@ function going_menu_perm()
 
 function going_load($gid)
 {
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$query->fields('r',array('rname'));
-	$going=$query->execute()->fetchObject();
-	if(!empty($going))
-		$going->formatTime=_going_datetime_to_string($going->time);
+	$going=cache_get('going:'.$gid);
+	if(empty($going)) {
+		$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
+		$query->innerJoin('vl_room','r','g.place=r.rid');
+		$query->fields('r',array('rname'));
+		$going=$query->execute()->fetchObject();
+		if(!empty($going)) {
+			$going->formatTime=_going_datetime_to_string($going->time);
+			cache_set('going:'.$gid, $going);
+		}
+	} else $going=$going->data;
 	return $going;
 }
 
 function goingfull_load($gid)
 {
-	$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$query->fields('r',array('rname'));
-	$subquery=db_select('students_going','sg')->where('sg.gid=g.gid')->fields('sg',array('uid'));
-	$query->exists($subquery);
-	$going=$query->execute()->fetchObject();
-	if(!empty($going))
-		$going->formatTime=_going_datetime_to_string($going->time);
-	return $going;
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE gid=:gid)', array(':gid'=>$gid))->fetchField();
+	if(empty($r)) return FALSE;
+	else return going_load($gid);
 }
 
 function going_menu_assign_modify($going)
