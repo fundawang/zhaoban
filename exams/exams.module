@@ -157,9 +157,16 @@ function exams_definations_perm () {
  *    The loaded exam.
 */
 function exam_load($eid) {
-	$query=db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e');
-	$query->addExpression(" CONCAT_WS('',e.ename,e.elevel)",'enamefull');
-	return $query->execute()->fetchObject();
+	$exam=cache_get('exam:'.$eid);
+	if(empty($exam)) {
+		$exam=db_query("SELECT e.*, CONCAT_WS('',e.ename,e.elevel) AS enamefull FROM {vl_exam} e WHERE e.eid=:eid",
+			array(':eid'=>$eid)
+		)->fetchObject();
+		if(!empty($exam))
+			cache_set('exam:'.$eid, $exam);
+	} else
+		$exam=$exam->data;
+	return $exam;
 }
 
 /**
@@ -168,12 +175,16 @@ function exam_load($eid) {
  *    The loaded profession.
 */
 function profession_load($pid) {
-	$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p')->execute()->fetchObject();
-	if(!empty($prof)) {
-		$exams=unserialize($prof->exams);
-		ksort($exams);
-		$prof->exams=$exams;
-	}
+	$prof=cache_get('profession:'.$pid);
+	if(empty($prof)) {
+		$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p')->execute()->fetchObject();
+		if(!empty($prof)) {
+			$exams=unserialize($prof->exams);
+			ksort($exams);
+			$prof->exams=$exams;
+			cache_set('profession:'.$pid, $prof);
+		}
+	} else $prof=$prof->data;
 	return $prof;
 }
 
@@ -229,7 +240,7 @@ function exams_examlist() {
 	return $output;
 }
 
-function exams_professionlist() { 
+function exams_professionlist() {
 	$query = db_select('vl_professions', 'p'); 
 	$query->innerjoin('vl_department', 'd', 'p.did = d.did');
 	$query->innerjoin('vl_research_sec', 'r', 'p.uid = r.uid');
@@ -663,5 +674,7 @@ function exams_profession_delete_submit($form, &$form_state) {
 	db_delete('vl_professions')
 		->condition('pid', arg(3))
 		->execute();
+	cache_clear_all('profession:'.arg(3));
 	$form_state['redirect'] = 'definations/professions';
 }
+?>

@@ -1783,10 +1783,11 @@ function signup_user_professions_form_save($form, $form_state) {
 			))->execute();
 		
 	}
+	$profession=profession_load($profession_major);
 	
 	// Now, let's compute the exam.
 	
-	$exams_major = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$profession_major)->execute()->fetchField());
+	$exams_major = $profession->$exams;
 	
 	$exams_student = array();
 	// Seperate sofa to so and fa
