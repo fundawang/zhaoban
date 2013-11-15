@@ -440,7 +440,7 @@ function exams_exam_edit_submit($form, &$form_state) {
 			l(t('View'), 'definations/exams/edit/'.arg(3))
 		);
 	}
-	cache_clear_all('exam:'.arg(3));
+	cache_clear_all('exam:'.arg(3), 'cache');
 	$form_state['redirect'] = 'definations/exams';
 }
 
@@ -460,7 +460,7 @@ function exams_exam_delete_submit($form, &$form_state) {
 	db_delete('vl_exam')
 		->condition('eid', arg(3))
 		->execute();
-	cache_clear_all('exam:'.arg(3));
+	cache_clear_all('exam:'.arg(3), 'cache');
 	$form_state['redirect'] = 'definations/exams';
 }
 
@@ -657,7 +657,7 @@ function exams_profession_edit_submit($form, &$form_state) {
 		);
 	}
 	$form_state['redirect'] = 'definations/professions';
-	cache_clear_all('profession:'.arg(3));
+	cache_clear_all('profession:'.arg(3), 'cache');
 }
 
 function exams_profession_delete($form, $form_state, $profession) {
@@ -676,7 +676,7 @@ function exams_profession_delete_submit($form, &$form_state) {
 	db_delete('vl_professions')
 		->condition('pid', arg(3))
 		->execute();
-	cache_clear_all('profession:'.arg(3));
+	cache_clear_all('profession:'.arg(3), 'cache');
 	$form_state['redirect'] = 'definations/professions';
 }
 ?>
