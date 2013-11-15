@@ -13,8 +13,8 @@ function onlinecharge_requirements($phase) {
 
 	if ($phase == 'runtime') {
 		$t = get_t();
-		$num=db_select('orders','o')->fields('o')->countQuery()->execute()->fetchField();
-		$succeeded=db_select('orders','o')->fields('o')->condition('o.status',100)->countQuery()->execute()->fetchField();
+		$num=db_query('SELECT COUNT(*) FROM {orders}')->fetchField();
+		$succeeded=db_query('SELECT COUNT(*) FROM {orders} WHERE status=100')->fetchField();
 		$requirements['onlinecharge'] = array(
 			'title' => t('Online Charging orders'),
 			'severity' => REQUIREMENT_INFO,
@@ -158,8 +158,8 @@ function onlinecharge_block_view($delta = '') {
 
 function onlinecharge_fee() {
 	$form=array();
-	$should_disabled=db_select('orders','o')->fields('o')->countQuery()->execute()->fetchField();
-	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',1)->execute()->fetchField();
+	$should_disabled=db_query('SELECT count(*) FROM {orders}')->fetchField();
+	$title=db_query('SELECT title FROM {vl_charging_standard} WHERE period=1')->fetchField();
 	$form['telephone']=array(
 		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
@@ -178,7 +178,7 @@ function onlinecharge_fee() {
 		'#markup' => $title,
 		'#size' => 80,
 	);
-	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',2)->execute()->fetchField();
+	$title=db_query('SELECT title FROM {vl_charging_standard} WHERE period=2')->fetchField();
 	$form['round2feetitle']=array(
 		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
@@ -188,7 +188,7 @@ function onlinecharge_fee() {
 		'#markup' => $title,
 		'#size' => 80,
 	);
-	$title=db_select('vl_charging_standard','sc')->fields('sc',array('title'))->condition('period',3)->execute()->fetchField();
+	$title=db_query('SELECT title FROM {vl_charging_standard} WHERE period=3')->fetchField();
 	$form['round3feetitle']=array(
 		'#type' => $should_disabled?'item':'textfield',
 		'#required' => TRUE,
@@ -198,7 +198,7 @@ function onlinecharge_fee() {
 		'#markup' => $title,
 		'#size' => 80,
 	);
-	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
+	$student_types=db_query('SELECT * FROM {vl_student_type} ORDER BY stid');
 	$form['detail']=array(
 		'#type' => 'item',
 		'#title' => t('Detail charging standard'),
@@ -206,7 +206,8 @@ function onlinecharge_fee() {
 		'#description' => t('Unit: RMB'),
 	);
 	foreach($student_types as $student_type) {
-		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',1)->fields('sc',array('fee'))->execute()->fetchField();
+		$fee=db_query('SELECT fee FROM {vl_charging_standard} WHERE ucategory=:stid AND period=1',
+			array(':stid'=>$student_type->stid))->fetchField();
 		$form['feestandard_1_'.$student_type->stid]=array(
 			'#type' => $should_disabled?'item':'textfield',
 			'#required' => TRUE,
@@ -215,7 +216,8 @@ function onlinecharge_fee() {
 			'#markup'=>$fee,
 			'#size' => 10,
 		);
-		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',2)->fields('sc',array('fee'))->execute()->fetchField();
+		$fee=db_query('SELECT fee FROM {vl_charging_standard} WHERE ucategory=:stid AND period=2',
+			array(':stid'=>$student_type->stid))->fetchField();
 		$form['feestandard_2_'.$student_type->stid]=array(
 			'#type' => $should_disabled?'item':'textfield',
 			'#required' => TRUE,
@@ -224,7 +226,8 @@ function onlinecharge_fee() {
 			'#markup'=>$fee,
 			'#size' => 10,
 		);
-		$fee=db_select('vl_charging_standard','sc')->condition('ucategory',$student_type->stid)->condition('period',3)->fields('sc',array('fee'))->execute()->fetchField();
+		$fee=db_query('SELECT fee FROM {vl_charging_standard} WHERE ucategory=:stid AND period=3',
+			array(':stid'=>$student_type->stid))->fetchField();
 		$form['feestandard_3_'.$student_type->stid]=array(
 			'#type' => $should_disabled?'item':'textfield',
 			'#required' => TRUE,
@@ -255,7 +258,7 @@ function theme_onlinecharge_fee($variables) {
 		t('2nd round standard'),
 		t('3rd round standard'),
 	);
-	$student_types=db_select('vl_student_type','st')->fields('st')->orderby('st.stid')->execute();
+	$student_types=db_query('SELECT * FROM {vl_student_type} ORDER BY stid');
 	$rows=array();
 	foreach($student_types as $student_type) {
 		$rows[]=array(
@@ -282,7 +285,7 @@ function onlinecharge_fee_validate($form, $form_state) {
 
 function onlinecharge_fee_submit($form, $form_state) {
 	db_truncate('vl_charging_standard')->execute();
-	$student_types=db_select('vl_student_type','st')->fields('st')->orderBy('st.stid')->execute();
+	$student_types=db_query('SELECT * FROM {vl_student_type} ORDER BY stid');
 	$i=1;
 	foreach($student_types as $student_type) {
 		db_insert('vl_charging_standard')->fields(array(
@@ -332,20 +335,20 @@ function onlinecharge_user_access($user) {
 function onlinecharge_user_orders($form, $form_state, $user) {
 	
 	for($i=1;$i<=3;$i++) {
-		$fee=db_select('vl_charging_standard','c')->fields('c')->condition('c.ucategory',$user->ucategory)->condition('c.period',$i)->condition('c.fee',0,'>')->execute()->fetchObject();
+		$fee=db_query('SELECT * FROM {vl_charging_standard} WHERE ucategory=:ucategory AND period=:i AND fee>0',
+			array(':ucategory'=>$user->ucategory, ':i'=>$i))->fetchObject();
 		if($fee==FALSE) continue;
-		$r=db_select('orders','o')->condition('o.standard',$fee->scid)->condition('o.uid',$user->uid)->fields('o')->countQuery()->execute()->fetchField();
-		if($r==0) {
+		$r=db_query('SELECT EXISTS(SELECT * FROM {orders} WHERE standard=:stid AND uid=:uid)',
+			array(':stid'=>$fee->scid, ':uid'=>$user->uid))->fetchField();
+		if(empty($r)) {
 			if($fee->period > 1) {
-				$query=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s');
-				$query->innerJoin('students_going','sg','s.uid=sg.uid');
-				$query->condition('sg.eid','200','>');
-				$p=$query->countQuery()->execute()->fetchField();
+				$p=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+					'WHERE s.uid=:uid AND s.pass_round1_major=1 AND sg.eid>200)',
+					array(':uid'=>$user->name))->fetchField();
 				if(!$p) {
-					$query=db_select('students','s')->condition('s.uid',$user->name)->fields('s');
-					$query->innerJoin('students_passthrough','sp','sp.idcard_number=s.idcard_number');
-					$p=$query->countQuery()->execute()->fetchField();
-					if($p==0) break;
+					$p=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) '.
+						'FROM {students} s WHERE s.uid=:uid', array(':uid'=>$user->name))->fetchField();
+					if(empty($p)) break;
 				}
 			}
 			db_insert('orders')->fields(array(
@@ -377,13 +380,11 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		'#collapsible' => TRUE,
 	);
 	
-	$query=db_select('students','s')->condition('s.uid',$user->name)->condition('s.pass_round1_major',1)->fields('s');
-	$query->innerJoin('students_going','sg','s.uid=sg.uid');
-	$query->condition('sg.eid','200','>');
-	$query->innerJoin('vl_charging_standard','sc','sc.ucategory=s.ucategory');
-	$query->condition('sc.fee',0,'>')->condition('sc.period',1,'>');
-	$r=$query->countQuery()->execute()->fetchField();
-	if($r>0) {
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+		'INNER JOIN {vl_charging_standard} sc ON sc.ucategory=s.ucategory '.
+		'WHERE s.uid=:uid AND s.pass_round1_major=1 AND sc.fee>0 AND sc.period>1'.
+		')', array(':uid'=>$user->name))->fetchField();
+	if(!empty($r)) {
 		$form['round2']=array(
 			'#type' => 'fieldset',
 			'#title' => t('2nd round charging'),
@@ -395,10 +396,8 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 			'#collapsible' => TRUE,
 		);
 	}
-	$query=db_select('orders','o')->condition('o.uid',$user->uid);
-	$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
-	$query->fields('o')->fields('sc',array('period'))->orderBy('sc.period');
-	$result=$query->execute();
+	$result=db_query('SELECT o.*, sc.period FROM {orders} o INNER JOIN {vl_charging_standard} sc ON sc.scid=o.standard '.
+		'WHERE o.uid=:uid ORDER BY sc.period', array(':uid'=>$user->uid));
 	foreach($result as $r) {
 		$form['round'.$r->period]['period'.$r->period]=array(
 			'#type' => 'hidden',
@@ -524,8 +523,8 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 function onlinecharge_generate_random_orderno() {
 	do {
 		$rand=sprintf('%s%06d',date('YmdHms'),mt_rand(0,999999));
-		$r=db_select('orders','o')->condition('o.orderno',$rand)->fields('o')->countQuery()->execute()->fetchField();
-	} while ($r!=0);
+		$r=db_query('SELECT EXISTS(SELECT * FROM {orders} WHERE orderno=:rand)', array(':rand'=>$rand))->fetchField();
+	} while (!empty($r));
 	return $rand;
 }
 
