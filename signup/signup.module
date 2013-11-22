@@ -1362,28 +1362,21 @@ function _signup_user_tab_access($user=NULL, $sec=NULL) {
 	if(!$is_student = array_key_exists('5',$user->roles)) return FALSE;
 	switch($sec) {
 		case 'profession':
-			$result = db_query('SELECT idcard_number, name FROM {students} WHERE uid=:uid',
-				array(':uid'=>$user->name)
-			)->fetchObject();
-			if(!($result->idcard_number) || !($result->name)) return FALSE;
-			else return TRUE;
+			$result = _signup_determine_period($user);
+			if($result>=signup_progress_PROFESSION) return TRUE;
+			return FALSE;
 		case 'exam':
-			$result = db_query('SELECT profession_major, examplace FROM {students} WHERE uid=:uid',
-				array(':uid'=>$user->name)
-			)->fetchObject();
-			if($result->profession_major == '0' || $result->examplace == '') return FALSE;
-			else return TRUE;
+			$result = _signup_determine_period($user);
+			if($result>=signup_progress_EXAM) return TRUE;
+			return FALSE;
 		case 'contact':
-			$result = db_query('SELECT MAX(opus) FROM {students_going} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
-			if(!$result) return FALSE;
-			else return TRUE;
+			$result = _signup_determine_period($user);
+			if($result>=signup_progress_CONTACT) return TRUE;
+			return FALSE;
 		case 'gaokao':
-			$ucategory=db_query('SELECT ucategory FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
-			if(($ucategory == 0 ) || ($ucategory == 3)) return FALSE;
-			$result=db_query('SELECT contact_phone FROM {students_contact} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
-			if(!$result) return FALSE;
-			else if(_signup_user_tab_access($user, 'contact')) return TRUE;
-			else return FALSE;
+			$result = _signup_determine_period($user);
+			if($result>=signup_progress_GAOKAO) return TRUE;
+			return FALSE;
 		default: return FALSE;
 	}
 	return TRUE;
@@ -2330,6 +2323,7 @@ function signup_user_gaokao_form($form, $form_state, $user) {
 		'#type' => 'fieldset',
 		'#title' => t('Scores'),
 		'#collapsible' => 'true',
+		'#access' => $is_gk_enabled,
 	);
 	
 	$form['score']['score_chinese'] = array(
@@ -2358,14 +2352,6 @@ function signup_user_gaokao_form($form, $form_state, $user) {
 		'#description' => t('If you are from Shandong province, please add your testing score into synthesis subject.'),
 		'#required' => TRUE,
 	);
-	// Computes visibility of score section.
-	if(!$is_gk_enabled) {
-		$form['score']['#description'] = t('The score uploading feature of your provice is banned by the administrator.');
-		unset($form['score']['score_chinese']);
-		unset($form['score']['score_languages']);
-		unset($form['score']['score_math']);
-		unset($form['score']['score_synthesis']);
-	}
 	
 	$form['save'] = array(
 		'#type' => 'submit',
@@ -4269,7 +4255,7 @@ function signup_ground_by_province_report($prov) {
 	$pdf->Output('ground_report.pdf', 'I');
 }
 
-function signup_preset_passthrough() {
+function signup_preset_passthrough($form, $form_state) {
 	$rows = array();
 	$form = array();
 	$header = array(
