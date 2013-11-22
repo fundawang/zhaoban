@@ -823,7 +823,7 @@ function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
 			'#type'=>'fieldset',
 		);
 		$form['orderlist'][$r->orderno]['suid']=array(
-			'#markup' => l($r->suid, sprintf('user/%s',$r->uid)),
+			'#markup' => user_access('access user profiles')?l($r->suid, sprintf('user/%s',$r->uid)):$r->suid,
 		);
 		$form['orderlist'][$r->orderno]['sname']=array(
 			'#markup' => $r->sname,
