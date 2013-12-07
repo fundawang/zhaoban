@@ -5020,4 +5020,13 @@ function signup_simpleoauth($input, $appid=NULL) {
 	}
 	return $output;
 }
+
+function signup_get_phone_number($user) {
+	$r=db_query('SELECT * FROM {students_contact} WHERE uid=:uid',array(':uid'=>$user->name))->fetchObject();
+	if(empty($r)) return;
+	$result=array();
+	preg_match_all('/^1\d{10}/', $r->contact_phone, $result) ;
+	return array_values($result);
+}
+
 ?>
