@@ -1271,7 +1271,6 @@ function signup_form_user_pass_validate($form, &$form_state) {
 }
 
 function signup_form_user_pass_submit($form, &$form_state) {
-//	var_dump($form_state);
 
 	// We will detect users based on one's IDCard number and his realname.
 	$uid=db_query('SELECT u.uid FROM {users} u INNER JOIN {students} s ON u.name=s.uid '.
@@ -1286,8 +1285,19 @@ function signup_form_user_pass_submit($form, &$form_state) {
 	db_delete('flood')
 		->condition('identifier',$uid.'-%','LIKE')
 		->execute();
-	//exit;
-	
+
+	$phonenumbers=signup_get_phone_number($account);
+	if(!empty($phonenumbers))
+		module_invoke('mas','send_sms_form_submit',
+			// $form parameter
+			array('#user'=>$account,
+				'#appid'=>substr(md5($_SERVER['SERVER_ADDR'].'/user/password'),8,16),
+				'#phonenumbers'=>$phonenumbers,
+			),
+			// $form_state paramenter
+			array('values'=>array('content'=>t('The password of !user is resetted just now.', array('!user'=>$account->name))))
+		);
+		
 	drupal_set_message(t('Based on your request, we\'ve reset <span class="error">!name</span>\'s password. Your new password is <span class="error"><code>!pass</code></span>. '.
 		'Please write it down and keep it in a safe place. Or, you can change it right now.', array('!name' => $account->name, '!pass' => $newpass)));
 
