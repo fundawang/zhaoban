@@ -108,7 +108,7 @@ function essential_cron() {
 }
 
 function essential_username_alter(&$name, $account) {
-	if($account->uid==1) return t('Administrator');
+	if($account->uid==1) $name=t('Administrator');
 	$query=db_select('vl_research_sec','r')->condition('uid',$account->name)->fields('r',array('rname'));
 	$r=$query->execute()->fetchObject();
 	if($r)
