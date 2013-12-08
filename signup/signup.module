@@ -5040,9 +5040,9 @@ function signup_get_phone_number($user) {
 }
 
 function signup_form_mas_send_sms_form_alter(&$form, $form_state) {
-	$r=db_query('SELECT name FROM {students} WHERE uid=:uid', array(':uid'=>$form['#user']->name))->fetchField();
+	$r=db_query('SELECT * FROM {students} WHERE uid=:uid', array(':uid'=>$form['#user']->name))->fetchObject();
 	if($r)
-		$form['#contentprefix']=$r.', ';
+		$form['#contentprefix']=sprintf('%s %s, ', $r->uid, $r->name);
 }
 
 ?>
