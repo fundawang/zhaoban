@@ -66,31 +66,17 @@ function essential_block_view($delta = '') {
 	$block = array();
 	switch ($delta) {
 		case 'weather':
-			$options=array('timeout'=>1);
-			$valid_code=array('302','200');
-			$r=json_decode(variable_get('current_weather',''))->weatherinfo;
-			if($r===FALSE) return;
-			$block['subject'] = t('Weather of @city',array('@city'=>$r->city));
-			$c=($r->fchh>=15?'n':'d');
-			$period=($r->fchh>=15?t('night to tomorrow day'):t('day to night'));
-			$img=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/21x15/%s%02d.gif" title="%s">', $c,$r->img1, $r->img_title1);
-			$c=($r->fchh>=15?'d':'n');
-			$img.=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/21x15/%s%02d.gif" title="%s">&nbsp;', $c,($r->img2==99?$r->img1:$r->img2), $r->img_title2);
-			$block['content'] = '<b>'.t('This @period',array('@period'=>$period)).'</b><br/>'.$img.$r->weather1.' '.$r->temp1;
-			$block['content'].= '<br/>';
-			$c=($r->fchh>=15?'n':'d');
-			$period=($r->fchh>=15?t('night to the day after tomorrow day'):t('day to night'));
-			$img=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/21x15/%s%02d.gif" title="%s">', $c, $r->img3, $r->img_title3);
-			$c=($r->fchh>=15?'d':'n');
-			$img.=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/21x15/%s%02d.gif" title="%s">&nbsp;', $c, ($r->img4==99?$r->img3:$r->img4), $r->img_title4);
-			$block['content'].= '<b>'.t('Tomorrow @period',array('@period'=>$period)).'</b><br/>'.$img.$r->weather2.' '.$r->temp2;
-			$block['content'].= '<br/>';
-			$c=($r->fchh>=15?'n':'d');
-			$img=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/21x15/%s%02d.gif" title="%s">', $c,$r->img5, $r->img_title5);
-			$c=($r->fchh>=15?'d':'n');
-			$period=($r->fchh>=15?t('night to the next day'):t('day to night'));
-			$img.=sprintf('&nbsp;<img src="http://www.weather.com.cn/m2/i/icon_weather/21x15/%s%02d.gif" title="%s">&nbsp;', $c,($r->img6==99?$r->img5:$r->img6), $r->img_title6);
-			$block['content'].= '<b>'.t('The day after tommorrow @period',array('@period'=>$period)).'</b><br/>'.$img.$r->weather3.' '.$r->temp3;
+			$r=json_decode(variable_get('current_weather',''))->results[0];
+			$block['subject'] = t('Weather of @city',array('@city'=>$r->currentCity));
+			$block['content'] = '';
+			for($i=0;$i<3;$i++) {
+				$date=$r->weather_data[$i]->date;
+				$date=mb_substr($date, 0, 2);
+				$block['content'].= sprintf('<strong>%s</strong>', $date);
+				$block['content'].= sprintf('&nbsp; <img src="%s" title="%s" height="20"/>&nbsp;<img src="%s" title="%s" height="20"/>&nbsp;%s',
+					$r->weather_data[$i]->dayPictureUrl, $r->weather_data[$i]->weather, $r->weather_data[$i]->nightPictureUrl, $r->weather_data[$i]->weather, $r->weather_data[$i]->temperature);
+				$block['content'].= '<br/>';
+			}
 	}
 	return $block;
 }
@@ -102,7 +88,7 @@ function essential_cron() {
 	$options=array('timeout'=>1);
 	$valid_code=array('302','200');
 	do {
-		$r=drupal_http_request("http://m.weather.com.cn/data/101010100.html",$options);
+		$r=drupal_http_request("http://api.map.baidu.com/telematics/v3/weather?location=%E5%8C%97%E4%BA%AC&output=json&ak=i2muDdpzDkmrf4bKlcVD0ekR",$options);
 		if(isset($r->error)) return;
 	} while ($r->code !='200');
 	variable_set('current_weather', $r->data);
