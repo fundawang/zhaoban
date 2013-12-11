@@ -53,7 +53,7 @@ function essential_block_info() {
 	
 	$result['weather'] = array(
 		'info' => t('Weather'),
-		'cache' => DRUPAL_CACHE_GLOBAL,
+		'cache' => DRUPAL_CACHE_CUSTOM,
 	);
 	return $result;
 }
@@ -66,6 +66,8 @@ function essential_block_view($delta = '') {
 	$block = array();
 	switch ($delta) {
 		case 'weather':
+			$r=cache_get('block:essential:weather');
+			if(!empty($r)) return $r->data;
 			$r=json_decode(variable_get('current_weather',''))->results[0];
 			$block['subject'] = t('Weather of @city',array('@city'=>$r->currentCity));
 			$block['content'] = '';
@@ -77,6 +79,7 @@ function essential_block_view($delta = '') {
 					$r->weather_data[$i]->dayPictureUrl, $r->weather_data[$i]->weather, $r->weather_data[$i]->nightPictureUrl, $r->weather_data[$i]->weather, $r->weather_data[$i]->temperature);
 				$block['content'].= '<br/>';
 			}
+			cache_set('block:essential:weather', $block);
 	}
 	return $block;
 }
@@ -91,7 +94,11 @@ function essential_cron() {
 		$r=drupal_http_request("http://api.map.baidu.com/telematics/v3/weather?location=%E5%8C%97%E4%BA%AC&output=json&ak=i2muDdpzDkmrf4bKlcVD0ekR",$options);
 		if(isset($r->error)) return;
 	} while ($r->code !='200');
-	variable_set('current_weather', $r->data);
+	$c=variable_get('current_weather','');
+	if($r->data!=$c) {
+		variable_set('current_weather', $r->data);
+		cache_clear_all('block:essential:weather','cache');
+	}
 }
 
 function essential_username_alter(&$name, $account) {
