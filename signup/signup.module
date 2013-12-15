@@ -1841,22 +1841,22 @@ function signup_user_professions_form_save($form, $form_state) {
 		// Case 2: The piano exams
 		else if($eid !='250' &&(substr($eid,0,2) == '25' || substr($eid,0,2) == '26')) {
 			if(in_array('251', $exams_student_existing) && ($eid=='251' || $eid=='261')) { // Piano A
-				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 251);
+				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 251)->execute();
 				unset($exams_student[$i]);
 				unset($exams_student_existing[array_search('251', $exams_student_existing)]);
 			} else
 			if(in_array('252', $exams_student_existing) && ($eid=='252' || $eid=='262')) { // Piano B
-				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 252);
+				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 252)->execute();
 				unset($exams_student[$i]);
 				unset($exams_student_existing[array_search('252', $exams_student_existing)]);
 			} else
 			if(in_array('261', $exams_student_existing) && ($eid=='251' || $eid=='261')) { // Instrument A
-				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 261);
+				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 261)->execute();
 				unset($exams_student[$i]);
 				unset($exams_student_existing[array_search('261', $exams_student_existing)]);
 			} else
 			if(in_array('262', $exams_student_existing) && ($eid=='252' || $eid=='262')) { // Instrument B
-				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 262);
+				db_update('students_going')->fields(array('eid'=>$eid))->condition('uid',$user->name)->condition('eid', 262)->execute();
 				unset($exams_student[$i]);
 				unset($exams_student_existing[array_search('262', $exams_student_existing)]);
 			} else {
