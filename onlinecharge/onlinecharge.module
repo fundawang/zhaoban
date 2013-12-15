@@ -340,15 +340,15 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		if($fee==FALSE) continue;
 		$r=db_query('SELECT EXISTS(SELECT * FROM {orders} WHERE standard=:stid AND uid=:uid)',
 			array(':stid'=>$fee->scid, ':uid'=>$user->uid))->fetchField();
+		$is_passthough=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) '.
+			'FROM {students} s WHERE s.uid=:uid', array(':uid'=>$user->name))->fetchField();
 		if(empty($r)) {
 			if($fee->period > 1) {
 				$p=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 					'WHERE s.uid=:uid AND s.pass_round1_major=1 AND sg.eid>200)',
 					array(':uid'=>$user->name))->fetchField();
 				if(!$p) {
-					$p=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) '.
-						'FROM {students} s WHERE s.uid=:uid', array(':uid'=>$user->name))->fetchField();
-					if(empty($p)) break;
+					if(empty($is_passthough)) break;
 				}
 			}
 			db_insert('orders')->fields(array(
@@ -357,10 +357,10 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 				'ordertime' => time(),
 				'standard' => $fee->scid,
 				'ordertitle' => $fee->title,
-				'amount' => $fee->fee,
+				'amount' => $is_passthough?0:$fee->fee,
 				'gateway' => NULL,
 				'gatewaytransactionno' => NULL,
-				'status' => 0,
+				'status' => $is_passthough?100:0,
 			))->execute();
 		}
 	}
