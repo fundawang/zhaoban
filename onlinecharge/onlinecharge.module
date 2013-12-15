@@ -326,8 +326,8 @@ function onlinecharge_user_access($user) {
 	if($user->uid==1) return FALSE;
 	$t=_signup_determine_period($user);
 	if($t==signup_progress_PAYMENT || $t==signup_progress_FINISH) {
-		if($user->uid==$GLOBALS['user']->uid) return TRUE;
-		else return user_access('administer users');
+		if($user->uid==$GLOBALS['user']->uid) return user_access('use online charging');
+		else return user_access('administer users') && user_access('use online charging', $user);
 	}
 	else return FALSE;
 }
