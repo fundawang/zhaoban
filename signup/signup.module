@@ -924,7 +924,7 @@ function signup_user_account_form_validate($form, $form_state) {
 			}
 			if(!is_null(Database::getConnectionInfo('jiaowu'))) {
 				db_set_active('jiaowu');
-				$r=db_query('SELECT EXISTS(SELECT * FROM {xs_xjb} WHERE XH=:xh AND XM=:xm AND sfyxj=:yes)',
+				$r=db_query('SELECT EXISTS(SELECT * FROM xs_xjb WHERE XH=:xh AND XM=:xm AND SFYXJ=:yes)',
 					array(':xh'=>strtoupper($edit['idnumber']), ':xm'=>trim($edit['truename']), ':yes'=>'是')
 				)->fetchField();
 				db_set_active('default');
