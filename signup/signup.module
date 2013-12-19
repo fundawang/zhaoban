@@ -2822,6 +2822,7 @@ function signup_overview_by_profession_detail($prof) {
 			->extend('TableSort')->orderByHeader($header)
 			->extend('PagerDefault')->limit(20);
 	$rdbo=$query->execute();
+	var_dump($cookie_examplace);
 	if($rdbo->rowCount()==0 && $cookie_examplace<>'1') {
 			return MENU_NOT_FOUND;
 	}
