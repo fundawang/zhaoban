@@ -2740,11 +2740,10 @@ function signup_overview_by_profession_detail($prof) {
 	$cookie_examplace='1';
 	
 	if(isset($_COOKIE["examplace"])) {
-		$query=db_select('vl_profession_place','pp')
-			->condition('pp.examplace',$_COOKIE["examplace"])
-			->condition('pp.pid',$prof)
-			->countQuery();
-		if(($query->execute()->fetchField()>0) || ($_COOKIE['examplace']=='110000'))
+		$query=db_query('SELECT EXISTS(SELECT * FROM {vl_profession_place} WHERE examplace=:examplace AND pid=:pid)',
+			array(':pid'=>$prof->pid, ':examplace'=>$_COOKIE["examplace"])
+		);
+		if(($query->fetchField()) || ($_COOKIE['examplace']=='110000'))
 			$cookie_examplace="s.examplace='".$_COOKIE['examplace']."'";
 		else
 			setcookie('examplace', NULL);
@@ -2754,7 +2753,7 @@ function signup_overview_by_profession_detail($prof) {
 
 	drupal_set_title(t('By Profession').' - '.$prof->pname);
 
-	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
+	if(db_query('SELECT EXISTS(SELECT * FROM {students} WHERE validated=1)')->fetchField())
 		$valins="s.validated=1 ";
 	else 
 		$valins="1";
@@ -2770,10 +2769,9 @@ function signup_overview_by_profession_detail($prof) {
 	$options=array('000000'=>t('All students'));
 	$options+=array((string)($r->cid)=>$r->name);
 
-	$query=db_select('vl_profession_place','p')->condition('p.pid',$prof->pid);
-	$query->innerJoin('vl_city_district','cd','p.examplace=cd.cid');
-	$query=$query->fields('cd',array('cid','name'))->orderBy('cd.cid');
-	$rdbo=$query->execute();
+	$rdbo=db_query('SELECT cd.cid, cd.name FROM {vl_profession_place} p INNER JOIN {vl_city_district} cd ON p.examplace=cd.cid '.
+		'WHERE p.pid=:pid ORDER BY cd.cid', array(':pid'=>$prof->pid)
+	);
 	foreach($rdbo as $r) {
 			$a=(string)($r->cid);
 			$options += array((string)$r->cid=>$r->name);
