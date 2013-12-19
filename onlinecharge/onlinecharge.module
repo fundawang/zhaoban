@@ -845,7 +845,7 @@ function onlinecharge_log_form($form, $form_state, $pre_orderno=NULL) {
 			'#markup' => sprintf("%s (&yen;%s)", $r->period==1?t('1st round'):($r->period==2?t('2nd round'):t('3rd round')), $r->amount),
 		);
 		$form['orderlist'][$r->orderno]['gateway']=array(
-			'#markup' => $r->gateway=='offline'?t('Offline'):$gateways[$r->gateway]['name'],
+			'#markup' => $r->gateway=='offline'?t('Offline'):(empty($r->gateway)?'':$gateways[$r->gateway]['name']),
 		);
 		$form['orderlist'][$r->orderno]['gatewaytransactionno']=array(
 			'#markup' => $r->gatewaytransactionno,
