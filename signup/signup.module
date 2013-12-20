@@ -1292,7 +1292,7 @@ function signup_form_user_pass_submit($form, &$form_state) {
 			// $form parameter
 			array('#user'=>$account,
 				'#appid'=>substr(md5($_SERVER['SERVER_ADDR'].'/user/password'),8,16),
-				'#phonenumbers'=>$phonenumbers,
+				'#phonenumbers'=>array($phonenumbers),
 			),
 			// $form_state paramenter
 			array('values'=>array('content'=>t('The password of !user is resetted just now.', array('!user'=>$account->name))))
@@ -2284,7 +2284,9 @@ function signup_user_gaokao_form($form, $form_state, $user) {
 	$citylist = array();
 	$query=db_select('vl_city_district', 'cd');
 	$query->innerJoin('students_gk', 'sg', 'cd.pid=sg.province');
-	$query=$query->fields('cd')->condition('sg.uid', $user->name)->where("cd.cid <> cd.pid")->orderBy('cd.cid');
+	$query=$query->fields('cd')->condition('sg.uid', $user->name)->orderBy('cd.cid');
+	if($user->ucategory==1)
+		$query=$query->where("cd.cid <> cd.pid");
 	$rdbo=$query->execute();
 	
 	foreach($rdbo as $r) {
@@ -2299,7 +2301,7 @@ function signup_user_gaokao_form($form, $form_state, $user) {
 	$form['gkinfo'] = array(
 		'#type' => 'fieldset',
 		'#title' => t('Exam info'),
-		'#collapsible' => 'true',
+		'#collapsible' => TRUE,
 	);
 
 	$form['gkinfo']['sid'] = array(
@@ -2308,9 +2310,10 @@ function signup_user_gaokao_form($form, $form_state, $user) {
 		'#description' => $ucategory == 1? t('It should be a 14-digit number, beginning with @year.',array('@year'=>substr(variable_get('zhaoban_current_year',date('Y')),-2))).t('Xinjiang students, please fill your 11-digit art exam number here.') : '',
 		'#maxlength' => 14,
 		'#default_value' => $default_values['sid'],
-		'#required' => TRUE,
-		'#attributes' => array('placeholder'=>substr(variable_get('zhaoban_current_year',date('Y')),-2).substr($default_values['province'],0,2).'XXXXXXXXXX'),
+		'#required' => $user->ucategory == 1
 	);
+	if($user->ucategory == 1)
+		$form['gkinfo']['sid']['#attributes'] = array('placeholder'=>substr(variable_get('zhaoban_current_year',date('Y')),-2).substr($default_values['province'],0,2).'XXXXXXXXXX');
 	$form['gkinfo']['city_district'] = array(
 		'#type' => 'select',
 		'#title' => t('The city/district you live in'),
