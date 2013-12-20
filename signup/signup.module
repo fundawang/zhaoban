@@ -789,7 +789,7 @@ function signup_user_account_form($form, $form_state) {
 					'#required' => !$isvalidated,
 					'#disabled' => $isvalidated,
 				);
-				$dbo = db_query('SELECT * FROM {vl_province} WHERE ucategory=:ucategory', array(':ucategory'=>$user->category));
+				$dbo = db_query('SELECT * FROM {vl_province} WHERE ucategory=:ucategory', array(':ucategory'=>$user->ucategory));
 				foreach ($dbo as $result)
 				{
 					$r = array($result->pid => $result->name);
