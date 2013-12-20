@@ -2305,7 +2305,7 @@ function signup_user_gaokao_form($form, $form_state, $user) {
 	$form['gkinfo']['sid'] = array(
 		'#type' => 'textfield',
 		'#title' => t('The student ID given by your exam organizer'),
-		'#description' => $ucategory == 1? t('It should be a 14-digit number, beginning with @year.',array('@year'=>substr(variable_get('zhaoban_current_year',date('Y')),-2))) : '',
+		'#description' => $ucategory == 1? t('It should be a 14-digit number, beginning with @year.',array('@year'=>substr(variable_get('zhaoban_current_year',date('Y')),-2))).t('Xinjiang students, please fill your 11-digit art exam number here.') : '',
 		'#maxlength' => 14,
 		'#default_value' => $default_values['sid'],
 		'#required' => TRUE,
@@ -2415,7 +2415,12 @@ function signup_user_gaokao_form_validate($form, $form_state) {
 	if($ucategory == 1)
 		if($edit['sid']) {
 			$province=db_select('students_gk','sg')->condition('sg.uid',$user->name)->fields('sg',array('province'))->execute()->fetchField();
-			if(!preg_match('/'.substr(variable_get('zhaoban_current_year',date('Y')),-2).substr($province,0,2).'\d{10}/', $edit['sid'])) $is_gid_invalid = TRUE;
+			if($province=='650000') {
+				if(!preg_match('/^[0-9]{11}$/', $edit['sid']))
+					$is_gid_invalid = TRUE;
+			}
+			else
+				if(!preg_match('/'.substr(variable_get('zhaoban_current_year',date('Y')),-2).substr($province,0,2).'\d{10}/', $edit['sid'])) $is_gid_invalid = TRUE;
 			if($is_gid_invalid) form_set_error('sid', t('The student gaokao ID you\'ve entered is not valid.'));
 		}
 		if(isset($edit['score_chinese']) && !is_numeric($edit['score_chinese']))
