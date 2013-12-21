@@ -492,6 +492,15 @@ function signup_form_user_login_block_alter(&$form, &$form_state) {
 }
 
 function signup_form_user_register_form_alter(&$form, &$form_state) {
+	// Disable register if one IP is registering too many users.
+	$url=url('user/register', array('absolute'=>TRUE));
+	$query=db_query('SELECT count(*) FROM {watchdog} '.
+		'WHERE hostname=:ip AND location=:location AND referer=:referer AND timestamp>=:time',
+		array(':ip'=>ip_address(), ':location'=> $url, ':referer'=>$url,
+			':time'=>time()-300));
+	if($query->fetchField()>10) {
+		$form['actions']['submit']['#type'] = 'button';
+	}
 	
 	// we don't need email address for this site
 	$form['account']['mail']['#type']='hidden';
