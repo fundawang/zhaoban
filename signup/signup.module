@@ -423,7 +423,8 @@ function signup_get_random_mail_address(){
 
 function signup_user_load($users) {
 	foreach($users as $uid => $user) {
-		$users[$uid]->ucategory=db_query('SELECT ucategory FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
+		if(array_key_exists('5', $user->roles))
+			$users[$uid]->ucategory=db_query('SELECT ucategory FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 	}
 }
 
