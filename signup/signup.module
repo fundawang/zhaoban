@@ -4818,6 +4818,19 @@ function signup_cron() {
 			->condition('validated',1)
 			->execute();
 	}
+
+	// Drop those empty users did not logged in for 1 days.
+	$query=db_query('SELECT u.uid, u.name FROM {students} s INNER JOIN {users} u ON s.uid=u.name '.
+		'WHERE s.idcard_number IS NULL AND u.access < :time', array(':time'=>time()-3600*24));
+	foreach($query as $student) {
+		watchdog(
+			'user',
+			'@user was dropped due to inactive for 1 day.',
+			array('@user'=>$student->name),
+			WATCHDOG_WARNING
+		);
+		user_delete($student->uid);
+	}
 }
 
 function signup_search_students($citera) {
