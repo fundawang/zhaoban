@@ -573,8 +573,10 @@ function theme_onlinecharge_user_orders($variables) {
 		'operation' => t('Operation'),
 	);
 	$rows=array();
+	$is_finished=TRUE;
 	
 	for($i=1;$i<=3;$i++) {
+		if(isset($form['submit'.$i])) $is_finished=FALSE;
 		if(!isset($form['round'.$i])) continue;
 		$rows[]=array(
 			$form['round'.$i]['period'.$i]['#value'],
@@ -588,18 +590,25 @@ function theme_onlinecharge_user_orders($variables) {
 		unset($form['round'.$i]);
 	}
 	$output.=theme('table', array('header'=>$header, 'rows'=>$rows));
-	$output.=drupal_render($form['gateway']);
-	if(isset($form['gatewayintro']))
-		$output.=drupal_render($form['gatewayintro']);
-	$output.=drupal_render($form['help']);
-	$output.=drupal_render_children($form);
+	if($is_finished) {
+		$output .= '<p>';
+		$output .= t('To improve our online payment experience, we invite you to participate in a online survey.');
+		$output .= t('Participating the survey is voluntary and anonymous, which has no relationship with anything related to the student himself.');
+		$output .= '<br/>';
+		$output .= l(t('Survey on online payment'), 'http://app.askform.cn/291930001.aspx', array('attributes' => array('target' => array('_blank'))));
+		$output .= '</p>';
+		unset($form['gateway']);
+		unset($form['gatewayintro']);
+		unset($form['help']);
+	} else {
+		$output.=drupal_render($form['gateway']);
+		if(isset($form['gatewayintro']))
+			$output.=drupal_render($form['gatewayintro']);
+		$output.=drupal_render($form['help']);
+		$output.=drupal_render_children($form);
+	}
+	
 
-	$output .= '<p>';
-	$output .= t('To improve our online payment experience, we invite you to participate in a online survey.');
-	$output .= t('Participating the survey is voluntary and anonymous, which has no relationship with anything related to the student himself.');
-	$output .= '<br/>';
-	$output .= l(t('Survey on online payment'), 'http://app.askform.cn/291930001.aspx', array('attributes' => array('target' => array('_blank'))));
-	$output .= '</p>';
 
 	return $output;
 }
