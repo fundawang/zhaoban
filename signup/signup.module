@@ -1302,7 +1302,7 @@ function signup_form_user_pass_submit($form, &$form_state) {
 			// $form parameter
 			array('#user'=>$account,
 				'#appid'=>substr(md5($_SERVER['SERVER_ADDR'].'/user/password'),8,16),
-				'#phonenumbers'=>$phonenumbers,
+				'#phonenumbers'=>$phonenumbers[0],
 			),
 			// $form_state paramenter
 			array('values'=>array('content'=>t('The password of !user is resetted just now.', array('!user'=>$account->name))))
