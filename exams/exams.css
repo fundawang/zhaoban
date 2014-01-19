@@ -22,3 +22,7 @@ form div.description {
 div.error {
 	font-size: 20px;
 }
+
+div.captcha > img {
+	float: right; position: relative; left: -720px; top: 10px;
+}

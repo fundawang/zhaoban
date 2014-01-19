@@ -3670,8 +3670,7 @@ function signup_3rd_round_by_province_report($prov) {
 		return MENU_NOT_FOUND;
 	}
 	
-	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
-	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/examples/tcpdf_include.php');
 	
 	ini_set('max_execution_time','300');
 
@@ -3683,10 +3682,10 @@ function signup_3rd_round_by_province_report($prov) {
 			$this->SetX(10);
 			$this->SetY(8);
 			// Set font
-			$this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
+			$this->SetFont('droidsansfallback', 'B', 24, '', true);
 			// Title
 			$this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
-			$this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
+			$this->SetFont('droidsansfallback', 'B', 10, '', true);
 			$this->SetX(1);
 			$this->SetY(18);
 			$this->Cell(10, 2, '序号',0, false, 'C');
@@ -3712,7 +3711,7 @@ function signup_3rd_round_by_province_report($prov) {
 			$this->Line(5,198,292,198,array('width'=>0.5));
 			// Set font
 			// Page number
-			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
+			$this->SetFont('droidsansfallback', 'B', 11, '', true);
 			$this->Cell(30, 12, date('Y年n月j日'));
 			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:我院面向全国招生，文理兼收，不做分省计划。校考成绩加括号者为平均排序，非直接成绩。', 0, false, 'C');
 			$this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
@@ -3728,7 +3727,7 @@ function signup_3rd_round_by_province_report($prov) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	$pdf->setHeaderMargin(30);
@@ -4167,8 +4166,7 @@ function signup_ground_by_province_report($prov) {
 		return MENU_NOT_FOUND;
 	}
 	
-	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
-	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/examples/tcpdf_include.php');
 	
 	ini_set('max_execution_time','300');
 
@@ -4180,10 +4178,10 @@ function signup_ground_by_province_report($prov) {
 			$this->SetX(10);
 			$this->SetY(8);
 			// Set font
-			$this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
+			$this->SetFont('droidsansfallback', 'B', 24, '', true);
 			// Title
 			$this->Cell(0, 10, $this->header_title, 0, false, 'C', 0, '', 0, false, 'M', 'M');
-			$this->SetFont('droidsansfallbackfull', 'B', 10, '', true);
+			$this->SetFont('droidsansfallback', 'B', 10, '', true);
 			$this->SetX(1);
 			$this->SetY(18);
 			$this->Cell(10, 2, '序号',0, false, 'C');
@@ -4208,7 +4206,7 @@ function signup_ground_by_province_report($prov) {
 			$this->Line(5,198,292,198,array('width'=>0.5));
 			// Set font
 			// Page number
-			$this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
+			$this->SetFont('droidsansfallback', 'B', 11, '', true);
 			$this->Cell(30, 12, date('Y年n月j日'));
 			$this->Cell(220,12, '院校名称:10045中央音乐学院    注:高考成绩未标明者为文科。校考成绩带括号者为其平均序，非成绩。', 0, false, 'C');
 			$this->Cell(52, 12, '第'.$this->getAliasNumPage().'页，共'.$this->getAliasNbPages().'页', 0, false, 'R', 0, '', 0, false, 'T', 'M');
@@ -4224,7 +4222,7 @@ function signup_ground_by_province_report($prov) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	$pdf->setHeaderMargin(30);
@@ -4440,7 +4438,6 @@ function signup_report($account) {
 	$result = db_select('students','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	$result_gk = db_select('students_gk','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
 	$result_contact = db_select('students_contact','s')->fields('s')->condition('s.uid',$account->name)->execute()->fetchObject();
-	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
 	ini_set('max_execution_time','500');
@@ -4458,7 +4455,7 @@ function signup_report($account) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
+	$pdf->SetFont('DroidSansFallback', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	
@@ -4469,7 +4466,7 @@ function signup_report($account) {
 	$pdf->SetAutoPageBreak(false);
 
 	//set some language-dependent strings
-	$pdf->setLanguageArray($l);
+	//$pdf->setLanguageArray($l);
 
 	// ---------------------------------------------------------
 
@@ -4656,7 +4653,6 @@ function signup_ticket_report($user) {
 	$query->innerJoin('vl_department','d','p.did=d.did');
 	$query->fields('s')->fields('p',array('pname'))->fields('d',array('dname'));
 	$student=$query->execute()->fetchObject();
-	require_once(drupal_get_path('module','signup').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
 	ini_set('max_execution_time','500');
@@ -4674,7 +4670,7 @@ function signup_ticket_report($user) {
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(false);
 	
@@ -4709,28 +4705,28 @@ function signup_ticket_report($user) {
 	}
 	
 	$pdf->SetFontSize(14);
-	$pdf->Text(54,117,'准考证号');
+	$pdf->Text(44,112,'准考证号');
 	$pdf->SetFontSize(28);
-	$pdf->Text(76,113,$student->uid);
+	$pdf->Text(66,108,$student->uid);
 	$pdf->SetFontSize(14);
-	$pdf->Text(64,126,'姓名');
-	$pdf->Text(76,126,$student->name);
-	$pdf->Text(64,135,'性别');
-	$pdf->Text(76,135,$student->gender==2?'女':'男');
-	$pdf->Text(54,144,'证件号码');
-	$pdf->Text(76,144,$student->idcard_number);
-	$pdf->Text(54,153,'报考专业');
-	$pdf->Text(76,153,$student->pname);
+	$pdf->Text(54,121,'姓名');
+	$pdf->Text(66,121,$student->name.(empty($student->foreign_name)?'':' / '.$student->foreign_name));
+	$pdf->Text(54,130,'性别');
+	$pdf->Text(66,130,$student->gender==2?'女':'男');
+	$pdf->Text(44,139,'证件号码');
+	$pdf->Text(66,139,strlen($student->idcard_number)==18?substr($student->idcard_number,0,6).'********'.substr($student->idcard_number,-4):$student->idcard_number);
+	$pdf->Text(44,148,'报考专业');
+	$pdf->Text(66,148,$student->pname);
 
-	$pdf->Text(47,183,'中央音乐学院招生委员会办公室');
-	$pdf->Text(40,189,'此证需配合有效身份证件原件方为有效');
-	$pdf->Text(46,195,'打印时间：'.date('Y年n月j日G:i'));
+	$pdf->Image(drupal_get_path('module', 'signup').'/../../files/qrcode_weixin_ccomzhaoban.jpg',27,182,22,22,'','','','',600);
+
+	$pdf->Text(56,183,'中央音乐学院招生委员会办公室 发');
+	$pdf->Text(50,189,'此证需配合有效身份证件原件方为有效');
+	$pdf->Text(56,195,'打印时间：'.date('Y年n月j日G:i'));
 
 	$pdf->StartTransform();
 	$pdf->Rotate(90, 70, 110);
 	$pdf->SetFontSize(8);
-	$pdf->Write1DBarcode($student->uid,'C128B',79,141,100,15,'',array('text'=>TRUE));
-	$pdf->Write1DBarcode($student->uid,'C128B',10,71,100,15,'',array('text'=>TRUE));
 	$pdf->StopTransform();
 	$pdf->SetDrawColor(0,0,0);
 	$pdf->SetLineWidth(0.1);
