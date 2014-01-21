@@ -668,7 +668,7 @@ function going_assign_list() {
 }
 
 function going_assign_students($form, $form_state, $going) {
-	$valid_exams=explode(', ',  $going->exams);
+	$valid_exams=explode(', ',  $going->valid_exams);
 	
 	$students=array();
 	$form=array();
@@ -687,7 +687,7 @@ function going_assign_students($form, $form_state, $going) {
 		'addition' => array('data'=>t('Additional')),
 	);
 	
-	$etype=db_select('vl_exam','e')->condition('e.eid',$valid_exams[0])->fields('e',array('etype'))->execute()->fetchField();
+	$etype=db_query('SELECT etype FROM {vl_exam} WHERE eid=:eid', array(':eid'=>$valid_exams[0]))->fetchField();
 	if($etype <> 2)
 		$header['uid']['sort']='asc';
 	

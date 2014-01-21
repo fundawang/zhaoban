@@ -484,6 +484,8 @@ function signup_user_goto($user) {
 }
 
 function signup_form_user_login_alter(&$form, &$form_state) {
+	$form['name']['#size']=30;
+	$form['pass']['#size']=30;
 	$form['name']['#attributes']['placeholder']=array(variable_get('zhaoban_current_year',date('Y')).'BXXXX');
 }
 
@@ -1193,7 +1195,7 @@ function signup_form_user_pass_alter(&$form, &$form_state) {
 	$form['idnumber'] = array(
 		'#title' => t('Your ID Card Number'),
 		'#type' => 'textfield',
-		'#size' => '60',
+		'#size' => '30',
 		'#maxlength' => 18,
 		'#weight' => 1,
 		'#required' => TRUE,
@@ -1207,7 +1209,7 @@ function signup_form_user_pass_alter(&$form, &$form_state) {
 	$form['sid'] = array(
 		'#title' => t('Your ID Number'),
 		'#type' => 'textfield',
-		'#size' => '60',
+		'#size' => '30',
 		'#weight' => 3,
 		'#attributes'=>array('placeholder'=>array(variable_get('zhaoban_current_year',date('Y')).'BXXXX')),
 		'#states' => array(
