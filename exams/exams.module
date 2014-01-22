@@ -177,7 +177,7 @@ function exam_load($eid) {
 function profession_load($pid) {
 	$prof=cache_get('profession:'.$pid);
 	if(empty($prof)) {
-		$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p')->execute()->fetchObject();
+		$prof=db_query('SELECT * FROM {vl_professions} WHERE pid=:pid',array(':pid'=>$pid))->fetchObject();
 		if(!empty($prof)) {
 			$exams=unserialize($prof->exams);
 			ksort($exams);
@@ -678,5 +678,25 @@ function exams_profession_delete_submit($form, &$form_state) {
 		->execute();
 	cache_clear_all('profession:'.arg(3), 'cache');
 	$form_state['redirect'] = 'definations/professions';
+}
+
+function exams_simpleoauth($input, $appid=NULL) {
+	$output=array();
+	if(empty($input) || empty($input['subop']) || $input['subop']!='professionlist')  {
+		$output=array(
+			'status' => '40002',
+			'errmsg' => t('Invalid input for @op operation.', array('@op'=>'signup')),
+		);
+		return $output;
+	}
+	$query=db_query('SELECT d.did, d.dname, p.pid, p.pname FROM {vl_professions} p INNER JOIN {vl_department} d ON p.did=d.did '.
+		'WHERE p.enabled=1 ORDER BY p.pid');
+	foreach($query as $r)
+		$output[$r->pid]=array(
+			'did' => $r->did,
+			'dname' => $r->dname,
+			'pname' => $r->pname
+		);
+	return $output;
 }
 ?>
