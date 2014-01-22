@@ -692,9 +692,10 @@ function exams_simpleoauth($input, $appid=NULL) {
 	$query=db_query('SELECT d.did, d.dname, p.pid, p.pname FROM {vl_professions} p INNER JOIN {vl_department} d ON p.did=d.did '.
 		'WHERE p.enabled=1 ORDER BY p.pid');
 	foreach($query as $r)
-		$output[$r->pid]=array(
+		$output['result'][]=array(
 			'did' => $r->did,
 			'dname' => $r->dname,
+			'pid' => $r->pid,
 			'pname' => $r->pname
 		);
 	return $output;
