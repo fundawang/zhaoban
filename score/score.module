@@ -2044,12 +2044,6 @@ function score_myscore($user=NULL) {
 	
 	$output .= '</p>';
 	
-	$output .= '<p>';
-	$output .= t('To improve our online payment experience, we invite you to participate in a online survey.');
-	$output .= t('Participating the survey is voluntary and anonymous, which has no relationship with anything related to the student himself.');
-	$output .= '<br/>';
-	$output .= l(t('Survey on online payment'), 'http://www.askform.cn/159883-315466.aspx', array('attributes' => array('target' => array('_blank'))));
-	$output .= '</p>';
 	return $output;
 }
 

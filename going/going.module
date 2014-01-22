@@ -837,7 +837,6 @@ function going_assign_empty_submit($form, &$form_state) {
 
 function going_print_orderlist($going)
 {
-	require_once(drupal_get_path('module','going').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','going').'/../tcpdf/tcpdf.php');
 	
 	$exam_ids=explode(', ', $going->valid_exams);
@@ -1020,7 +1019,6 @@ function going_print_orderlist($going)
 
 function going_print_score_report($going)
 {
-	require_once(drupal_get_path('module','going').'/../tcpdf/config/lang/eng.php');
 	require_once(drupal_get_path('module','going').'/../tcpdf/tcpdf.php');
 	
 	set_time_limit(300);
