@@ -4682,9 +4682,6 @@ function signup_ticket_report($user) {
 	$pdf->SetMargins(6, 6, 6);
 	$pdf->SetAutoPageBreak(false);
 
-	//set some language-dependent strings
-	$pdf->setLanguageArray($l);
-
 	// Add a page
 	// This method has several options, check the source code documentation for more information.
 	$pdf->AddPage();
