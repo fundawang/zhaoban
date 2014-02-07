@@ -128,12 +128,11 @@ function going_load($gid)
 {
 	$going=cache_get('going:'.$gid);
 	if(empty($going)) {
-		$query=db_select('vl_going','g')->condition('g.gid',$gid)->fields('g');
-		$query->innerJoin('vl_room','r','g.place=r.rid');
-		$query->fields('r',array('rname'));
-		$going=$query->execute()->fetchObject();
+		$going=db_query('SELECT g.*, r.rid, r.rname, r.cid FROM {vl_going} g INNER JOIN {vl_room} r ON g.place=r.rid '.
+			'WHERE g.gid=:gid', array(':gid'=>$gid))->fetchObject();
 		if(!empty($going)) {
 			$going->formatTime=_going_datetime_to_string($going->time);
+			$going->exams=explode(', ', $going->valid_exams);
 			cache_set('going:'.$gid, $going);
 		}
 	} else $going=$going->data;
@@ -149,12 +148,15 @@ function goingfull_load($gid)
 
 function going_menu_assign_modify($going)
 {
-	$r=db_select('vl_going', 'g')->fields('g')->condition('g.gid',$going->gid)->execute()->fetchObject();
-	$is_passed=date('YmdHi0000') > $r->time;
+	if(!empty($going->cid) && $going->cid <> '110000')
+		$is_passed=0;
+	else $is_passed=date('YmdHi0000') > $going->time;
+	$query=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+		'WHERE sg.gid IS NULL AND s.validated=1)');
 	$query=db_select('students','s')->fields('s');
 	$query->innerJoin('students_going','sg','s.uid=sg.uid');
 	$query->isNull('sg.gid')->condition('s.validated',1);
-	$exam_ids=explode(', ', $r->valid_exams);
+	$exam_ids=explode(', ', $going->valid_exams);
 	if(substr($exam_ids[0],0,1)<>'1')
 		$query->condition('s.pass_round1_major','1');
 	$empty_students=$query->countQuery()->execute()->fetchField();
@@ -515,6 +517,7 @@ function going_going_edit_submit($form, &$form_state) {
 			$form_state['redirect']='definations/going';
 			break;
 		case 'edit':
+			cache_clear_all('going:'.arg(3), 'cache');
 			$exams=array();
 			for($i=1;$i<=going_going_MAX_EXAMS;$i++) {
 				if($form_state['values']['exam'.$i]!='0')
@@ -632,11 +635,13 @@ function going_assign_list() {
 
 		if($is_dep_only) {
 			$exam_ids=explode(', ', $r->valid_exams);
-			if(!going_print_orderlist_perm(goingfull_load($r->gid)) && db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
+			if(db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
+				continue;
+			else if(!going_print_orderlist_perm(goingfull_load($r->gid)))
 				continue;
 		}
 
-		$is_passed=date('YmdHi0000') > $r->time;
+		$is_passed=0;
 		$rows[] = array(
 			'<nobr>'.$tmp_satus.'</nobr>',
 			$r->gname,
@@ -855,7 +860,7 @@ function going_print_orderlist($going)
 	// dejavusans is a UTF-8 Unicode font, if you only need to
 	// print standard ASCII chars, you can use core fonts like
 	// helvetica or times to reduce file size.
-	$pdf->SetFont('droidsansfallbackfull', 'B', 14, '', true);
+	$pdf->SetFont('droidsansfallback', 'B', 14, '', true);
 	// set default font subsetting mode
 	$pdf->setFontSubsetting(true);
 
@@ -1032,15 +1037,15 @@ function going_print_score_report($going)
 	    	$this->SetX(10);
 	    	$this->SetY(8);
 	        // Set font
-	        $this->SetFont('droidsansfallbackfull', 'B', 24, '', true);
+	        $this->SetFont('droidsansfallback', 'B', 24, '', true);
 	        // Title
 	        $header_titles=explode(',', $this->header_title);
 	        $this->Cell(0, 10, $header_titles[0], 0, false, 'C', 0, '', 0, false, 'M', 'M');
 	        $this->Ln();
-	        $this->SetFont('droidsansfallbackfull', 'B', 15, '', true);
+	        $this->SetFont('droidsansfallback', 'B', 15, '', true);
 	        $this->Cell(60, 5, $header_titles[1], 0, false, 'C', 0, '', 0, false, 'M', 'M');
 	        $this->Cell(0, 5, $header_titles[2], 0, false, 'C', 0, '', 0, false, 'M', 'M');
-	        $this->SetFont('droidsansfallbackfull', 'B', 12, '', true);
+	        $this->SetFont('droidsansfallback', 'B', 12, '', true);
 	        $this->Ln();
 	    	//$this->SetX(1);
 	    	//$this->SetY(18);
@@ -1061,7 +1066,7 @@ function going_print_score_report($going)
 	        //$this->Line(5,198,292,198,array('width'=>0.5));
 	        // Set font
 	        // Page number
-	        $this->SetFont('droidsansfallbackfull', 'B', 11, '', true);
+	        $this->SetFont('droidsansfallback', 'B', 11, '', true);
 	        $this->Cell(220,12, '评委签字', 0, false, 'C');
 	    }
 	}
@@ -1087,7 +1092,7 @@ function going_print_score_report($going)
 	$pdf->setPrintFooter(true);
 
 	$pdf->SetMargins(6, 33, 6);
-	$pdf->SetAutoPageBreak(true, 15);
+	//$pdf->SetAutoPageBreak(true, 15);
 
 	//set some language-dependent strings
 	$pdf->setLanguageArray($l);
@@ -1105,11 +1110,10 @@ function going_print_score_report($going)
 	
 	$results=$query->execute();
 	if($results->rowCount()==0) return MENU_NOT_FOUND;
-	$pdf->SetFont('droidsansfallbackfull', 'B', 12, '', true);
+	$pdf->SetFont('droidsansfallback', 'B', 12, '', true);
 	$i=1;
 	foreach($results as $r) {
 		$pdf->SetFillColor(216,216,216);
-		$pdf->Cell(10,2,$i++, 0, false, 'C',true);
 		$pdf->SetFillColor(255,255,255);
 		$ruid=$r->uid;
 		$rname=$r->name;
@@ -1117,12 +1121,10 @@ function going_print_score_report($going)
 			$ruid=substr($r->uid,0,6).'**'.substr($r->uid,8,1);
 			$rname='';
 		}
-		$pdf->Cell(30,2,$ruid, 0, false, 'C',true);
-		$pdf->Cell(25,2,$rname, 0, false, 'C',true);
-		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
 		//$pdf->Cell(40,2,'/', 0, false, 'C',true);
 
 		$exams =unserialize($r->opus);
+		$t='';
 		
 		if(!$exams) $pdf->Ln();
 		else
@@ -1134,15 +1136,37 @@ function going_print_score_report($going)
 					$t='主试乐器: 钢琴';
 			}
 			else
-				$t=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue;
+				$t.=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue."\n";
+			$pdf->SetX(140);
+			$y=$pdf->getY();
+			//$pdf->MultiCell(60, 0, $t, 0, 'L',true);
+		}
+		$pdf->SetX(6);
+		$y=$pdf->GetY();
+		$maxy=$y;
+		if(!empty($t)) {
+			$height=$pdf->getStringHeight(0, $t);
+			if($pdf->GetY()+$height>270) {
+				$pdf->AddPage();
+				$pdf->SetY(33);
+			}
+			$y=$pdf->getY();
 			$pdf->SetX(140);
 			$pdf->MultiCell(60, 0, $t, 0, 'L',true);
+			$maxy=$pdf->GetY();
 		}
+		$pdf->SetY($y);
+		$pdf->Cell(10,2,$i++, 0, false, 'C',true);
+		$pdf->Cell(30,2,$ruid, 0, false, 'C',true);
+		$pdf->Cell(25,2,$rname, 0, false, 'C',true);
+		$pdf->Cell(30,2,$r->pname, 0, false, 'C',true);
 		$pdf->Ln();
-		$pdf->setY($pdf->getY()-1);
-		$pdf->Line(6,$pdf->GetY()-2,200,$pdf->GetY()-2);
+		if($maxy>$pdf->GetY())
+			$pdf->setY($maxy);
+		$pdf->Line(6,$pdf->GetY()+2,200,$pdf->GetY()+2);
+		$pdf->setY($pdf->getY()+5);
 	}
-	
+
 	$pdf->Output('score_report.pdf', 'I');
 	
 }
