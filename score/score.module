@@ -3231,7 +3231,7 @@ function score_cron() {
 				'pid' => $r->profession_major,
 				'total_score' => 100,
 				'rank' => 1,
-				'total_rank' => 1
+				'total_rank' => in_array(substr($r->profession_major,0,2),array('D5','D6','D7','D8'))?1:NULL
 			))->execute();
 	}
 

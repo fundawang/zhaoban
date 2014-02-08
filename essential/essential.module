@@ -42,7 +42,13 @@ function essential_init() {
  * Implementation of province load helper function.
  */
 function province_load($pid) {
-	return db_select('vl_province','p')->condition('p.pid',$pid)->fields('p')->execute()->fetchObject();
+	$province=cache_get('province:'.$pid);
+	if(empty($province)) {
+		$province=db_query('SELECT * FROM {vl_province} WHERE pid=:pid',array(':pid'=>$pid))->fetchObject();
+		cache_set('province:'.$pid, $province);
+		return $province;
+	} else
+		return $province->data;
 }
 
 /**
