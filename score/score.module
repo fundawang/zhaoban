@@ -1903,7 +1903,7 @@ function score_myscore_check($user=NULL) {
 	if($user->uid == $GLOBALS['user']->uid)
 		return user_access('check students own scores') && $r;
 	else
-		return user_access('signup_3rd_overview') && $r;
+		return user_access('signup_3rd_overview') && user_access('check students own scores', $user) && $r;
 }
 
 function score_myscore_check_roundg($user=NULL) {

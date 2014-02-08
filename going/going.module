@@ -313,7 +313,7 @@ function _going_datetime_to_string($time) {
 	return t('@y-@m-@d @start-@end', array('@y' => $dateofs_y, '@m' => $dateofs_m, '@d' => $dateofs_d, '@start'=>sprintf('%s:%s', $timeofstarttime_h, $timeofstarttime_m), '@end'=>sprintf('%s:%s', $timeofendtime_h, $timeofendtime_m)));
 }
 
-function going_going_edit($form, $form_state, $going) {
+function going_going_edit($form, $form_state, $going=FALSE) {
 
 	$is_dep_only=user_access('administer own going')&&!user_access('administer going');
 	$form=array();
@@ -1094,9 +1094,6 @@ function going_print_score_report($going)
 	$pdf->SetMargins(6, 33, 6);
 	//$pdf->SetAutoPageBreak(true, 15);
 
-	//set some language-dependent strings
-	$pdf->setLanguageArray($l);
-	
 	$query=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 	$query->innerJoin('students','s','sg.uid=s.uid');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -1146,7 +1143,7 @@ function going_print_score_report($going)
 		$maxy=$y;
 		if(!empty($t)) {
 			$height=$pdf->getStringHeight(0, $t);
-			if($pdf->GetY()+$height>270) {
+			if($pdf->GetY()+$height>260) {
 				$pdf->AddPage();
 				$pdf->SetY(33);
 			}
