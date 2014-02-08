@@ -1899,7 +1899,7 @@ function score_mark_3rd_round_submit($form, $form_state) {
 function score_myscore_check($user=NULL) {
 	if(is_null($user)) $user=$GLOBALS['user'];
 	if(!$user->uid) return false;
-	$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$user->name))->fetchField();
 	if($user->uid == $GLOBALS['user']->uid)
 		return user_access('check students own scores') && $r;
 	else
@@ -1909,12 +1909,12 @@ function score_myscore_check($user=NULL) {
 function score_myscore_check_roundg($user=NULL) {
 	if(is_null($user)) $user=$GLOBALS['user'];
 	if(!$user->uid) return false;
-	$r=db_select('students','s')->fields('s',array('pass_roundg_major'))->condition('uid',$user->name)->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE uid=:uid AND pass_roundg_major>0)', array(':uid'=>$user->name))->fetchField();
 	return user_access('check students roundg scores', $user) && $r;
 }
 
 function score_myscore_title_callback($user) {
-	$g=db_select('students','s')->fields('s',array('gender'))->condition('s.uid',$user->name)->execute()->fetchField();
+	$g=db_query('SELECT gender FROM {students} WHERE uid=:uid',array(':uid'=>$user->name))->fetchField();
 	if(empty($g)) return t('His/Her Scores');
 	if($g==1) return t('His Scores');
 	else return t('Her Scores');
@@ -1924,7 +1924,7 @@ function score_myscore($user=NULL) {
 	if(is_null($user)) $user=$GLOBALS['user'];
 	$uid=$user->name;
 
-	$student=db_select('students','s')->fields('s')->condition('uid',$uid)->execute()->fetchObject();
+	$student=db_query('SELECT * FROM {students} WHERE uid=:uid',array(':uid'=>$uid))->fetchObject();
 	if(empty($student)) return FALSE;
 
 	if($student->ucategory==1 && $student->pass_round3_major>=1) {

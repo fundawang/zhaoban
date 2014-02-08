@@ -1737,7 +1737,11 @@ function _signup_user_professions_form_examplaces_options($pid='', $user) {
 	$query->innerJoin('vl_professions','p','p.pid=pp.pid');
 	$query->innerJoin('vl_city_district','cd','cd.cid=pp.examplace');
 	$query=$query->fields('cd',array('cid','name'))->groupBy('cd.cid')->distinct();
-	$dbo=$query->execute();
+	$dbo=db_query('SELECT DISTINCT cd.cid, cd.name FROM {vl_profession_place} pp '.
+		'INNER JOIN {vl_professions} p ON p.pid=pp.pid '.
+		'INNER JOIN {vl_city_district} cd ON cd.cid=pp.examplace '.
+		'WHERE pp.status=1 AND pp.pid=:pid GROUP BY cd.cid', array(':pid'=>$pid));
+
 
 	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
 	$options=array($r->cid=>$r->name);
@@ -1778,7 +1782,7 @@ function signup_user_professions_form_save($form, $form_state) {
 	$edit=$form_state['values'];
 	$profession_major=$edit['pid'];
 	
-	$r=db_select('students','s')->fields('s')->condition('s.uid',$user->name)->execute()->fetchObject();
+	$r=db_query('SELECT * FROM {students} WHERE s.uid=:uid',array(':uid'=>$user->name))->fetchObject();
 	if($r->validated) return;
 	
 	$old_profession=$r->profession_major;
