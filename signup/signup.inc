@@ -30,6 +30,7 @@ define('uc_OVERSEA_STUDENT',3);
 function _signup_determine_period($user) {
 	// Determine whether you have entered your personal information.
 	$result = db_select('students', 's')->fields('s')->condition('s.uid',$user->name)->execute()->fetchObject();
+	if(empty($result)) return;
 	if(!($result->idcard_number) || !($result->name))
 		return signup_progress_PERSONALINFORMATION; // One must fill in personal information at first.
 

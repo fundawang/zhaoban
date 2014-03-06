@@ -1782,7 +1782,7 @@ function signup_user_professions_form_save($form, $form_state) {
 	$edit=$form_state['values'];
 	$profession_major=$edit['pid'];
 	
-	$r=db_query('SELECT * FROM {students} WHERE s.uid=:uid',array(':uid'=>$user->name))->fetchObject();
+	$r=db_query('SELECT * FROM {students} WHERE uid=:uid',array(':uid'=>$user->name))->fetchObject();
 	if($r->validated) return;
 	
 	$old_profession=$r->profession_major;
@@ -4770,7 +4770,7 @@ function signup_ticket_report($user) {
 			$pdf->Ln();
 			$pdf->setX(210);
 			if($r->etype=='2')
-				if($r->eid=='146' || $r->eid == '204' || $r->eid == '274' || strpos($r->gname,'专业复试')) ; // HACK FOR INTERVIEW OF ARTS MANAGEMENT
+				if(in_array($r->eid, array('146', '202', '204', '274', '108')) || strpos($r->gname,'专业复试')) ; // HACK FOR INTERVIEW OF ARTS MANAGEMENT
 				else
 					$pdf->Cell(65,7, sprintf("你是本考场总第%d名参加考试的考生。",$r->gorder));
 			else
@@ -5049,10 +5049,13 @@ function signup_simpleoauth($input, $appid=NULL) {
 			'pname' => $r->pname,
 		);
 		$appname=simpleoauth_get_appname($appid);
+		$uuid=db_query('SELECT uid FROM {users} WHERE name=:uid',array(':uid'=>$r->uid))->fetchField();
 		watchdog(
 			'signup',
 			'@uid was connected via @appid.',
-			array('@uid'=>$r->uid, '@appid'=>$appname)
+			array('@uid'=>$r->uid, '@appid'=>$appname),
+			WATCHDOG_NOTICE,
+			l(t('View'), 'user/'.$uuid)
 		);
 		variable_set('simpleoauth.connect.'.$appid.'.'.$r->uid, 1);
 	}

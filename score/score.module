@@ -177,7 +177,7 @@ function score_menu() {
 			'page callback' => 'score_transfer_list',
 			'access callback' => 'score_transfer_list_check',
 	);
-	$items['signup/transfer/%profession'] = array(
+	$items['signup/transfer/%going'] = array(
 			'title'=>'Transfer students',
 			'type'=>MENU_CALLBACK,
 			'description' => 'Modify the profession of students',
@@ -1047,10 +1047,16 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 				if(floatval($weight) == 0 ) continue;
 				$query->innerJoin('students_score','e'.$eid,'e'.$eid.'.uid=s.uid');
 				$query=$query->condition('e'.$eid.'.eid', $eid);
-				$total_score[]='e'.$eid.'.score*'.$weight;
+				if(in_array($profession->did,array('D5','D6','D7','D8')))
+					$total_score[]='e'.$eid.'.rank*'.$weight;
+				else
+					$total_score[]='e'.$eid.'.score*'.$weight;
 			}
 			$query->addExpression(implode('+',$total_score), 'total_score');
-			$query=$query->orderBy('total_score', 'DESC')->orderBy('s.uid');
+			if(in_array($profession->did,array('D5','D6','D7','D8')))
+				$query=$query->orderBy('total_score', 'ASC')->orderBy('s.uid');
+			else
+				$query=$query->orderBy('total_score', 'DESC')->orderBy('s.uid');
 			break;
 		
 		case 'o': // sort by gorder
@@ -1232,16 +1238,10 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 }
 
 function score_transfer_list_check() {
-	$query=db_select('students_going','sg')->isNotNull('sg.gid')->fields('sg');
-	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
-	$query->condition('e.uid',$GLOBALS['user']->name);
-	$r=$query->countQuery()->execute()->fetchField();
+	if(!empty($GLOBALS['menu_admin'])) return TRUE;
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} sg INNER JOIN {vl_exam} e ON sg.eid=e.eid WHERE sg.gid IS NOT NULL AND e.uid=:uid)', array(':uid'=>$GLOBALS['user']->name))->fetchField();
 	if($r==0) return FALSE;
-	$query=db_select('vl_professions','p')->condition('p.uid',$GLOBALS['user']->name)->groupBy('p.exams');
-	$query->addExpression('count(pid)','pid_count');
-	$query=db_select($query,'pcount');
-	$query->addExpression('MAX(pid_count)','num');
-	$r=$query->execute()->fetchField();
+	$r=db_query('SELECT MAX(pid_count) AS num FROM (SELECT count(pid) AS pid_count FROM {vl_professions} p WHERE p.uid=:uid GROUP BY p.exams) t', array(':uid'=>$GLOBALS['user']->name))->fetchField();
 	return ($r>1) && user_access('mark 2nd round students') || ($GLOBALS['user']->uid==1);
 }
 
@@ -1280,10 +1280,11 @@ function score_transfer_check($going) {
 }
 
 function score_transfer($form, $form_state, $going) {
+	$gid=$going->gid;
 	global $user;
 	drupal_set_title(t('Transfer students').' - '.$going->gname);
 	$form=array();
-	
+
 	$header=array(
 		'gorder'=>array('data'=>t('No.'),'field'=>'sg.gorder'),
 		'uid'=>array('data'=>t('Student ID'), 'field'=>'s.uid'),
@@ -1291,17 +1292,22 @@ function score_transfer($form, $form_state, $going) {
 		'gender'=>array('data'=>t('Gender'), 'field'=>'s.gender'),
 		'pname'=>array('data'=>t('Current Profession'), 'field'=>'p.pid'),
 	);
-	
+
+	$query=db_select('vl_going','g')->condition('g.gid',$going->gid)->fields('g');
+	$query->innerJoin('vl_room','r','g.place=r.rid');
+	$query->fields('r',array('rname'));
+	$g_info=$query->execute()->fetchObject();
+
 	$query->innerJoin('students_going','sg','sg.gid=g.gid');
 	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
 	$query->fields('e',array('eid'))->groupBy('e.eid');
 	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)",'ename');
-	$exams=$query->execute();
+	$exams=$query->execute()->fetchAll();
 	foreach($exams as $r) {
 		$header['e'.$r->eid]=array('data'=>$r->ename, 'field'=>'e'.$r->eid, 'sort'=>'desc');
 	}
-	
-	$squery=db_select('students_going','sg')->condition('sg.gid',$going->gid);
+
+	$squery=db_select('students_going','sg')->condition('sg.gid',$gid);
 	$squery->innerJoin('students','s','s.uid=sg.uid');
 	$squery->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'))->fields('p',array('pname'));
@@ -1321,7 +1327,7 @@ function score_transfer($form, $form_state, $going) {
 			$squery->addExpression('CAST(e'.$r->eid.'.score as DECIMAL)','e'.$r->eid);
 		}
 	}
-	
+
 	$squery->extend('TableSort')->orderByHeader($header);
 	$students=$squery->execute()->fetchAll();
 	$options=array();
@@ -1332,17 +1338,17 @@ function score_transfer($form, $form_state, $going) {
 			if($item=='gender')
 				$options[$r->uid][$item]=($r->gender==2?t('Female'):t('Male'));
 		}
-		
+
 	}
-	
+
 	if(count($header)==5) {
 		$header['gorder']['sort']='asc';
 	}
-	
+
 	$form['desc']=array(
-		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $going->gname, $going->rname, $going->fomartTimes).'</div>',
+		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $g_info->gname, $g_info->rname, _going_datetime_to_string($g_info->time)).'</div>',
 	);
-	
+
 	$form['students']=array(
 			'#type' => 'tableselect',
 			'#header' => $header,
@@ -1350,7 +1356,7 @@ function score_transfer($form, $form_state, $going) {
 			'#attributes' => array('class'=>array('assign_students')),
 			'#empty' => t('No students to operate.'),
 	);
-	
+
 	$profs=db_select('vl_professions','p')->condition('p.uid',$user->name)->condition('p.enabled',0,'<>')
 		->orderBy('p.pid')->fields('p',array('pid','pname'))->execute()->fetchAllKeyed();
 	$form['targetprof']=array(
@@ -1360,14 +1366,14 @@ function score_transfer($form, $form_state, $going) {
 		'#attributes' => array('class'=>'inline-element'),
 		'#prefix'=>'<p/><div class="container-inline">',
 	);
-	
+
 	$form['submit']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
 		'#prefix'=>'&nbsp;&nbsp;&nbsp;',
 		'#suffix'=>'</div>',
 	);
-	
+
 	return $form;
 }
 
@@ -1564,6 +1570,11 @@ function score_prepare_3rd_overview() {
 }
 
 function score_prepare_3rd_detail($profession) {
+	watchdog('score',
+		'Viewed the 3rd round result of !prof.', array(
+			'!user'=>format_username($GLOBALS['user']),
+			'!prof'=>$profession->pname),
+		WATCHDOG_DEBUG);
 	drupal_add_css(
 		'div#sidebar-left { display: none; } '.
 		'.one-sidebar div#content { width: 95%; } ',

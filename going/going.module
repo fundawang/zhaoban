@@ -168,8 +168,11 @@ function going_print_orderlist_perm($going)
 		$query=db_select('students_going','sg')->condition('sg.gid',$going->gid)->fields('sg');
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-		if(!user_access('administer going'))
-			$query->condition('p.uid',$GLOBALS['user']->name);
+		if(!user_access('administer going')) {
+			$u=db_query('SELECT uid FROM {vl_exam} WHERE eid=:eid',array(':eid'=>$going->exams[0]))->fetchField();
+			if($GLOBALS['user']->name!=$u)
+				$query->condition('p.uid',$GLOBALS['user']->name);
+		}
 		$r=$query->countQuery()->execute()->fetchField();
 	} else $r=1;
 	return going_menu_perm() && user_access('print order list') && $r;
@@ -635,9 +638,10 @@ function going_assign_list() {
 
 		if($is_dep_only) {
 			$exam_ids=explode(', ', $r->valid_exams);
-			if(db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
+			$q=db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField();
+			if(!going_print_orderlist_perm(goingfull_load($r->gid)))
 				continue;
-			else if(!going_print_orderlist_perm(goingfull_load($r->gid)))
+			else if(db_select('vl_exam','e')->condition('e.eid',$exam_ids[0])->condition('e.uid',$GLOBALS['user']->name)->fields('e')->countQuery()->execute()->fetchField()==0)
 				continue;
 		}
 
@@ -1128,9 +1132,9 @@ function going_print_score_report($going)
 		foreach($exams as $enum => $evalue) {
 			if($enum=='eadditional') {
 				if($evalue!=='')
-					$t='主试乐器: '.t($evalue);
+					$t='主试乐器: '.t($evalue)."\n";
 				else
-					$t='主试乐器: 钢琴';
+					$t='主试乐器: 钢琴'."\n";
 			}
 			else
 				$t.=$pdf->unhtmlentities('&#x'.(2459+substr($enum,-1)).';').$evalue."\n";
@@ -1153,6 +1157,12 @@ function going_print_score_report($going)
 			$maxy=$pdf->GetY();
 		}
 		$pdf->SetY($y);
+		$height=$pdf->getStringHeight(0, $rname);
+		if($pdf->GetY()+$height>260) {
+			$pdf->AddPage();
+			$pdf->SetY(33);
+		}
+		$y=$pdf->getY();
 		$pdf->Cell(10,2,$i++, 0, false, 'C',true);
 		$pdf->Cell(30,2,$ruid, 0, false, 'C',true);
 		$pdf->Cell(25,2,$rname, 0, false, 'C',true);
@@ -1171,8 +1181,8 @@ function going_print_score_report($going)
 function going_mygoing_check($user=NULL) {
 	if(empty($user)) $user=$GLOBALS['user'];
 	if($user->uid==0) return FALSE;
-	$r=db_select('students_going','sg')->condition('sg.uid',$user->name)->isNotNull('sg.gid')->fields('sg')->countQuery()->execute()->fetchField();
-	return user_access('check my going', $user) && $r>0;
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND gid IS NOT NULL)', array(':uid'=>$user->name))->fetchField();
+	return user_access('check my going', $user) && $r;
 }
 
 function going_mygoing() {
@@ -1203,7 +1213,7 @@ function going_mygoing() {
 	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
 	$query->addExpression('w.rname','wname');
 	$query->addExpression("IFNULL(g.time, '9999999999999999')",'citera');
-	$query->fields('e',array('eid','ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname'));
+	$query->fields('e',array('eid','ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname','status'));
 	$query->orderBy('citera')->orderBy('sg.eid');
 	$result=$query->execute();
 	
@@ -1218,7 +1228,7 @@ function going_mygoing() {
 	foreach($result as $r) {
 		$gorder='';
 		if(!is_null($r->gorder)) {
-			if($r->eid == '146' || $r->eid == '204' || $r->eid == '274' || strpos($r->gname,'专业复试'))
+			if(in_array($r->eid, array('146', '202', '204', '274', '108')) || strpos($r->gname,'专业复试'))
 				$gorder='';
 			else $gorder=$r->gorder;
 		}
