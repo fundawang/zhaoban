@@ -4649,7 +4649,16 @@ function signup_ticket_report_perm($user) {
 	$isvalidated=db_select('students', 's')->fields('s',array('validated'))->condition('s.uid',$user->name)->execute()->fetchField();
 	if(!$isvalidated) return FALSE;
 	if(user_access('view draft')) return TRUE;
-	if(user_access('print admission ticket', $user) && $user->uid==$GLOBALS['user']->uid) return TRUE;
+	if(user_access('print admission ticket', $user) && $user->uid==$GLOBALS['user']->uid) {
+		$r=TRUE;
+		if(module_exists('onlinecharge')) {
+			$q=onlinecharge_payment_status($user);
+			if(isset($q[1])) $r=$r&&$q[1];
+			if(isset($q[2])) $r=$r&&$q[2];
+			if(isset($q[3])) $r=$r&&$q[3];
+		}
+		return $r;
+	}
 	return FALSE;
 }
 

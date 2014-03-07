@@ -1182,6 +1182,12 @@ function going_mygoing_check($user=NULL) {
 	if(empty($user)) $user=$GLOBALS['user'];
 	if($user->uid==0) return FALSE;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND gid IS NOT NULL)', array(':uid'=>$user->name))->fetchField();
+	if(module_exists('onlinecharge')) {
+		$q=onlinecharge_payment_status($user);
+		if(isset($q[1])) $r=$r&&$q[1];
+		if(isset($q[2])) $r=$r&&$q[2];
+		if(isset($q[3])) $r=$r&&$q[3];
+	}
 	return user_access('check my going', $user) && $r;
 }
 

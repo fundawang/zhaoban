@@ -1911,6 +1911,12 @@ function score_myscore_check($user=NULL) {
 	if(is_null($user)) $user=$GLOBALS['user'];
 	if(!$user->uid) return false;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$user->name))->fetchField();
+	if(module_exists('onlinecharge')) {
+		$q=onlinecharge_payment_status($user);
+		if(isset($q[1])) $r=$r&&$q[1];
+		if(isset($q[2])) $r=$r&&$q[2];
+		if(isset($q[3])) $r=$r&&$q[3];
+	}
 	if($user->uid == $GLOBALS['user']->uid)
 		return user_access('check students own scores') && $r;
 	else
