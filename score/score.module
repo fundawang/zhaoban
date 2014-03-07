@@ -731,14 +731,14 @@ function score_batch($form, $form_state) {
 		'#type'=>'select',
 		'#title'=>t('Select the exam you want to import'),
 		'#options'=>$exams,
-		'#default_value'=>$form_state['values']['eid'],
+		'#default_value'=>isset($form_state['values'])?$form_state['values']['eid']:'',
 		'#required'=>TRUE,
 	);
 	$form['frame']['scoretype']=array(
 		'#type'=>'select',
 		'#title'=>t('Select the score type'),
 		'#options'=>$scoretypes,
-		'#default_value'=>$form_state['values']['scoretype'],
+		'#default_value'=>isset($form_state['values'])?$form_state['values']['scoretype']:'',
 		'#required'=>TRUE,
 	);
 	$form['frame']['score']=array(
@@ -746,7 +746,7 @@ function score_batch($form, $form_state) {
 		'#rows'=>'20',
 		'#title'=>t('The mass scores'),
 		'#description'=>t('The scores should be pasted directly from spreadsheet program.'),
-		'#default_value'=>$form_state['values']['score'],
+		'#default_value'=>isset($form_state['values'])?$form_state['values']['score']:'',
 		'#required'=>TRUE,
 	);
 	
@@ -814,7 +814,7 @@ function _score_generate_batch_preview($eid,$mass_score) {
 			$r->province=='000000'?t('Our own student'):db_select('vl_province','p')->condition('p.pid',$r->province)->fields('p',array('name'))->execute()->fetchField(),
 		);
 	}
-	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output = theme('table', array('header'=>$header, 'rows'=>$rows));
 	return $output;
 }
 
