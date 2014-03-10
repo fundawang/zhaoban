@@ -4651,12 +4651,6 @@ function signup_ticket_report_perm($user) {
 	if(user_access('view draft')) return TRUE;
 	if(user_access('print admission ticket', $user) && $user->uid==$GLOBALS['user']->uid) {
 		$r=TRUE;
-		if(module_exists('onlinecharge')) {
-			$q=onlinecharge_payment_status($user);
-			if(isset($q[1])) $r=$r&&$q[1];
-			if(isset($q[2])) $r=$r&&$q[2];
-			if(isset($q[3])) $r=$r&&$q[3];
-		}
 		return $r;
 	}
 	return FALSE;
@@ -4668,6 +4662,14 @@ function signup_ticket_report($user) {
 	$query->innerJoin('vl_department','d','p.did=d.did');
 	$query->fields('s')->fields('p',array('pname'))->fields('d',array('dname'));
 	$student=$query->execute()->fetchObject();
+
+	if(module_exists('onlinecharge')) {
+		$q=onlinecharge_payment_status($user);
+		if(!isset($q[1])) $q[1]=TRUE;
+		if(!isset($q[2])) $q[2]=TRUE;
+		if(!isset($q[3])) $q[3]=TRUE;
+	} else $q=array(TRUE, TRUE, TRUE, TRUE);
+
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
 	ini_set('max_execution_time','500');
@@ -4769,12 +4771,15 @@ function signup_ticket_report($user) {
 	$pdf->setXY(155,35);
 	foreach($result as $r) {
 		$pdf->setX(155);
-		$pdf->Cell(55,7,$r->ename.($r->elevel?$r->elevel:''));
+		$pdf->Cell(55,7,mb_substr($r->ename.($r->elevel?$r->elevel:''),0,14,'UTF-8'));
+		$should_show=1;
+		$eperiod=intval(substr($r->eid,0,1));
+		if(!$q[$eperiod]) $should_show=0;
 		$date=intval(substr($r->time,4,2)).t('Month').intval(substr($r->time,6,2)).t('Day');
 		$starttime=sprintf("%d:%02d",intval(substr($r->time,8,2)), substr($r->time,10,2));
 		$endtime=sprintf("%d:%02d",intval(substr($r->time,12,2)), substr($r->time,14,2));
 		$rname = ($r->wname?"候考: ".$r->wname:$r->rname);
-		if($r->gid) {
+		if($r->gid && $should_show) {
 			$pdf->Cell(65,7, $date.$starttime.' - '.$endtime.' / '.$rname);
 			$pdf->Ln();
 			$pdf->setX(210);

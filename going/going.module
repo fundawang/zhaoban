@@ -1182,17 +1182,18 @@ function going_mygoing_check($user=NULL) {
 	if(empty($user)) $user=$GLOBALS['user'];
 	if($user->uid==0) return FALSE;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND gid IS NOT NULL)', array(':uid'=>$user->name))->fetchField();
-	if(module_exists('onlinecharge')) {
-		$q=onlinecharge_payment_status($user);
-		if(isset($q[1])) $r=$r&&$q[1];
-		if(isset($q[2])) $r=$r&&$q[2];
-		if(isset($q[3])) $r=$r&&$q[3];
-	}
 	return user_access('check my going', $user) && $r;
 }
 
 function going_mygoing() {
 	$uid=$GLOBALS['user']->name;
+	$q=array(1,1,1,1);
+	if(module_exists('onlinecharge')) {
+		$q=onlinecharge_payment_status($GLOBALS['user']);
+		if(!isset($q[1])) $q[1]=1;
+		if(!isset($q[2])) $q[2]=1;
+		if(!isset($q[3])) $q[3]=1;
+	}
 
 	$query=db_select('students','s')->fields('s')->condition('s.uid',$uid);
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
@@ -1238,13 +1239,17 @@ function going_mygoing() {
 				$gorder='';
 			else $gorder=$r->gorder;
 		}
+		$should_show=1;
+		$eperiod=intval(substr($r->eid,0,1));
+		if(!$q[$eperiod]) $should_show=0;
 		$rows[]=array(
 			$r->ename.($r->elevel?$r->elevel:''),
-			$r->rname?$r->rname:t('To be arranged'),
-			$r->wname?$r->wname:'',
-			_going_datetime_to_string($r->time),
-			$gorder,
+			$should_show?($r->rname?$r->rname:t('To be arranged')):'',
+			$should_show?($r->wname?$r->wname:''):'',
+			$should_show?_going_datetime_to_string($r->time):'',
+			$should_show?$gorder:'',
 		);
+
 	}
 	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
 	
