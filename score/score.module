@@ -1625,7 +1625,7 @@ function score_prepare_3rd_detail($profession) {
 	}
 		
 	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
-		if(in_array($profession->did,array('D5','D6','D8')))
+		if(in_array($profession->did,array('D5','D6','D7','D8')))
 			$header[]=array('data'=>t('Total score'));
 		$header[]=array('data'=>t('Total average rank'), 'field'=>'totsort', 'sort'=>'desc');
 	} else {
@@ -1635,7 +1635,7 @@ function score_prepare_3rd_detail($profession) {
 
 	$rows=array();
 	
-	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','profession_major'));
+	$query=db_select('students','s')->fields('s',array('uid','idcard_number','ucategory','name','gender','profession_major'));
 	// FIXME: HACK FOR CELLA
 	if(in_array($profession->pid, array('D603', 'D604', 'D716','D717'))) {
 		$query->condition('s.pass_round1_major',1);
@@ -1721,15 +1721,20 @@ function score_prepare_3rd_detail($profession) {
 				}
 			}
 		}
-		if(!in_array($profession->did,array('D7')))
-			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
 		if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
 			$rows[count($rows)-1][]=round($r['total_rank'], 2);
-		}
+		} else
+			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
 		if($r['profession_major']!==$profession->pid)
 			$rows[count($rows)-1][]='* '.t('This is a secondary profession student');
 		else
 			$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
+		
+		$a=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} WHERE idcard_number=:idcard)', array(':idcard'=>$r['idcard_number']))->fetchField();
+		if($a) {
+			$rows[count($rows)-1][count($rows[count($rows)-1])-2]=t('PASSTHROUGHED');
+		}
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
 	return $output;
