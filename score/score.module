@@ -1269,6 +1269,8 @@ function score_transfer_list() {
 
 function score_transfer_check($going) {
 	global $user;
+	if(!empty($GLOBALS['menu_admin'])) return TRUE;
+	if(user_is_anonymous()) return FALSE;
 	$query=db_select('vl_going','g')->condition('g.gid',$going->gid);
 	$query->innerJoin('students_going','sg','sg.gid=g.gid');
 	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
@@ -1968,7 +1970,7 @@ function score_myscore($user=NULL) {
 		if(isset($q[2])) $r=$r&&$q[2];
 		if(isset($q[3])) $r=$r&&$q[3];
 		if(!$r) {
-			$output .= '<p>'.t('Please finish your orders to view the score. <a href="@url">Click here</a> to view your unfinished orders.', array('@url'=>url('user/'.$user->uid.'/payment')));
+			$output = '<p>'.t('Please finish your orders to view the score. <a href="@url">Click here</a> to view your unfinished orders.', array('@url'=>url('user/'.$user->uid.'/payment')));
 			return $output;
 		}
 	}
