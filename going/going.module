@@ -111,6 +111,7 @@ function going_menu() {
 
 	$items['myschedule'] = array(
 		'title' => 'My Schedule',
+		'weight' => 20,
 		'description' => "List my examine schedule",
 		'page callback' => 'going_mygoing',
 		'access callback' => 'going_mygoing_check',
@@ -1179,6 +1180,7 @@ function going_print_score_report($going)
 }
 
 function going_mygoing_check($user=NULL) {
+	if(!empty($GLOBALS['menu_admin'])) return TRUE;
 	if(empty($user)) $user=$GLOBALS['user'];
 	if($user->uid==0) return FALSE;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND gid IS NOT NULL)', array(':uid'=>$user->name))->fetchField();

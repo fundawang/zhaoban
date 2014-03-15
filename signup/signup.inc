@@ -64,10 +64,9 @@ function _signup_determine_period($user) {
 
 	// Determine if one has finished his online payment orders
 	if(module_exists('onlinecharge')) {
-		$total_orders=db_select('orders','o')->condition('o.uid',$user->uid)->fields('o')->countQuery()->execute()->fetchField();
-		$unfinished_orders=db_select('orders','o')->condition('o.uid',$user->uid)->condition('status',100,'<>')->fields('o')->countQuery()->execute()->fetchField();
-		//$result=db_select('orders','o')->condition('o.uid',$user->uid)->condition('o.status',100,'<>')->countQuery()->execute()->fetchField();
-		if($unfinished_orders===FALSE) return signup_progress_FINISH;
+		$total_orders=db_query('SELECT COUNT(*) FROM {orders} WHERE uid=:uid',array(':uid'=>$user->uid))->fetchField();
+		$unfinished_orders=db_query('SELECT COUNT(*) FROM {orders} WHERE uid=:uid AND status<>100', array(':uid'=>$user->uid))->fetchField();
+		if($unfinished_orders==0) return signup_progress_FINISH;
 		else if($unfinished_orders>0 || $total_orders==0) return signup_progress_PAYMENT;
 	}
 	return signup_progress_FINISH;

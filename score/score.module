@@ -255,6 +255,7 @@ function score_menu() {
 
 	$items['myscore'] = array(
 		'title' => 'My Score',
+		'weight' => 21,
 		'description' => "Allow students to check the his own result",
 		'page callback' => 'score_myscore',
 		'access callback' => 'score_myscore_check',
@@ -1410,10 +1411,10 @@ function score_transfer_submit($form, &$form_state) {
 						'profession_major'=>$form_values['targetprof']
 				))->condition('uid',$uid)
 				->execute();
-				$q=db_query('SELECT EXISTS(SELECT * FROM {students_total_score} WHERE uid=:uid AND pid=:pid)', array(':uid'=>$uid, ':pid'=>$form_values['targetprof']))->fetchField();
-				if(!$q)
-					db_update('students_total_score')->fields(array('pid'=>$form_values['targetprof']))->condition('pid',$prof_orig)->execute();
 			}
+			$q=db_query('SELECT EXISTS(SELECT * FROM {students_total_score} WHERE uid=:uid AND pid=:pid)', array(':uid'=>$uid, ':pid'=>$form_values['targetprof']))->fetchField();
+			if(!$q)
+				db_update('students_total_score')->fields(array('pid'=>$form_values['targetprof']))->condition('pid',$prof_orig)->condition('uid',$uid)->execute();
 	}
 	drupal_set_message(t('!num students have been transfered into !prof_new profession.', array('!num'=>count($students), '!prof_new'=>$prof->pname)));
 	watchdog('score',
@@ -1919,19 +1920,15 @@ function score_mark_3rd_round_submit($form, $form_state) {
 }
 
 function score_myscore_check($user=NULL) {
+	if(!empty($GLOBALS['menu_admin'])) return TRUE;
 	if(is_null($user)) $user=$GLOBALS['user'];
 	if(!$user->uid) return false;
+	//return($user->name=='2014B7153');
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$user->name))->fetchField();
-	if(module_exists('onlinecharge')) {
-		$q=onlinecharge_payment_status($user);
-		if(isset($q[1])) $r=$r&&$q[1];
-		if(isset($q[2])) $r=$r&&$q[2];
-		if(isset($q[3])) $r=$r&&$q[3];
-	}
 	if($user->uid == $GLOBALS['user']->uid)
 		return user_access('check students own scores') && $r;
 	else
-		return user_access('signup_3rd_overview') && user_access('check students own scores', $user) && $r;
+		return user_access('review all score') && $r;
 }
 
 function score_myscore_check_roundg($user=NULL) {
@@ -1963,6 +1960,19 @@ function score_myscore($user=NULL) {
 			return $output;
 		}
 	}
+
+	if(module_exists('onlinecharge') && $user->uid==$GLOBALS['user']->uid) {
+		$r=1;
+		$q=onlinecharge_payment_status($user);
+		if(isset($q[1])) $r=$r&&$q[1];
+		if(isset($q[2])) $r=$r&&$q[2];
+		if(isset($q[3])) $r=$r&&$q[3];
+		if(!$r) {
+			$output .= '<p>'.t('Please finish your orders to view the score. <a href="@url">Click here</a> to view your unfinished orders.', array('@url'=>url('user/'.$user->uid.'/payment')));
+			return $output;
+		}
+	}
+
 
 	if(module_exists('simpleoauth')) {
 		$result=db_select('simpleoauth','s')->fields('s',array('appid','appname'))->execute();
