@@ -3676,7 +3676,7 @@ function signup_3rd_round_by_province_report($prov) {
 		return MENU_NOT_FOUND;
 	}
 	
-	require_once(drupal_get_path('module','signup').'/../tcpdf/examples/tcpdf_include.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
 	ini_set('max_execution_time','300');
 
