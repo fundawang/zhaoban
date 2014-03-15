@@ -1402,7 +1402,7 @@ function score_transfer_submit($form, &$form_state) {
 	$form_values=$form_state['values'];
 	$students=$form_values['students'];
 	$students=array_filter($students);
-	$prof_new=db_select('vl_professions','p')->condition('p.pid',$form_values['targetprof'])->fields('p',array('pname'))->execute()->fetchField();
+	$prof=profession_load($form_values['targetprof']);
 	foreach($students as $uid=>$u) {
 			$prof_orig=db_query('SELECT profession_major FROM {students} WHERE uid=:uid',array(':uid'=>$uid))->fetchField();
 			if($prof_orig!=$form_values['targetprof']) {
@@ -1415,11 +1415,11 @@ function score_transfer_submit($form, &$form_state) {
 					db_update('students_total_score')->fields(array('pid'=>$form_values['targetprof']))->condition('pid',$prof_orig)->execute();
 			}
 	}
-	drupal_set_message(t('!num students have been transfered into !prof_new profession.', array('!num'=>count($students), '!prof_new'=>$prof_new)));
+	drupal_set_message(t('!num students have been transfered into !prof_new profession.', array('!num'=>count($students), '!prof_new'=>$prof->pname)));
 	watchdog('score',
 		'!num students have been transfered into !prof_new profession.', array(
 			'!num'=>count($students),
-			'!prof_new'=>$prof_new
+			'!prof_new'=>$prof->pname
 	));
 	$form_state['redirect']='signup/transfer';
 }
