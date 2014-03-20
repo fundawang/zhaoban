@@ -2110,7 +2110,7 @@ function score_myscore($user=NULL) {
 			else {
 				$output .= t('You are marked as qualified student.');
 				if($student->profession_major=='D401') {
-					$rank=$ts->rank-db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>0 '.
+					$rank=$ts->rank-db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>1 '.
 						'AND ucategory<>1 AND profession_major=:prof', array(':prof'=>'D401'))->fetchField();
 					$output .= t('Your total score is ranked as @rank.',array('@rank'=>$rank));
 				}
