@@ -576,8 +576,9 @@ function theme_onlinecharge_user_orders($variables) {
 	$is_finished=TRUE;
 	
 	for($i=1;$i<=3;$i++) {
+		$a=element_children($form['round'.$i]);
 		if(isset($form['submit'.$i])) $is_finished=FALSE;
-		if(!isset($form['round'.$i])) continue;
+		if(empty($a)) continue;
 		$rows[]=array(
 			$form['round'.$i]['period'.$i]['#value'],
 			'&yen;'.$form['round'.$i]['amount'.$i]['#value'],

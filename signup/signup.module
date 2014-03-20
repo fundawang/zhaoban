@@ -3347,7 +3347,7 @@ function signup_3rd_round_by_profession_detail($prof) {
 		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
 		->extend('PagerDefault')->limit(20);
 	if(in_array(substr($prof->pid,0,2),array('D5','D6','D7','D8'))) {
-		$query->orderBy('ts.total_rank');
+		$query->orderBy('ts.total_rank')->orderBy('ts.total_score', 'desc');
 	} else {
 		$query->orderBy('ts.total_score', 'desc');
 	}

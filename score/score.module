@@ -1924,8 +1924,7 @@ function score_mark_3rd_round_submit($form, $form_state) {
 function score_myscore_check($user=NULL) {
 	if(!empty($GLOBALS['menu_admin'])) return TRUE;
 	if(is_null($user)) $user=$GLOBALS['user'];
-	if(!$user->uid) return false;
-	//return($user->name=='2014B7153');
+	if(!$user->uid) return FALSE;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$user->name))->fetchField();
 	if($user->uid == $GLOBALS['user']->uid)
 		return user_access('check students own scores') && $r;
@@ -1952,7 +1951,8 @@ function score_myscore($user=NULL) {
 	$uid=$user->name;
 
 	$student=db_query('SELECT * FROM {students} WHERE uid=:uid',array(':uid'=>$uid))->fetchObject();
-	if(empty($student)) return FALSE;
+	if(empty($student)) return MENU_NOT_FOUND;
+	if(!isset($student->pass_round3_major)) return MENU_NOT_FOUND;
 
 	if($student->ucategory==1 && $student->pass_round3_major>=1) {
 		$sid=db_select('students_gk','sg')->fields('sg',array('sid'))->condition('sg.uid',$student->uid)->execute()->fetchField();
@@ -1994,11 +1994,9 @@ function score_myscore($user=NULL) {
 	);
 	$output .= '</p>';
 	
-	$query=db_select('vl_professions','p');
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query->innerJoin('students','s','s.profession_major=p.pid');
-	$query->fields('p',array('plan','pname','exams'))->fields('d',array('dname'))->condition('s.uid',$uid);
-	$profession=$query->execute()->fetchObject();
+	$profession=db_query('SELECT p.plan, p.pname, p.exams, d.dname FROM {vl_professions} p '.
+		'INNER JOIN {vl_department} d ON p.did=d.did '.
+		'INNER JOIN {students} s ON s.profession_major=p.pid WHERE s.uid=:uid', array(':uid'=>$uid))->fetchObject();
 	$output .= '<p>';
 	$output .= t('You\'ve selected @dep @prof profession this year. The plan of this profession is @plan.',
 		array(
@@ -2046,34 +2044,85 @@ function score_myscore($user=NULL) {
 		t('Result')
 	);
 	
-	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
+	$ts=db_query('SELECT * FROM {students_total_score} WHERE uid=:uid AND pid=:pid',
+		array(':uid'=>$student->uid, ':pid'=>$student->profession_major))->fetchObject();
+	if(empty($ts)) return MENU_NOT_FOUND;
+
+	if($student->profession_major=='D301') {
+		$formula='';
+		ksort($exams);
+		foreach($exams as $eid => $eweight){
+			$exam = db_query('SELECT * from {vl_exam} e WHERE e.eid=\''.$eid.'\'')->fetchObject();
+			if ($eweight)
+				$formula .= $exam->ename.$exam->elevel.'*'.sprintf('%g%%',$eweight*100).'+';
+		}
+		$formula = substr($formula, 0, strlen($formula)-1);
+
+		$rows[]=array(
+			array('data'=>t('Total score'), 'header'=>TRUE, 'colspan'=>3),
+			round($ts->total_score,2)
+		);
+		$rows[]=array(
+			array('data'=>t('Total score').'='.$formula, 'colspan'=>4)
+		);
+	}
+	$output .= theme('table',array('rows'=>$rows, 'header'=>$header, 'colspan'=>2));
 
 	$output .= '<p>';
 	
-	$ts=db_select('students_total_score','ts')->fields('ts')->condition('ts.uid',$student->uid)->condition('ts.pid',$student->profession_major)->execute()->fetchObject();
-	if(!isset($student->pass_round3_major)) return FALSE;
 	switch($student->pass_round3_major) {
 		case 10:
 			$output .= '<b>';
-			if($student->profession_major=='D301' || $student->profession_major=='DA02')
-				$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
-			else 
+			if(($student->profession_major=='D301' || $student->profession_major=='D303') && $student->ucategory==1) {
+				if($student->profession_major=='D301') {
+					$output .= t('You are marked as qualified student.');
+					$max_min_score=db_query('SELECT MAX(total_score) AS max, MIN(total_score) AS min '.
+						'FROM {students_total_score} ts INNER JOIN {students} s '.
+						'ON ts.uid=s.uid AND ts.pid=s.profession_major '.
+						'WHERE s.pass_round3_major>0 AND s.profession_major=:pid AND s.ucategory=1',
+						array(':pid'=>$student->profession_major)
+					)->fetchObject();
+					$output .= t('The maximum score of @num passed students in this profession is @max, and the minimum is @min.',
+						array('@max'=>round($max_min_score->max,2), '@min'=>round($max_min_score->min,2),
+							'@num'=>db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>0 AND profession_major=:pid',
+								array(':pid'=>$student->profession_major))->fetchField()));
+					$output .= t('Based on your total score, you are ranking at @rank.', array('@rank'=>$ts->rank));
+					$output .= t('Your gaokao score will be standardized to 100, then calculate average value with scores of profession to get an overall score, when considering marking in within this year.',array('@rank'=>$ts->rank));
+				}
+				else
+					$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
+			}
+			else {
 				$output .= t('You are marked as planed students.');
+			}
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			$output .= '</b>';
+			if($student->profession_major=='D401')
+				$output .= '<br/>'.t('NOTE ON XIAMEN UNIVERSITY.').'<br/>';
 			if($student->ucategory==1)
-				$output .= '</b><br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 1:
 			$output .= '<b>';
-			if($student->profession_major=='D301' || $student->profession_major=='DA02')
+			if($student->profession_major=='D301' || $student->profession_major=='D303')
 				$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
-			else
-				$output .= t('You are marked as unplaned students, and the order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
+			else {
+				$output .= t('You are marked as qualified student.');
+				if($student->profession_major=='D401') {
+					$rank=$ts->rank-db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>0 '.
+						'AND ucategory<>1 AND profession_major=:prof', array(':prof'=>'D401'))->fetchField();
+					$output .= t('Your total score is ranked as @rank.',array('@rank'=>$rank));
+				}
+				else
+					$output .= t('Based on your total scores, ');
+				$output .= t('Your order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
+			}
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			$output .= '</b>';
+			if($student->profession_major=='D401')
+				$output .= '<br/>'.t('NOTE ON XIAMEN UNIVERSITY.').'<br/>';
 			if($student->ucategory==1)
 				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
@@ -3342,7 +3391,7 @@ function score_simpleoauth($input, $appid=NULL) {
 			return $output;
 		}
 		$user=user_load_by_name($input['sid']);
-		if(!user_access('review my score', $user)) {
+		if(!user_access('check students own scores', $user)) {
 			$output=array(
 				'status' => '40002',
 				'errmsg' => t('Invalid input for @op operation.', array('@op'=>'score')),
