@@ -732,7 +732,6 @@ function going_assign_students($form, $form_state, $going) {
 		foreach($rdbo as $r) {
 			$students[]=array($r->uid=>$exam);
 		}
-		
 	}
 	
 	drupal_set_title(t('Assign students').' - '.$going->gname);

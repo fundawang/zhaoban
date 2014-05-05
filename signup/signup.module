@@ -428,6 +428,15 @@ function signup_user_load($users) {
 	}
 }
 
+function signup_user_insert(&$edit, $account, $category) {
+	if(array_key_exists(5, $account->roles)) {
+		if(!db_query('SELECT EXISTS(SELECT * FROM {students} WHERE uid=:uid)', array(':uid'=>$account->name))->fetchField())
+			db_insert('students')->fields(array('uid'=>$account->name))->execute();
+		if(!db_query('SELECT EXISTS(SELECT * FROM {students_gk} WHERE uid=:uid)', array(':uid'=>$account->name))->fetchField())
+			db_insert('students_gk')->fields(array('uid'=>$account->name))->execute();
+	}
+}
+
 function signup_user_delete($account) {
 	db_delete('students')
 		->condition('uid', $account->name)
@@ -3837,6 +3846,7 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 			'#options' => array(
 				'shunfeng' => t('SF-Express'),
 				'ems' => t('EMS'),
+				'huitongkuaidi' => t('Best Express'),
 			),
 		);
 		if($r) $form['deliver']['com']['#default_value'] = $r->com;
@@ -3853,6 +3863,7 @@ function signup_3rd_round_province_delivery($form, $form_state, $prov) {
 			'#type' => 'submit',
 			'#name' => 'save',
 			'#value' => t('Save'),
+			'#suffix' => l(t('Place order online'), 'https://i.sf-express.com/order/sc/order.html', array('attributes'=>array('target'=>'_blank'))),
 		);
 	}
 	return $form;
@@ -4844,7 +4855,7 @@ function signup_cron() {
 
 	// Drop those empty users did not logged in for 1 days.
 	$query=db_query('SELECT u.uid, u.name FROM {students} s INNER JOIN {users} u ON s.uid=u.name '.
-		'WHERE s.idcard_number IS NULL AND u.access < :time', array(':time'=>time()-3600*24));
+		'WHERE s.idcard_number IS NULL AND u.access < :time AND u.access > 0', array(':time'=>time()-3600*24));
 	foreach($query as $student) {
 		watchdog(
 			'user',
@@ -4916,6 +4927,7 @@ function signup_search_students($citera) {
 	$query->condition('s.name','%'.$citera.'%', 'LIKE');
 	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
 	$query->addExpression('IF(sc.contact_phone=sc.phone_roundg, sc.contact_phone, CONCAT(sc.contact_phone,\' / \',sc.phone_roundg))','phone');
+	$query=$query->extend('PagerDefault')->limit(10);
 	$r=$query->execute();
 
 	// If only one target is found then direct to it right now.
@@ -4930,8 +4942,6 @@ function signup_search_students($citera) {
 	if($r->rowCount()>1) {
 		$count=0;
 		$output .='<div><h3>'.t("Search by student name:").'</h3>';
-		if($r->rowCount()>10)
-			$output .= '<p>'.t('@num students have been found, but we only list the first ten records. Please consider using more strict search citera.', array('@num'=>$r->rowCount())).'</p>';
 		$output .= '<ul>';
 		foreach($r as $u) {
 			$count++;
@@ -4948,6 +4958,7 @@ function signup_search_students($citera) {
 		}
 		$output .='</ul>';
 		$output .='</div>';
+		$output .= theme('pager');
 	}
 	
 	// 3. Search by students idcard_num

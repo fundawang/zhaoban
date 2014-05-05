@@ -1941,6 +1941,7 @@ function score_myscore_check_roundg($user=NULL) {
 
 function score_myscore_title_callback($user) {
 	$g=db_query('SELECT gender FROM {students} WHERE uid=:uid',array(':uid'=>$user->name))->fetchField();
+	if($user->uid==$GLOBALS['user']->uid) return t('My Score');
 	if(empty($g)) return t('His/Her Scores');
 	if($g==1) return t('His Scores');
 	else return t('Her Scores');
