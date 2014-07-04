@@ -11,3 +11,17 @@ if [ "$NEW_VER" != "$OLD_VER" ] ; then
 	unzip -qqo tcpdf_$FILEVER.zip
 	rm -f tcpdf_$FILEVER.zip
 fi
+
+if [ ! -f tcpdf/fonts/droidsansfallback.z ] ; then
+	wget -q https://github.com/android/platform_frameworks_base/raw/master/data/fonts/DroidSansFallback.ttf -O tcpdf/fonts/droidsansfallback.ttf
+	cat > tcpdf/examples/examples_066.php << EOF
+<?php
+require_once("tcpdf_include.php");
+\$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, true);
+\$pdf->addTTFfont('../fonts/droidsansfallback.ttf', 'TrueTypeUnicode', '', 32);
+?>
+EOF
+	cd tcpdf/examples
+	php examples_066.php
+	cd ../..
+fi
