@@ -2366,16 +2366,16 @@ function score_gaokao_province_status_form_submit($form, &$form_state) {
 				$query=db_update('students_gk')->condition('uid',$student);
 				if($scores_ksh!='00')
 					$update_fields+=array('sid'=>$record[$scores_ksh]);
-				$update_fields+=array('score_chinese'=>$record[$scores_yw]);
-				$update_fields+=array('score_math'=>$record[$scores_sx]);
-				$update_fields+=array('score_languages'=>$record[$scores_wy]);
+				$update_fields+=array('score_chinese'=>floatval($record[$scores_yw]));
+				$update_fields+=array('score_math'=>floatval($record[$scores_sx]));
+				$update_fields+=array('score_languages'=>floatval($record[$scores_wy]));
 				if($form_state['values']['scores_zh']!=='00') {
-					$update_fields+=array('score_synthesis'=>$record[$scores_zh]);
-					$update_fields+=array('score_total'=>$record[$scores_yw]+$record[$scores_sx]+$record[$scores_wy]+$record[$scores_zh]);
+					$update_fields+=array('score_synthesis'=>floatval($record[$scores_zh]));
+					$update_fields+=array('score_total'=>floatval($record[$scores_yw])+floatval($record[$scores_sx])+floatval($record[$scores_wy])+floatval($record[$scores_zh]));
 				} else {
 						$update_fields+=array(
 							'score_total'=>
-							($record[$scores_yw]+$record[$scores_sx]+$record[$scores_wy]+$record[$scores_zh])*1.67
+							(floatval($record[$scores_yw])+floatval($record[$scores_sx])+floatval($record[$scores_wy])+floatval($record[$scores_zh]))*1.67
 						);
 				}
 				$num_updated+=$query->fields($update_fields)->execute();
@@ -2601,7 +2601,7 @@ function score_gaokao_province_detail_form_submit($form, &$form_state) {
 	$form_values=$_POST;
 	$keys=array_keys($form_values);
 	foreach($keys as $key) {
-		if(substr($key,0,4)!=variable_get('zhaoban_current_year',date('Y'))) continue;
+		if(!db_query('SELECT EXISTS(SELECT * FROM {students} WHERE uid=:uid)', array(':uid'=>$key))->fetchField()) continue;
 		db_update('students_gk')->condition('uid',$key)->fields(array(
 			'sid' => $form_values['_sid-'.$key],
 			'is_math_subjects' => (isset($form_values['_sis-'.$key]) && $form_values['_sis-'.$key]==='1')?1:0,
