@@ -356,8 +356,8 @@ function signup_3rd_overview() {
 }
 
 function signup_ground_overview() {
-	if(!empty($GLOBALS['menu_admin'])) return TRUE;
-	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_roundg_major<>:val)', array(':val'=>0))->fetchField();
+	if(!empty($GLOBALS['menu_admin']) && $GLOBALS['menu_admin']) return TRUE;
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_roundg_major<>:val)', array(':val'=>1))->fetchField();
 	return user_access('view passroundg') && $r;
 }
 
@@ -4184,7 +4184,7 @@ function signup_ground_by_province_report($prov) {
 		return MENU_NOT_FOUND;
 	}
 	
-	require_once(drupal_get_path('module','signup').'/../tcpdf/examples/tcpdf_include.php');
+	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
 	
 	ini_set('max_execution_time','300');
 
