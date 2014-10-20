@@ -571,11 +571,11 @@ function signup_form_user_register_form_submit($form, &$form_state) {
 	$user=user_save('',$data);
 	
 	// Affect our own table now
-	db_insert('students')->fields(array(
+	db_merge('students')->key(array('uid'=>$data['name']))->fields(array(
 		'uid' => $data['name'],
 		'ucategory' => $data['ucategory'],
 	))->execute();
-	db_insert('students_gk')->fields(array(
+	db_merge('students_gk')->key(array('uid'=>$data['name']))->fields(array(
 		'uid' => $data['name'],
 	))->execute();
 	
