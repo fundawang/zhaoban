@@ -337,8 +337,8 @@ function signup_menu() {
 }
 
 function signup_access_overview($ar=NULL) {
-	if($ar=='province') return user_access('view draft');
-	else return user_access('view draft')||user_access('view own draft');
+	if($ar=='province') return user_access('view draft') && db_query('SELECT EXISTS(SELECT * FROM {students})')->fetchField();
+	else return (user_access('view draft')||user_access('view own draft')) && db_query('SELECT EXISTS(SELECT * FROM {students})')->fetchField();
 }
 
 function signup_check_access() {
@@ -905,6 +905,7 @@ function signup_user_account_form($form, $form_state) {
 		}
 		$form['personal']['photo'] = array(
 			'#type' => 'managed_file',
+			//'#type' => 'gameguyz_cropimage',
 			'#title' => empty($default_values->picture)?t('Photo'):t('Change Photo'),
 			'#required' => TRUE,
 			'#required' => empty($default_values->picture),
@@ -915,7 +916,22 @@ function signup_user_account_form($form, $form_state) {
 		if(!empty($default_values->picture)) {
 			$form['personal']['photo']['#description'] .= t('If you want to change the picture, please upload it here. Otherwise, just leave it blank.');
 		}
-		$form['#validate'][]='signup_user_account_form_validate';
+		if (module_exists('gameguyz_cropimage')) {
+			$element_info = element_info('managed_file');
+			$form['personal']['photo'] = array(
+				'#title' => empty($default_values->picture)?t('Photo'):t('Change Photo'),
+				'#description' => t('Only image files are allowed to be uploaded.'),
+				'#type' => 'managed_file',
+				'#required' => empty($default_values->picture),
+				'#disabled' => $isvalidated,
+				'#upload_validators' => array('file_validate_extensions' => array('jpg png jpeg'), 'file_validate_image_resolution' => array('2000x2000', '150x150')),
+				'#upload_validators' => array('file_validate_extensions' => array('jpg png jpeg')),
+				'#process' => array_merge($element_info['#process'], array('gameguyz_cropimage_process', 'gameguyz_cropimage_beauty_settings_process')),
+				'#file_value_callbacks' => array('gameguyz_cropimage_widget_value'),
+			);
+		}
+
+  		$form['#validate'][]='signup_user_account_form_validate';
 		$form['#submit']=array('signup_user_account_form_save');
 	return $form;
 }
@@ -1150,7 +1166,13 @@ function signup_user_account_form_save($form, &$form_state) {
 	}
 	
 	if($edit['photo']) {
-		$file=file_load($edit['photo']);
+		$crop_info = variable_get('gameguyz_cropimage_info', array());
+		$fid = $edit['photo']['fid'];
+		//var_dump($fid);
+		//var_dump($crop_info);exit;
+		exit;
+		$fid = empty($crop_info[$fid])?$fid:$crop_info[$fid]['fid_new'];
+		$file=file_load($fid);
 		$image=image_load($file->uri);
 		image_save($image, $file->uri.'.jpg');
 		$fd=fopen($file->uri.'.jpg','rb');
@@ -2763,7 +2785,7 @@ function signup_overview_by_profession() {
 			);
 		}
 	}
-	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
+	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('There is no suitable students.')));
 	$output .= '</div>';
 	
 	setcookie('examplace', NULL, 0, '/');
