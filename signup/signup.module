@@ -127,8 +127,13 @@ function signup_menu() {
 	);
 
 	$items['signup/schools_autocompletion'] = array(
-		'title' => 'School Autocompletion',
 		'page callback' => 'signup_schools_autocomplete',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK,
+	);
+
+	$items['signup/station_autocompletion'] = array(
+		'page callback' => 'signup_terminus_of_train_autocomplete',
 		'access callback' => TRUE,
 		'type' => MENU_CALLBACK,
 	);
@@ -1166,13 +1171,7 @@ function signup_user_account_form_save($form, &$form_state) {
 	}
 	
 	if($edit['photo']) {
-		$crop_info = variable_get('gameguyz_cropimage_info', array());
-		$fid = $edit['photo']['fid'];
-		//var_dump($fid);
-		//var_dump($crop_info);exit;
-		exit;
-		$fid = empty($crop_info[$fid])?$fid:$crop_info[$fid]['fid_new'];
-		$file=file_load($fid);
+		$file=file_load($edit['photo']);
 		$image=image_load($file->uri);
 		image_save($image, $file->uri.'.jpg');
 		$fd=fopen($file->uri.'.jpg','rb');
@@ -2235,6 +2234,8 @@ function signup_user_contact_form($form, $form_state, $user) {
 		'#description' => t('The terminus when you take the trains going home.'),
 		'#maxlength' => 20,
 		'#required' => 'true',
+		'#field_prefix' => t('Beijing <->'),
+		'#autocomplete_path' => 'signup/station_autocompletion',
 		'#default_value' => $default_values['terminus_of_train'],
 	);
 	$form['other']['needroom'] = array(
@@ -2266,6 +2267,28 @@ function signup_user_contact_form($form, $form_state, $user) {
 	);
 	$form['#submit'][]='signup_user_contact_form_save';
 	return $form;
+}
+
+function signup_terminus_of_train_autocomplete($string) {
+	$matches = array();
+	if ($string) {
+		$result = db_query('SELECT station_name FROM {vl_terminus_of_train} WHERE station_name LIKE :station LIMIT 20', array(':station'=>db_like($string).'%'));
+		foreach ($result as $station) {
+			$matches[$station->station_name] = check_plain($station->station_name);
+		}
+	}
+
+	drupal_json_output($matches);
+}
+
+function signup_user_contact_form_validate($form, $form_state) {
+	$terminus_of_train=trim($form_state['values']['terminus_of_train']);
+	if(!empty($form_state['values']['terminus_of_train']) && db_table_exists('vl_terminus_of_train')
+		&& db_query('SELECT COUNT(*) FROM {vl_terminus_of_train}')->fetchField()>0) {
+		$r=db_query('SELECT EXISTS(SELECT * FROM {vl_terminus_of_train} WHERE station_name=:station)', array(':station'=>$terminus_of_train))->fetchField();
+		if(!$r)
+			form_set_error('terminus_of_train', t('The station name you have input is invalid, please check your input.'));
+	}
 }
 
 function signup_user_contact_form_save($form, $form_state) {

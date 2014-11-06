@@ -130,6 +130,14 @@ function signup_schema() {
 		),
 		'primary key' => array('idcard_number'),
 	);
+	$schema['vl_terminus_of_train'] = array(
+		'fields' => array(
+			'station_name' => array('type' => 'varchar','length' => '20','not null' => TRUE),
+		),
+		'indexes' => array(
+			'station_name' => array('station_name'),
+		),
+	);
 
 	return $schema;
 }
