@@ -3114,9 +3114,20 @@ function score_myscore_roundg() {
 	return $output;
 }
 
+function score_weixin_menu() {
+	$menu=array();
+	$menu[]=array('title'=>t('My Score'), 'weight'=>2);
+	$menu[]=array('title'=>t('My Score'), 'weight'=>21);
+	$menu[]=array('title'=>t('My enrollment result'), 'weight'=>22);
+	return $menu;
+}
+
 function score_weixin($request, $user) {
-	if($request->msgtype !== 'text'||$user->uid==0) return;
-	if($request->content == '查询成绩' || $request->content == '考试结果' || $request->content == '考试成绩' ) {
+	$event=key($request->content);
+	$eventkey=$request->content[$event];
+	$event=strtolower($event);
+	if(($request->msgtype=='text' && ($request->content == '查询成绩' || $request->content == '考试结果' || $request->content == '考试成绩')) ||
+		($request->msgtype=='click' && $request->eventkey=='weixin_menu_21')) {
 		$r=db_select('students','s')->fields('s',array('pass_round1_major'))->condition('uid',$user->name)->execute()->fetchField();
 		if(user_access('check students own scores', $user) || !$r) return t('You are not allowed to access the score query feature.');
 		$query=db_select('students','s')->condition('s.uid',$user->name);
@@ -3164,7 +3175,8 @@ function score_weixin($request, $user) {
 			$t.=t('It is a mean rank, rather than numeric value.');
 		}
 	}
-	if($request->content == '录取结果') {
+	if(($request->msgtype=='text' && $request->content == '录取结果') ||
+		($request->msgtype=='click' && $request->eventkey=='weixin_menu_22')) {
 		if(!score_myscore_check_roundg($user)) return t('You are not allowed to access the roundg query feature.');
 	}
 	if(isset($t)) return $t;
