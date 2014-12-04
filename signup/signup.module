@@ -1461,9 +1461,9 @@ function signup_user_view($user, $view_mode, $langcode) {
 	}
 	if(!empty($result->picture)) {
 		if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
-			$img=sprintf('<img src="/user/%s/%s/picture.jpg" style="padding-right: 10px" align="left" height="100"/>', $user->uid, substr(md5($result->picture),0,4));
+			$img=sprintf('<img src="/user/%s/%s/picture.jpg" style="padding-right: 10px; height: 100px;" align="left" height="60"/>', $user->uid, substr(md5($result->picture),0,4));
 		} else {
-			$img=sprintf('<img src="data:image/jpeg;base64,%s" style="padding-right: 10px" align="left" height="100"/>', $result->picture);
+			$img=sprintf('<img src="data:image/jpeg;base64,%s" style="padding-right: 10px; height: 100px;" align="left"/>', $result->picture);
 		}
 		$user->content['pi']['name']['#title'] = $img.$user->content['pi']['name']['#title'];
 	}
