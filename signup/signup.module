@@ -1774,7 +1774,7 @@ function _signup_user_professions_form_examplaces_options($pid='', $user) {
 		'WHERE pp.status=1 AND pp.pid=:pid GROUP BY cd.cid', array(':pid'=>$pid));
 
 
-	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
+	$r=db_query('SELECT cid, name FROM {vl_city_district} WHERE cid=:cid', array(':cid'=>'110000'))->fetchObject();
 	$options=array($r->cid=>$r->name);
 	foreach($dbo as $r) {
 		unset($options[$r->cid]);
@@ -1950,7 +1950,7 @@ function signup_user_examinations_form($form, $form_state, $user) {
 	if(!$isvalidated)
 		$isvalidated=$ispassthrough;
 	// Let's fetch the examinations of the user at first
-	$rdbo = db_select('students_going','sg')->fields('sg',array('eid'))->condition('sg.uid',$user->name)->execute();
+	$rdbo = db_query('SELECT eid FROM {students_going} WHERE uid=:uid',array(':uid'=>$user->name));
 	$exams = array();
 	foreach($rdbo as $r)
 		$exams[] = $r->eid * 1;
@@ -1990,7 +1990,7 @@ function signup_user_examinations_form($form, $form_state, $user) {
 
 		// Let's fetch the original value
 		if($r->eadditional || $r->opus) {
-			$q=db_select('students_going','sg')->fields('sg',array('opus'))->condition('uid',$user->name)->condition('eid',$eid)->execute()->fetchField();
+			$q=db_query('SELECT opus FROM {students_going} WHERE uid=:uid AND eid=:eid',array(':uid'=>$user->name, 'eid'=>$eid))->fetchField();
 			if($q) {
 				$default_values=unserialize($q);
 			}
@@ -2299,13 +2299,13 @@ function signup_user_contact_form_save($form, $form_state) {
 	
 	// If is our own students, lets fill in some more information automatically
 	if($user->ucategory==0) {
-		$sid=db_select('students','s')->fields('s',array('idcard_number'))->condition('uid',$user->name)->execute()->fetchField();
+		$sid=db_query('SELECT idcard_number FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
 		if(!is_null(Database::getConnectionInfo('jiaowu'))) {
 			db_set_active('jiaowu');
 			$r=db_query('SELECT xm, xsh FROM {xs_xjb} WHERE XH=:xh', array(':xh'=>$sid))->fetchObject();
 			db_set_active('default');
 		} else $r=(object)array('xsh'=>'','xm'=>'');
-		$depname=db_select('vl_department','d')->fields('d',array('dname'))->condition('did_exchange',$r->xsh)->execute()->fetchField();
+		$depname=db_query('SELECT dname FROM {vl_department} WHERE did_exchange=:did',array(':did'=>$r->xsh))->fetchField();
 
 		$edit['address_round3'] = '中央音乐学院'.$depname;
 		$edit['zip_round3'] = '100031';

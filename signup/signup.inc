@@ -29,13 +29,13 @@ define('uc_OVERSEA_STUDENT',3);
 
 function _signup_determine_period($user) {
 	// Determine whether you have entered your personal information.
-	$result = db_select('students', 's')->fields('s')->condition('s.uid',$user->name)->execute()->fetchObject();
+	$result = db_query('SELECT * FROM {students} WHERE uid=:uid',array(':uid'=>$user->name))->fetchObject();
 	if(empty($result)) return;
 	if(!($result->idcard_number) || !($result->name))
 		return signup_progress_PERSONALINFORMATION; // One must fill in personal information at first.
 
 	// Determine whether you have signed up professions
-	$result = db_select('students', 's')->fields('s',array('profession_major', 'examplace'))->condition('s.uid',$user->name)->execute()->fetchObject();
+	$result = db_query('SELECT * FROM {students} WHERE uid=:uid',array(':uid'=>$user->name))->fetchObject();
 	if($result->profession_major == '0' || $result->examplace=='' )
 		return signup_progress_PROFESSION; // One must fill in profession at first.
 
@@ -50,7 +50,7 @@ function _signup_determine_period($user) {
 
 	// Determine whether you have filled up your contact information
 	//$result = db_result(db_query('SELECT count(*) FROM {students_contact} WHERE uid=\'%s\'', $user->name));
-	$result = db_select('students_contact','sc')->fields('sc',array('contact_phone'))->condition('sc.uid',$user->name)->countQuery()->execute()->fetchField();
+	$result = db_query('SELECT EXISTS(SELECT * FROM {students_contact} WHERE uid=:uid)', array(':uid'=>$user->name))->fetchField();
 	if(!$result)
 		return signup_progress_CONTACT; // One must fill in contact at first.
 
