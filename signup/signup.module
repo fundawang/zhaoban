@@ -2114,7 +2114,8 @@ function signup_user_contact_form($form, $form_state, $user) {
 	// Paint form
 	$form['contact_phone'] = array(
 		'#type' => 'textfield',
-		'#title' => t('The phone number we could contact you during the period of examination'),
+		'#description' => t('The phone number we could contact you during the period of examination'),
+		'#title' => t('Contact phone'),
 		'#default_value' => $default_values['contact_phone'],
 		'#required' => 'true',
 		'#maxlength' => 30,
@@ -2232,6 +2233,7 @@ function signup_user_contact_form($form, $form_state, $user) {
 		'#type' => 'textfield',
 		'#title' => t('The terminus of train'),
 		'#description' => t('The terminus when you take the trains going home.'),
+		'#size' => 52,
 		'#maxlength' => 20,
 		'#required' => 'true',
 		'#field_prefix' => t('Beijing <->'),
