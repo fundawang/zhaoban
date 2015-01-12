@@ -362,7 +362,7 @@ function signup_3rd_overview() {
 
 function signup_ground_overview() {
 	if(!empty($GLOBALS['menu_admin']) && $GLOBALS['menu_admin']) return TRUE;
-	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_roundg_major<>:val)', array(':val'=>1))->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_roundg_major<>:val)', array(':val'=>0))->fetchField();
 	return user_access('view passroundg') && $r;
 }
 
