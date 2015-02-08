@@ -357,10 +357,10 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 				'ordertime' => time(),
 				'standard' => $fee->scid,
 				'ordertitle' => $fee->title,
-				'amount' => $is_passthough?0:$fee->fee,
+				'amount' => ($is_passthough&&$i>1)?0:$fee->fee,
 				'gateway' => NULL,
 				'gatewaytransactionno' => NULL,
-				'status' => $is_passthough?100:0,
+				'status' => ($is_passthough&&$i>1)?100:0,
 			))->execute();
 		}
 	}

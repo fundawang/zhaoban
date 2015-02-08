@@ -24,14 +24,16 @@ function exams_schema() {
 			'etype' => array('type' => 'varchar', 'length' => '1', 'not null' => TRUE, 'description' => t('Whether the examination is paper exam or not')),
 			'opus' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('The number of opus this exam requires')),
 			'uid' => array('type' => 'varchar', 'length' => '20', 'not null' => TRUE, 'description' => t('Which research section will give the score of this examination')),
-			'department' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE)
+			'department' => array('type' => 'varchar', 'length' => '4', 'not null' => FALSE),
+			'needdraw' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'disp-width' => '1', 'description' => t('If the exam should be draw at first')),
 		),
 		'primary key' => array('eid'),
 		'indexes' => array(
 			'elevel' => array('elevel'),
 			'ename' => array('ename'),
 			'etype' => array('etype'),
-			'uid' => array('uid')
+			'uid' => array('uid'),
+			'needdraw' => array('needdraw')
 		),
 	);
 

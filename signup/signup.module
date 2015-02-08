@@ -2552,7 +2552,7 @@ function signup_block_view($delta = '') {
 			break;
 		case 'searchstu':
 			if(user_access('access user profiles')) {
-				$block['subject']='';
+				$block['subject']=t('Search students');
 				$block['content']=drupal_get_form('signup_search_student');
 				return $block;
 			}
@@ -3103,34 +3103,55 @@ function signup_overview_by_province_detail($prov) {
 
 function signup_overview_set_validated() {
 	if(module_exists('onlinecharge')) {
+		$user_register=variable_get('user_register', NULL);
 		$form=array();
-		$query=db_select('students','s');
-		$query->innerJoin('users','u','u.name=s.uid');
-		$query->innerJoin('orders','o','u.uid=o.uid');
-		$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
-		$query->condition('sc.period',1)->condition('o.status',100)->condition('s.validated',0)->fields('s');
-		$count=$query->countQuery()->execute()->fetchField();
-		if($count) {
-			$form['setvalidate'] = array(
-				'#type' => 'submit',
-				'#name' => 'setvalidate',
-				'#value' => t('Set all paid students as validated'),
-			);
+		switch($user_register) {
+			case USER_REGISTER_VISITORS:
+				$form['closereg']=array(
+					'#type' => 'submit',
+					'#name' => 'closereg',
+					'#value' => t('Disable Registration'),
+				);
+				return $form;
+			case USER_REGISTER_ADMINISTRATORS_ONLY:
+				$query=db_select('students','s');
+				$query->innerJoin('users','u','u.name=s.uid');
+				$query->innerJoin('orders','o','u.uid=o.uid');
+				$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
+				$query->condition('sc.period',1)->condition('o.status',100)->condition('s.validated',0)->fields('s');
+				$count=$query->countQuery()->execute()->fetchField();
+				if($count) {
+					$form['setvalidate'] = array(
+						'#type' => 'submit',
+						'#name' => 'setvalidate',
+						'#value' => t('Set all paid students as validated'),
+					);
+				}
+				$count=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {users} u ON u.name=s.uid WHERE s.validated=0 AND u.status=1)')->fetchField();
+				if($count) {
+					$form['setinactive'] = array(
+						'#type' => 'submit',
+						'#name' => 'setinactive',
+						'#value' => t('Set all unconfirmed students as inactive'),
+					);
+				}
+				$permissions=user_role_permissions(array(5=>'aaa'));
+				if(array_key_exists('print admission ticket', $permissions))
+					$form['enableticket'] = array(
+						'#type' => 'markup',
+						'#markup' => t('Printing admission ticket enabled.')
+					);
+				else
+					$form['enableticket'] = array(
+						'#type' => 'submit',
+						'#name' => 'enableticket',
+						'#value' => t('Enable printing admission ticket')
+					);
+				if(count($form))
+					return $form;
+				else return NULL;
+			default: return NULL;
 		}
-		$query=db_select('students','s')->condition('validated',0);
-		$query->innerJoin('users','u','u.name=s.uid');
-		$query->condition('u.status',1)->fields('s');
-		$count=$query->countQuery()->execute()->fetchField();
-		if($count) {
-			$form['setinactive'] = array(
-				'#type' => 'submit',
-				'#name' => 'setinactive',
-				'#value' => t('Set all unconfirmed students as inactive'),
-			);
-		}
-		if(count($form))
-			return $form;
-		else return NULL;
 	} else
 		return NULL;
 }
@@ -3174,6 +3195,16 @@ function signup_overview_set_validated_submit($form, $form_state) {
 				);
 			}
 		}
+
+		if($form_state['triggering_element']['#name']=='closereg') {
+			variable_set('user_register', USER_REGISTER_ADMINISTRATORS_ONLY);
+			drupal_set_message(t('Registration has been disabled.'));
+		}
+
+		if($form_state['triggering_element']['#name']=='enableticket') {
+			user_role_grant_permissions(5, array('print admission ticket'));
+		}
+
 	}
 }
 

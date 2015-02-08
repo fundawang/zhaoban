@@ -453,15 +453,17 @@ function going_going_edit_validate($form, &$form_state) {
 	$types=array();
 	for($i=1;$i<=going_going_MAX_EXAMS;$i++) {
 		if($form_state['values']['exam'.$i]!='0') {
-			$r=db_select('vl_exam', 'e')->fields('e',array('uid','etype'))->condition('e.eid',$form_state['values']['exam'.$i])->execute()->fetchObject();
+			$r=db_select('vl_exam', 'e')->fields('e',array('uid','etype','needdraw'))->condition('e.eid',$form_state['values']['exam'.$i])->execute()->fetchObject();
 			$exams[]=$form_state['values']['exam'.$i];
 			$sec[]=$r->uid;
 			$types[]=$r->etype;
+			$needdraw[]=$r->needdraw;
 		}
 	}
 	$sec=array_unique($sec);
 	$types=array_unique($types);
 	$exams=array_unique($exams);
+	$needdraws=array_unique($needdraw);
 
 	if(count($sec)==0) { // No exam defined
 		form_set_error('valid_exams', t('There is no examinations in this schedule.'));
@@ -470,6 +472,8 @@ function going_going_edit_validate($form, &$form_state) {
 		form_set_error('valid_exams', t('Conflict research section detected.'));
 	} else if(count($types)!=1) { // Different exam type
 		form_set_error('valid_exams', t('Conflict exam type detected.'));
+	} else if(count($needdraws)!=1) { // Different exam draw types
+		form_set_error('valid_exams', t('Conflict draw type detected.'));
 	}
 	if(module_exists('onlinetests')) {
 		if($types[0]=='3' && count($exams) >1)

@@ -362,6 +362,21 @@ function exams_exam_edit($form, $form_state, $exam=NULL) {
 		'#title' => t('The number of opus'),
 		'#options' => array('0', '1', '2', '3', '4', '5', '6', '7', '8'),
 		'#default_value' => (isset($default_values->opus) ? $default_values->opus : '0'),
+		'#states' => array(
+			'visible' => array(
+				'input[name="etype"]' => array('value' =>'2'),
+			),
+		),
+	);
+	$form['drawtype'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('This exam need students to draw at the beginning, rather than participating one by one.'),
+		'#default_value' => (isset($default_values->needdraw) ? $default_values->needdraw : FALSE),
+		'#states' => array(
+			'visible' => array(
+				'input[name="etype"]' => array('value' =>'2'),
+			),
+		),
 	);
 
 	$research_sec = array();
@@ -412,7 +427,8 @@ function exams_exam_edit_submit($form, &$form_state) {
 			'etype' => $form_state['values']['etype'],
 			'opus' => $form_state['values']['opus'],
 			'uid' => $form_state['values']['uid'],
-			'department' => $form_state['values']['dep']?$form_state['values']['uid']:null)
+			'department' => $form_state['values']['dep']?$form_state['values']['uid']:null,
+			'needdraw' => !empty($form_state['values']['drawtype']))
 		)->execute();
 
 		watchdog('exam',
@@ -431,6 +447,7 @@ function exams_exam_edit_submit($form, &$form_state) {
 			'etype' => $form_state['values']['etype'],
 			'opus' => $form_state['values']['opus'],
 			'uid' => $form_state['values']['uid'],
+			'needdraw' => !empty($form_state['values']['drawtype']),
 			'department' => $form_state['values']['dep']?$form_state['values']['uid']:NULL)
 		)->condition('eid', arg(3), '=')->execute();
 		watchdog('exam',
