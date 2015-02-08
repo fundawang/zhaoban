@@ -3285,7 +3285,7 @@ function signup_2nd_round_by_profession_detail($prof) {
 		array('data' =>t('Province'), 'field'=>'gk.province'),
 		array('data' =>t('Personnel record'), 'field'=>'personnel_record_at'),
 	);
-	
+
 	$query=db_select('students','s')->condition('s.idcard_number','','<>')->fields('s')->condition('p.pid',$prof->pid);
 	$query->leftJoin('students_gk','gk','s.uid=gk.uid');
 	$query->leftJoin('students_contact','c','s.uid=c.uid');
