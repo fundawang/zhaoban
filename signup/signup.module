@@ -3202,7 +3202,7 @@ function signup_overview_set_validated_submit($form, $form_state) {
 		}
 
 		if($form_state['triggering_element']['#name']=='enableticket') {
-			user_role_grant_permissions(5, array('print admission ticket'));
+			user_role_grant_permissions(5, array('print admission ticket', 'check my going'));
 		}
 
 	}

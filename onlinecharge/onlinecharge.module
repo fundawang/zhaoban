@@ -345,8 +345,9 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		if(empty($r)) {
 			if($fee->period > 1) {
 				$p=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
-					'WHERE s.uid=:uid AND s.pass_round1_major=1 AND sg.eid>200)',
-					array(':uid'=>$user->name))->fetchField();
+					'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+					'WHERE s.uid=:uid AND s.pass_round1_major=1 AND sg.eid>:eid AND p.allow_round1=2)',
+					array(':uid'=>$user->name, ':eid'=>$i*100))->fetchField();
 				if(!$p) {
 					if(empty($is_passthough)) break;
 				}
@@ -576,7 +577,9 @@ function theme_onlinecharge_user_orders($variables) {
 	$is_finished=TRUE;
 	
 	for($i=1;$i<=3;$i++) {
-		$a=element_children($form['round'.$i]);
+		$a=NULL;
+		if(isset($form['round'.$i]))
+			$a=element_children($form['round'.$i]);
 		if(isset($form['submit'.$i])) $is_finished=FALSE;
 		if(empty($a)) continue;
 		$rows[]=array(
