@@ -3488,13 +3488,13 @@ function score_automize_page($form, $form_state) {
 	drupal_add_js(
 			"jQuery(document).ready(function(){".
 			"jQuery('form input[type=text]').val('');".
-			'var $inp = jQuery("input[type=text]");'.
+			'var $inp = jQuery("input[type=text]:enabled");'.
 			'$inp.bind("keydown", function (e){'.
 				"var key = e.which;".
 				" if (key == 13) {".
 				"   e.preventDefault();".
 				'   var nxtIdx = $inp.index(this) + 1;'.
-				"   jQuery('input[type=text]:eq(' + nxtIdx + ')').focus();".
+				"   jQuery('input[type=text]:enabled:eq(' + nxtIdx + ')').focus();".
 				"}".
 			"});".
 			"});",
