@@ -3466,6 +3466,8 @@ function score_automize_page($form, $form_state) {
 			'#type' => 'checkbox',
 			'#title' => t('Absence'),
 			'#suffix' => '</div>',
+			'#default_value' => db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE eid=:eid AND uid=:uid AND score=-1)',
+				array(':uid'=>$r->uid, ':eid'=>$eid))->fetchField(),
 		);
 	}
 	$form['addscores']['new-score-teachername']=array(
