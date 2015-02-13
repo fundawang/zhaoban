@@ -3389,6 +3389,7 @@ function score_automize_page($form, $form_state) {
 		'#ajax' => array(
 			'callback' => '_score_automize_page_eid_gid_select_callback',
 			'wrapper' => 'scores-automize-page-eid-gid',
+			'progress' => array('message'=>NULL)
 		),
 	);
 
