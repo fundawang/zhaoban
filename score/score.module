@@ -55,7 +55,7 @@ function score_menu() {
 	$items['score'] = array(
 		'title' => 'Score',
 		'description' => "Upload the score of the students",
-		'page callback' => 'score_input_going_list',
+		'page callback' => 'score_top_page',
 		'access callback' => 'score_input_going_list_check',
 		'expanded' => TRUE,
 	);
@@ -65,14 +65,14 @@ function score_menu() {
 		'weight' => 0,
 		'page callback' => 'score_input_going_list',
 		'access callback' => 'score_input_going_list_check',
-		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'type' => MENU_LOCAL_TASK,
 	);
+
 	$items['score/input/%exam'] = array(
 		'title' => 'Input one by one',
-		'weight' => 0,
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('score_input_going_form', 2),
-		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'type' => MENU_CALLBACK,
 		'access callback' => 'score_input_check_access',
 		'access arguments' => array(2),
 	);
@@ -82,13 +82,23 @@ function score_menu() {
 		'weight' => 0,
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('score_input_going_form', 2, 3),
-		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'type' => MENU_CALLBACK,
 		'access callback' => 'score_input_check_access',
 		'access arguments' => array(2,3),
 	);
+
+	$items['score/automize'] = array(
+		'title' => 'Automizing Input',
+		'weight' => 1,
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('score_automize_page'),
+		'access callback' => 'score_input_going_list_check',
+		'type' => MENU_LOCAL_TASK,
+	);
+
 	$items['score/batch'] = array(
 		'title' => 'Batch upload',
-		'weight' => 1,
+		'weight' => 2,
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('score_batch'),
 		'access callback' => 'score_input_going_list_batch_check',
@@ -384,6 +394,8 @@ function score_input_check_access($exam, $going=NULL) {
 }
 
 function score_input_going_list() {
+
+	if (!user_access('input score')) return '';
 	
 	global $user;
 	$output ='<div><p>'.
@@ -397,7 +409,7 @@ function score_input_going_list() {
 		'#collapsible' => TRUE,
 		'#collapsed' => FALSE,
 	);
-	
+
 	$query=db_select('vl_exam','e')->fields('e',array('eid'))->fields('s',array('gid'));
 	$query->innerJoin('students_going','s','s.eid=e.eid');
 	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
@@ -454,10 +466,7 @@ function score_input_going_list() {
 		$output.=drupal_render($form['own']);
 		$output.=drupal_render($form['stu']);
 	}
-	if (user_access('input score'))
-		return $output;
-	else
-		return '';
+	return $output;
 }
 
 function score_input_going_form($form, $form_state, $exam, $going=NULL) {
@@ -3356,6 +3365,179 @@ function score_cron() {
 			->from($query)
 			->execute();
 	}
+}
+
+function score_automize_page($form, $form_state) {
+	global $user;
+	if(empty($form)) $form=array();
+	$query=db_query('SELECT * FROM {vl_exam} e WHERE EXISTS(SELECT * FROM {students_going} sg WHERE sg.eid=e.eid AND sg.gid IS NOT NULL) AND e.uid=:uid',
+		array(':uid'=>$user->name));
+	$options=array();
+	foreach($query as $r) {
+		$options[$r->eid]=$r->ename.$r->elevel;
+	}
+	$eid=empty($form_state['storage']['eid'])?$form_state['values']['eid']:$form_state['storage']['eid'];
+	$form['eid']=array(
+		'#type' => 'select',
+		'#options' => $options,
+		'#title' => t('Select Exam and going'),
+		'#prefix' => '<div class="inline-element-div">',
+		'#default' => $eid,
+		'#required' => TRUE,
+		'#ajax' => array(
+			'callback' => '_score_automize_page_eid_gid_select_callback',
+			'wrapper' => 'scores-automize-page-eid-gid',
+		),
+	);
+
+	$gid=empty($form_state['storage']['gid'])?$form_state['values']['gid']:$form_state['storage']['gid'];
+
+	$form['gid']=array(
+		'#type' => 'select',
+		'#options' => _score_automize_page_eid_gid_select_options($eid),
+		'#required' => TRUE,
+		'#title' => $form_state['storage']['gid'],
+		//'#title_display' => 'invisible',
+		'#prefix' => '<div id="scores-automize-page-eid-gid">',
+		'#default' => $gid,
+		'#suffix' => '</div>',
+	);
+
+	$form['eidgidgo']=array(
+		'#type' => 'submit',
+		'#value' => t('Update'),
+		'#suffix' => '</div>',
+		'#submit' => array('score_automize_page_submit_eidgidgo'),
+		'#limit_validation_errors' => array(array('eid'),array('gid')),
+	);
+
+	$form['addscores']=array(
+		'#type' => 'fieldset',
+		'#title' => t('Add a new score sheet'),
+		'#collapsible' => TRUE,
+		'#collapsed' => FALSE,
+		'#access' => !empty($form_state['storage']['gid']),
+		'#prefix' => '<div id="scores-automize-page-add-scores">',
+		'#suffix' => '</div>',
+		'#tree' => TRUE,
+	);
+
+	if(empty($form_state['storage']['gid'])) return $form;
+
+	$exam=exam_load($eid);
+	$query=db_query('SELECT sg.gorder, s.uid, s.name FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+		'WHERE sg.eid=:eid AND sg.gid=:gid ORDER BY sg.gorder', array(':eid'=>$eid, ':gid'=>$form_state['storage']['gid'])
+		);
+	$form_state['storage']['addscores']['students']=array();
+	foreach($query as $r) {
+		$form_state['storage']['addscores']['students'][]=$r->uid;
+		$form['addscores']['new-score-label'.$r->uid]=array(
+			'#markup' => sprintf('%s %s %s', $r->gorder, $r->uid, $r->name),
+			'#prefix' => '<div class="inline-element-div"><div style="width: 20em;">',
+			'#suffix' => '</div>',
+		);
+		$form['addscores']['new-score-'.$r->uid]=array(
+			'#type' => 'textfield',
+			'#length' => 10,
+			'#size' => 10,
+			'#title' => t('The score of @uid @name', array('@uid'=>$r->uid, '@name'=>$r->name)),
+			'#title_display' => 'invisible',
+			'#default_value' => '',
+			'#states' => array(
+				'disabled' => array(
+					'input[name="addscores[new-score-'.$r->uid.'-absence]"]' => array('checked' =>TRUE),
+				),
+				'required' => array(
+					'input[name="addscores[new-score-'.$r->uid.'-absence]"]' => array('checked' =>FALSE),
+				)
+			),
+		);
+		$form['addscores']['new-score-'.$r->uid.'-absence']=array(
+			'#type' => 'checkbox',
+			'#title' => t('Absence'),
+			'#suffix' => '</div>',
+		);
+	}
+	$form['addscores']['new-score-teachername']=array(
+		'#type' => 'textfield',
+		'#title' => t('Teacher name'),
+		'#maxlength' => 10,
+		'#size' => 20,
+		'#required' => TRUE,
+		'#prefix' => '<div class="inline-element-div">',
+		'#default_value' => '',
+		'#suffix' => '</div>',
+	);
+	$form['addscores']['new-score-save']=array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		'#submit' => array('score_automize_page_submit_new_score_save'),
+		'#validate' => array('score_automize_page_validate_new_score_save'),
+		'#limit_validation_errors' => array(array('addscores')),
+	);
+	drupal_add_js(
+			"jQuery(document).ready(function(){".
+			"jQuery('form input[type=text]').val('');".
+			"});",
+			'inline'
+	);
+	return $form;
+}
+
+function _score_automize_page_eid_gid_select_callback($form, $form_state) {
+	return $form['gid'];
+}
+
+function _score_automize_page_eid_gid_select_options($eid=NULL) {
+	if(empty($eid)) return array();
+	$query=db_query('SELECT DISTINCT gid FROM {students_going} sg WHERE sg.eid=:eid AND sg.gid IS NOT NULL ORDER BY gid', array(':eid'=>$eid));
+	$options=array();
+		foreach($query as $r) {
+			$going=going_load($r->gid);
+			$options[$r->gid]=sprintf('%s / %s', $going->formatTime, $going->rname);
+		}
+	return $options;
+}
+
+function _score_automize_page_add_scores_fieldset_callback($form, $form_state) {
+	return $form['addscores'];
+}
+
+function score_automize_page_submit_eidgidgo($form, &$form_state) {
+	$form_state['storage']['eid']=$form_state['values']['eid'];
+	$form_state['storage']['gid']=$form_state['values']['gid'];
+	$form_state['rebuild']=TRUE;
+}
+
+function score_automize_page_validate_new_score_save($form, $form_state) {
+}
+
+function score_automize_page_submit_new_score_save($form, &$form_state) {
+	$tname=trim($form_state['values']['addscores']['new-score-teachername']);
+	db_merge('vl_teachers')->key(array('tname'=>$tname))
+		->fields(array('tname'=>$tname))->execute();
+	$tid=db_query('SELECT tid FROM {vl_teachers} WHERE tname=:tname',array(':tname'=>$tname))->fetchField();
+	$i=0;
+	foreach($form_state['storage']['addscores']['students'] as $s) {
+		if($form_state['values']['addscores']['new-score-'.$s.'-absence'])
+			$score=-1;
+		else
+			$score=$form_state['values']['addscores']['new-score-'.$s];
+		$q=db_insert('students_score_temp')->fields(array(
+			'uid' => $s,
+			'tid' => $tid,
+			'eid' => $form_state['storage']['eid'],
+			'score' => floatval($score)
+		))->execute();
+		if($q) $i++;
+	}
+	drupal_set_message(t('@num scores of @tname have been saved.',array('@num'=>$i, '@tname'=>$tname)));
+	unset($form_state['values']['addscores']);
+	$form_state['rebuild']=TRUE;
+}
+
+function score_top_page() {
+	return score_input_going_list();
 }
 
 function score_simpleoauth($input, $appid=NULL) {
