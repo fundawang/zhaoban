@@ -3376,7 +3376,9 @@ function score_automize_page($form, $form_state) {
 	foreach($query as $r) {
 		$options[$r->eid]=$r->ename.$r->elevel;
 	}
-	$eid=empty($form_state['storage']['eid'])?$form_state['values']['eid']:$form_state['storage']['eid'];
+
+	$eid=$form_state['storage']['eid'];
+	if(!empty($form_state['values']['eid'])) $eid=$form_state['values']['eid'];
 	$form['eid']=array(
 		'#type' => 'select',
 		'#options' => $options,
