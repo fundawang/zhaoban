@@ -3396,8 +3396,7 @@ function score_automize_page($form, $form_state) {
 		'#type' => 'select',
 		'#options' => _score_automize_page_eid_gid_select_options($eid),
 		'#required' => TRUE,
-		'#title' => $form_state['storage']['gid'],
-		//'#title_display' => 'invisible',
+		'#title_display' => 'invisible',
 		'#prefix' => '<div id="scores-automize-page-eid-gid">',
 		'#default' => $gid,
 		'#suffix' => '</div>',
@@ -3510,6 +3509,22 @@ function score_automize_page_submit_eidgidgo($form, &$form_state) {
 }
 
 function score_automize_page_validate_new_score_save($form, $form_state) {
+	$tname=trim($form_state['values']['addscores']['new-score-teachername']);
+	$tid=db_query('SELECT tid FROM {vl_teachers} WHERE tname=:tname',array(':tname'=>$tname))->fetchField();
+	if(!empty($tid)) {
+		foreach($form_state['storage']['addscores']['students'] as $s) {
+			if(db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE uid=:uid AND eid=:eid AND tid=:tid)',
+				array(':uid'=>$s, ':eid'=>$form_state['storage']['eid'], ':tid'=>$tid))->fetchField())
+				form_set_error('addscores][new-score-'.$s, t('You have already input the score of !sid under !tname.',array('!sid'=>$s, '!tname'=>$tname)));
+		}
+	}
+	foreach($form_state['storage']['addscores']['students'] as $s) {
+		if(!$form_state['values']['addscores']['new-score-'.$s.'-absence']) {
+			$score=$form_state['values']['addscores']['new-score-'.$s];
+			if(!is_numeric($score) || (float)$score < 0 || (float)$score > 100)
+				form_set_error('addscores][new-score-'.$s, t('The score you\'ve inputted for !sid is invalid.',array('!sid'=>$s)));
+		}
+	}
 }
 
 function score_automize_page_submit_new_score_save($form, &$form_state) {
