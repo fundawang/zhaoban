@@ -3384,7 +3384,7 @@ function score_automize_page($form, $form_state) {
 		'#options' => $options,
 		'#title' => t('Select Exam and going'),
 		'#prefix' => '<div class="inline-element-div">',
-		'#default' => $eid,
+		'#default_value' => $eid,
 		'#required' => TRUE,
 		'#ajax' => array(
 			'callback' => '_score_automize_page_eid_gid_select_callback',
@@ -3392,7 +3392,9 @@ function score_automize_page($form, $form_state) {
 		),
 	);
 
-	$gid=empty($form_state['storage']['gid'])?$form_state['values']['gid']:$form_state['storage']['gid'];
+	$gid=$form_state['storage']['gid'];
+	if(!empty($form_state['values']['gid'])) $gid=$form_state['values']['gid'];
+	$options=_score_automize_page_eid_gid_select_options($eid);
 
 	$form['gid']=array(
 		'#type' => 'select',
@@ -3400,9 +3402,13 @@ function score_automize_page($form, $form_state) {
 		'#required' => TRUE,
 		'#title_display' => 'invisible',
 		'#prefix' => '<div id="scores-automize-page-eid-gid">',
-		'#default' => $gid,
+		'#default_value' => $gid,
 		'#suffix' => '</div>',
 	);
+
+	if(count($options)==1) {
+		$form['gid']['#default_value']=key($options);
+	}
 
 	$form['eidgidgo']=array(
 		'#type' => 'submit',
