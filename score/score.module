@@ -3383,8 +3383,8 @@ function score_automize_page($form, $form_state) {
 	$form['eid']=array(
 		'#type' => 'select',
 		'#options' => $options,
-		'#title' => t('Select Exam and going'),
-		'#prefix' => '<div class="inline-element-div">',
+		'#title' => '',
+		'#prefix' => '<div class="inline-element-div">'.t('Select Exam and going'),
 		'#default_value' => $eid,
 		'#required' => TRUE,
 		'#ajax' => array(
@@ -3476,6 +3476,7 @@ function score_automize_page_submit_eidgidgo($form, &$form_state) {
 	$form_state['storage']['eid']=$form_state['values']['eid'];
 	$form_state['storage']['gid']=$form_state['values']['gid'];
 	unset($form_state['storage']['tid']);
+	unset($form_state['values']['tid']);
 	$form_state['rebuild']=TRUE;
 }
 
@@ -3576,17 +3577,20 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 		'#default_value' => '',
 		'#suffix' => '</div>',
 	);
-	if($tid) {
-		$form['addscores']['new-score-teachername']['#type'] = 'item';
-		$form['addscores']['new-score-teachername']['#markup'] = db_query('SELECT tname FROM {vl_teachers} WHERE tid=:tid', array(':tid'=>$tid))->fetchField();
-	}
 	$form['addscores']['new-score-save']=array(
 		'#type' => 'submit',
+		'#name' => $tid?'new-score-save':'new-score-create',
 		'#value' => t('Save'),
 		'#submit' => array('score_automize_page_submit_new_score_save'),
 		'#validate' => array('score_automize_page_validate_new_score_save'),
-		'#limit_validation_errors' => array(array('addscores'), array('tid')),
+		'#limit_validation_errors' => array(array('addscores')),
 	);
+	if($tid) {
+		$form['addscores']['new-score-teachername']['#type'] = 'item';
+		$form['addscores']['new-score-teachername']['#markup'] = db_query('SELECT tname FROM {vl_teachers} WHERE tid=:tid', array(':tid'=>$tid))->fetchField();
+		$form['addscores']['new-score-save']['#limit_validation_errors']=array(array('addscores'), array('tid'));
+	} else
+		$form['addscores']['new-score-save']['#limit_validation_errors']=array(array('addscores'));
 
 	drupal_add_js(
 			"jQuery(document).ready(function(){".
@@ -3615,7 +3619,7 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 
 function score_automize_page_validate_new_score_save($form, $form_state) {
 	$tid=NULL;
-	if(isset($form_state['values']['tid'])) $tid=$form_state['values']['tid'];
+	if(isset($form_state['values']['tid'])&&$form_state['triggering_element']['#name']=='new-score-save') $tid=$form_state['values']['tid'];
 	if(empty($tid)) {
 		$tname=trim($form_state['values']['addscores']['new-score-teachername']);
 		$tid=db_query('SELECT tid FROM {vl_teachers} WHERE tname=:tname',array(':tname'=>$tname))->fetchField();
@@ -3645,7 +3649,8 @@ function score_automize_page_validate_new_score_save($form, $form_state) {
 }
 
 function score_automize_page_submit_new_score_save($form, &$form_state) {
-	$tid=$form_state['values']['tid'];
+	$tid=NULL;
+	if(isset($form_state['values']['tid'])&&$form_state['triggering_element']['#name']=='new-score-save') $tid=$form_state['values']['tid'];
 	if(empty($tid)) {
 		$tname=trim($form_state['values']['addscores']['new-score-teachername']);
 		db_merge('vl_teachers')->key(array('tname'=>$tname))
@@ -3656,7 +3661,7 @@ function score_automize_page_submit_new_score_save($form, &$form_state) {
 	}
 	$i=0;
 	foreach($form_state['storage']['addscores']['students'] as $s) {
-		if($tid)
+		if($form_state['triggering_element']['#name']=='new-score-save')
 			$key='new-score-'.$tid.'-'.$s.'-absence';
 		else
 			$key='new-score-'.$s.'-absence';
@@ -3664,7 +3669,7 @@ function score_automize_page_submit_new_score_save($form, &$form_state) {
 		if($form_state['values']['addscores'][$key])
 			$score=-1;
 		else {
-			if($tid)
+			if($form_state['triggering_element']['#name']=='new-score-save')
 				$key='new-score-'.$tid.'-'.$s;
 			else
 				$key='new-score-'.$s;
