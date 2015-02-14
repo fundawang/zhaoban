@@ -1946,7 +1946,7 @@ function signup_user_examinations_form($form, $form_state, $user) {
 		'FROM {students} s WHERE s.uid=:uid',
 		array(':uid'=>$user->name))->fetchField();
 
-	$isvalidated=db_query('SELECT validated FROM {students} WHERE uid=:uid', array(':uid'=>$user->name))->fetchField();
+	$isvalidated=variable_get('ticket-printed-'.$user->uid, FALSE);
 	if(!$isvalidated)
 		$isvalidated=$ispassthrough;
 	// Let's fetch the examinations of the user at first
@@ -4747,11 +4747,43 @@ function signup_ticket_report_perm($user) {
 }
 
 function signup_ticket_report($user) {
-	$query=db_select('students','s')->condition('s.uid',$user->name);
-	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query->fields('s')->fields('p',array('pname'))->fields('d',array('dname'));
-	$student=$query->execute()->fetchObject();
+	if($_SERVER['REQUEST_METHOD']!='POST'&&!variable_get('ticket-printed-'.$user->uid, FALSE)) {
+		$nid=db_query('SELECT nid FROM {node} WHERE title LIKE :title',array(':title'=>'%'.db_like('考生须知').'%'))->fetchField();
+		$n=node_load($nid);
+		$a=node_view($n);
+		$output=drupal_render($a);
+		$output.='<div><span id="numDiv"></span> ';
+		$output.=t('seconds left to print ticket report.').'</div>';
+		$output.=sprintf('<form method="post"><input id="print" type="submit" disabled="disabled" value="%s"/></form>', t('Please read the rules (@num seconds left).', array('@num'=>300)));
+		drupal_add_js(
+			'var leftSecond=300;'.
+			'function countDown(){'.
+			'  if(leftSecond<=0){'.
+			'    jQuery("#print").val("'.t('I have read above content').'");'.
+			'    jQuery("#print").attr("disabled",false);'.
+			'    jQuery("#numDiv").parent().hide();'.
+			'    jQuery("#print").show();'.
+			'  } else { '.
+			'    setTimeout("countDown()",1000);'.
+			'    leftSecond--;'.
+			'    jQuery("#numDiv").text(leftSecond);'.
+			'  }'.
+			'}'.
+			'jQuery(document).ready(function(){'.
+				'countDown();'.
+				'jQuery("#numDiv").parent().show();'.
+				'jQuery("#print").hide();'.
+				'});',
+			'inline'
+		);
+		return $output;
+	}
+
+	variable_set('ticket-printed-'.$user->uid, TRUE);
+
+	$student=db_query('SELECT s.*, p.pname, d.dname FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'INNER JOIN {vl_department} d ON p.did=d.did WHERE s.uid=:uid', array(':uid'=>$user->name)
+	)->fetchObject();
 
 	if(module_exists('onlinecharge')) {
 		$q=onlinecharge_payment_status($user);
@@ -4856,7 +4888,7 @@ function signup_ticket_report($user) {
 	$query->addExpression('w.rname','wname');
 	$query->addExpression("IFNULL(g.time, '9999999999999999')",'citera');
 	$query->fields('e',array('ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname'));
-	$query->orderBy('citera')->orderBy('sg.eid');
+	$query->orderBy('sg.eid');
 	$result=$query->execute();
 	$pdf->setXY(155,35);
 	foreach($result as $r) {

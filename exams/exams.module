@@ -428,7 +428,7 @@ function exams_exam_edit_submit($form, &$form_state) {
 			'opus' => $form_state['values']['opus'],
 			'uid' => $form_state['values']['uid'],
 			'department' => $form_state['values']['dep']?$form_state['values']['uid']:null,
-			'needdraw' => !empty($form_state['values']['drawtype']))
+			'needdraw' => (int)!empty($form_state['values']['drawtype']))
 		)->execute();
 
 		watchdog('exam',
@@ -447,7 +447,7 @@ function exams_exam_edit_submit($form, &$form_state) {
 			'etype' => $form_state['values']['etype'],
 			'opus' => $form_state['values']['opus'],
 			'uid' => $form_state['values']['uid'],
-			'needdraw' => !empty($form_state['values']['drawtype']),
+			'needdraw' => (int)!empty($form_state['values']['drawtype']),
 			'department' => $form_state['values']['dep']?$form_state['values']['uid']:NULL)
 		)->condition('eid', arg(3), '=')->execute();
 		watchdog('exam',
