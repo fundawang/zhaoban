@@ -4747,7 +4747,7 @@ function signup_ticket_report_perm($user) {
 }
 
 function signup_ticket_report($user) {
-	if($_SERVER['REQUEST_METHOD']!='POST'&&!variable_get('ticket-printed-'.$user->uid, FALSE)) {
+	if($user->uid==$GLOBALS['user']->uid&&$_SERVER['REQUEST_METHOD']!='POST'&&!variable_get('ticket-printed-'.$user->uid, FALSE)) {
 		$nid=db_query('SELECT nid FROM {node} WHERE title LIKE :title',array(':title'=>'%'.db_like('考生须知').'%'))->fetchField();
 		$n=node_load($nid);
 		$a=node_view($n);
