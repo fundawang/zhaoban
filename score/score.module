@@ -3712,6 +3712,20 @@ function score_automize_page_submit_new_score_save($form, &$form_state) {
 	$form_state['rebuild']=TRUE;
 }
 
+/*
+	$arr=array('100'=>30, '102'=>41, '101'=>30, '103'=>50);
+	var_dump(_score_array_rank($arr));
+*/
+function _score_array_rank($arr) {
+	$ret=array();
+	$a=$arr;
+	rsort($a, SORT_NUMERIC);
+	foreach($arr as $key=>$value) {
+		$ret[$key]=array_search($value, $a)+1;
+	}
+	return $ret;
+}
+
 function score_top_page() {
 	return score_input_going_list();
 }
