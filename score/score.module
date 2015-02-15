@@ -3632,12 +3632,12 @@ function score_automize_page_validate_new_score_save($form, $form_state) {
 		}
 	}
 	foreach($form_state['storage']['addscores']['students'] as $s) {
-		if($tid)
+		if($tid&&$form_state['triggering_element']['#name']=='new-score-save')
 			$key='new-score-'.$tid.'-'.$s.'-absence';
 		else
 			$key='new-score-'.$s.'-absence';
 		if(!$form_state['values']['addscores'][$key]) {
-			if($tid)
+			if($tid&&$form_state['triggering_element']['#name']=='new-score-save')
 				$key='new-score-'.$tid.'-'.$s;
 			else
 				$key='new-score-'.$s;
