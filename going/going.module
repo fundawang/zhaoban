@@ -263,6 +263,7 @@ function going_goinglist_filter($form, $form_state) {
 	$form['submit']=array(
 		'#type' => 'submit',
 		'#value' => t('Update'),
+		'#suffix' => '</div>',
 	);
 	return $form;
 }
