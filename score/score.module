@@ -3713,6 +3713,7 @@ function score_automize_page_submit_new_score_save($form, &$form_state) {
 }
 
 /*
+	Usage:
 	$arr=array('100'=>30, '102'=>41, '101'=>30, '103'=>50);
 	var_dump(_score_array_rank($arr));
 */
@@ -3723,6 +3724,33 @@ function _score_array_rank($arr) {
 	foreach($arr as $key=>$value) {
 		$ret[$key]=array_search($value, $a)+1;
 	}
+	return $ret;
+}
+
+/*
+	Usage:
+	$arr=array('100'=>30, '102'=>41, '101'=>30, '103'=>50);
+	var_dump(_score_array_small_n($arr));
+*/
+function _score_array_large_n($arr, $n=1) {
+	$ret=array();
+	$a=$arr;
+	arsort($a, SORT_NUMERIC);
+	var_dump($a);
+	$ret=array_slice($a, 0, $n, TRUE); 
+	return $ret;
+}
+
+/*
+	Usage:
+	$arr=array('100'=>30, '102'=>41, '101'=>30, '103'=>50);
+	var_dump(_score_array_small_n($arr));
+*/
+function _score_array_small_n($arr, $n=1) {
+	$ret=array();
+	$a=$arr;
+	asort($a, SORT_NUMERIC);
+	$ret=array_slice($a, 0, $n, TRUE); 
 	return $ret;
 }
 
