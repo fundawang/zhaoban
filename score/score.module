@@ -4,6 +4,22 @@
  * This file is licensed under GPLv2+.
 */
 
+function array_transpose($array, $selectKey = false) {
+    if (!is_array($array)) return false;
+    $return = array();
+    foreach($array as $key => $value) {
+        if (!is_array($value)) return $array;
+        if ($selectKey) {
+            if (isset($value[$selectKey])) $return[] = $value[$selectKey];
+        } else {
+            foreach ($value as $key2 => $value2) {
+                $return[$key2][$key] = $value2;
+            }
+        }
+    }
+    return $return;
+}
+
 /**
  * Implementation of hook_help().
  */
@@ -2108,8 +2124,6 @@ function score_myscore($user=NULL) {
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			$output .= '</b>';
-			if($student->profession_major=='D401')
-				$output .= '<br/>'.t('NOTE ON XIAMEN UNIVERSITY.').'<br/>';
 			if($student->ucategory==1)
 				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
@@ -2131,8 +2145,6 @@ function score_myscore($user=NULL) {
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.');
 			$output .= '</b>';
-			if($student->profession_major=='D401')
-				$output .= '<br/>'.t('NOTE ON XIAMEN UNIVERSITY.').'<br/>';
 			if($student->ucategory==1)
 				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
@@ -3461,6 +3473,8 @@ function score_automize_page($form, $form_state) {
 			'#type' => 'submit',
 			'#access' => $q>=5,
 			'#value' => t('Calculate the total score of !ename', array('!ename'=>$exam->enamefull)),
+			'#submit' => array('score_automize_page_submit_calculate'),
+			'#limit_validation_errors' => array(array('eid')),
 		);
 	}
 
@@ -3710,6 +3724,82 @@ function score_automize_page_submit_new_score_save($form, &$form_state) {
 	unset($form_state['values']['addscores']);
 	unset($form_state['values']['tid']);
 	$form_state['rebuild']=TRUE;
+}
+
+function score_automize_page_submit_calculate($q, $form_state) {
+	$form=array();
+	$professions=db_query('SELECT p.pname FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname', array(':eid'=>$form_state['values']['eid']));
+	foreach($professions as $p) {
+		$form['profession-'.$p->pname]=array(
+			'#type' => 'fieldset',
+			'#title' => t('Profession !pname', array('!pname'=>$p->pname)),
+			'#collapsible' => TRUE,
+			'#collapsed' => FALSE,
+		);
+		$teachers=db_query('SELECT st.tid, t.tname FROM {vl_teachers} t INNER JOIN {students_score_temp} st ON st.tid=t.tid '.
+			'WHERE st.eid=:eid GROUP BY st.tid ORDER BY st.tid', array(':eid'=>$form_state['values']['eid'])
+		)->fetchAll();
+		$header=array(
+			t('Student ID'),
+			t('Real Name'),
+			t('Profession'),
+		);
+		foreach($teachers as $t) {
+			$header[]=$t->tname;
+		}
+		$header[]=t('Total score');
+		foreach($teachers as $t) {
+			$header[]=t('Rank of !name',array('!name'=>$t->tname));
+		}
+		$header[]=t('Total average rank');
+		$students=db_query('SELECT s.uid, s.name FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+			'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+			'WHERE sg.eid=:eid AND sg.gid IS NOT NULL AND p.pname=:pname', array(':eid'=>$form_state['values']['eid'], ':pname'=>$p->pname))->fetchAll();;
+		$scores=array();
+		$totalscore=array();
+		$ranks=array();
+		$totalrank=array();
+		foreach($students as $s) {
+			$scores[$s->uid]=db_query('SELECT tid, score FROM {students_score_temp} WHERE eid=:eid AND uid=:uid',
+				array(':eid'=>$form_state['values']['eid'], ':uid'=>$s->uid)
+			)->fetchAllKeyed();
+			$n=1+floor((count($scores[$s->uid])-5)/3);
+			$totalscore[$s->uid]=array_sum($scores[$s->uid]);
+			$larges=_score_array_large_n($scores[$s->uid],$n);
+			$smalls=_score_array_small_n($scores[$s->uid],$n);
+			$totalscore[$s->uid]-=array_sum($larges)-array_sum($smalls);
+			$totalscore[$s->uid]/=count($scores[$s->uid])-(float)$n*2;
+			$rows[$s->uid]=array(
+				'uid'=>$s->uid,
+				'name'=>$s->name,
+				'pname'=>$p->pname,
+			);
+			foreach($teachers as $t) {
+				$rows[$s->uid][$t->tid]=$scores[$s->uid][$t->tid];
+			}
+			$rows[$s->uid][]=$totalscore[$s->uid];
+		}
+
+		$rankscores = array_transpose($scores);
+		foreach($teachers as $t) {
+			$ranks[$t->tid]=_score_array_rank($rankscores[$t->tid]);
+			foreach($ranks[$t->tid] as $s => $r ) {
+				echo "$s => $r/";
+				$rows[$s][$t->tid.'r']=$r;
+			}
+		}
+
+		$output = theme('table', array('header'=>$header, 'rows'=>$rows));
+		echo $output;
+	}
+	if($professions->rowCount()==1) {
+		$form=$form['profession-'.$p->pname];
+		unset($form['#type']);
+	}
+
+	var_dump($form); exit;
 }
 
 /*
