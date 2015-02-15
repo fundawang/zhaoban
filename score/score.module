@@ -3465,10 +3465,17 @@ function _score_automize_page_eid_gid_select_options($eid=NULL) {
 	if(empty($eid)) return array();
 	$query=db_query('SELECT DISTINCT gid FROM {students_going} sg WHERE sg.eid=:eid AND sg.gid IS NOT NULL ORDER BY gid', array(':eid'=>$eid));
 	$options=array();
-		foreach($query as $r) {
-			$going=going_load($r->gid);
-			$options[$r->gid]=sprintf('%s / %s', $going->formatTime, $going->rname);
-		}
+	foreach($query as $r) {
+		$going=going_load($r->gid);
+		$options[$r->gid]=sprintf('%s / %s', $going->formatTime, $going->rname);
+		$q=db_query('SELECT count(*) FROM ('.
+			'SELECT tid FROM {students_score_temp} st INNER JOIN {students_going} sg ON st.uid=sg.uid AND st.eid=sg.eid '.
+			'WHERE sg.eid=:eid and sg.gid=:gid GROUP BY st.tid) t',
+			array(':eid'=>$eid, ':gid'=>$r->gid)
+		)->fetchField();
+		if($q)
+			$options[$r->gid].=sprintf(' (%s)',t('!num score sheets collected', array('!num'=>$q)));
+	}
 	return $options;
 }
 
@@ -3544,6 +3551,7 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 			'#type' => 'textfield',
 			'#length' => 10,
 			'#size' => 10,
+			'#attributes' => array('autocomplete'=>'off'),
 			'#title' => t('The score of @uid @name', array('@uid'=>$r->uid, '@name'=>$r->name)),
 			'#title_display' => 'invisible',
 			'#default_value' => (isset($r->score)&&$r->score>0)?$r->score:'',
