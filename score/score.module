@@ -3736,7 +3736,6 @@ function _score_array_large_n($arr, $n=1) {
 	$ret=array();
 	$a=$arr;
 	arsort($a, SORT_NUMERIC);
-	var_dump($a);
 	$ret=array_slice($a, 0, $n, TRUE); 
 	return $ret;
 }
