@@ -3451,6 +3451,17 @@ function score_automize_page($form, $form_state) {
 		}
 
 		$form['addscores']=score_automize_page_modify_score($form_state, $eid, $gid, $form_state['values']['tid']);
+
+		$exam=exam_load($eid);
+		$q=db_query('SELECT count(*) FROM (SELECT tid FROM {students_score_temp} st WHERE st.eid=:eid GROUP BY st.tid) t',
+			array(':eid'=>$eid)
+		)->fetchField();
+
+		$form['calculate']=array(
+			'#type' => 'submit',
+			'#access' => $q>=5,
+			'#value' => t('Calculate the total score of !ename', array('!ename'=>$exam->enamefull)),
+		);
 	}
 
 	return $form;
