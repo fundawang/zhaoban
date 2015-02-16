@@ -3583,6 +3583,10 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 		'<th>'.t('Absence').'?</th>'.
 		'</th></thead><tbody>';
 	$trclass='odd';
+	$should_show_save=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score} sc ON s.uid=sc.uid '.
+		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
+		array(':eid'=>$eid)
+	)->fetchField();
 	foreach($query as $r) {
 		$form_state['storage']['addscores']['students'][]=$r->uid;
 		$form['addscores']['new-score-label'.$r->uid]=array(
@@ -3643,6 +3647,7 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 		'#type' => 'submit',
 		'#name' => $tid?'new-score-save':'new-score-create',
 		'#value' => t('Save'),
+		'#access' => !$should_show_save,
 		'#submit' => array('score_automize_page_submit_new_score_save'),
 		'#validate' => array('score_automize_page_validate_new_score_save'),
 		'#limit_validation_errors' => array(array('addscores')),
