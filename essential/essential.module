@@ -35,6 +35,32 @@ function essential_init() {
 		'});',
 		'inline'
 	);*/
+	$html_head = array(
+		'renderer' => array(
+			'#tag' => 'meta',
+			'#attributes' => array(
+				'name' => 'renderer',
+				'content' => 'webkit',
+			)
+		),
+		'force-rendering' => array(
+			'#tag' => 'meta',
+			'#attributes' => array(
+				'name' => 'force-rendering',
+				'content' => 'webkit',
+			)
+		),
+		'ua-compatible' => array(
+			'#tag' => 'meta',
+			'#attributes' => array(
+				'http-equiv' => 'X-UA-Compatible',
+				'content' => 'IE=edge,chrome=1',
+			)
+		),
+	);
+	foreach ($html_head as $key => $data) {
+		drupal_add_html_head($data, $key);
+	}
 }
 
 
