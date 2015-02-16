@@ -3779,12 +3779,12 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
 		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname ORDER BY p.pid', array(':eid'=>$eid));
 	drupal_set_title(t('Total score sheet of !ename', array('!ename'=>$exam->enamefull)));
-	$should_show_save=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score} sc ON s.uid=sc.uid '.
+	$should_hide_save=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score} sc ON s.uid=sc.uid '.
 		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
 		array(':eid'=>$eid)
 	)->fetchField();
-	if(!$should_show_save) {
-		$default_values=db_query('SELECT * FROM {students_score} WHERE eid=:eid', array(':eid'=>$eid))->fetchAll();
+	if($should_hide_save) {
+		$default_values=db_query('SELECT * FROM {students_score} WHERE eid=:eid', array(':eid'=>$eid))->fetchAllAssoc('uid');
 	}
 	foreach($professions as $p) {
 		$rows=array();
@@ -3826,7 +3826,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			arsort($t, SORT_NUMERIC);
 			$t=array_slice($t, $n, count($t), TRUE); 
 			$smalls[$s->uid]=_score_array_small_n($t,$n);
-			if($should_show_save) {
+			if($should_hide_save) {
 				$totalscore[$s->uid]=$default_values[$s->uid]->score;
 			} else {
 				$totalscore[$s->uid]=array_sum($scores[$s->uid]);
@@ -3856,7 +3856,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			arsort($t, SORT_NUMERIC);
 			$t=array_slice($t, $n, count($t), TRUE); 
 			$smallr[$s->uid]=_score_array_small_n($t,$n);
-			if($should_show_save) {
+			if($should_hide_save) {
 				$totalrank[$s->uid]=$default_values[$s->uid]->rank;
 			} else {
 				$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
@@ -3919,14 +3919,14 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 
 	$form['know']=array(
 		'#type' => 'checkbox',
-		'#access' => !$should_show_save,
+		'#access' => !$should_hide_save,
 		'#title' => t('I know that after saving, I will not able to modify any of the exam scores.'),
 		'#default_value' => FALSE,
 	);
 	$form['save']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
-		'#access' => !$should_show_save,
+		'#access' => !$should_hide_save,
 		'#submit' => array('score_automize_page_step_calculate_submit'),
 		'#states' => array(
 			'disabled' => array(
