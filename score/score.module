@@ -158,7 +158,6 @@ function score_menu() {
 	
 	$items['score/view/%exam'] = array(
 		'title' => 'View Scores',
-		'type' => MENU_CALLBACK,
 		'weight' => 2,
 		'page callback' => 'score_view_detail',
 		'page arguments' => array(2),
@@ -1513,9 +1512,10 @@ function score_view_admin() {
 		'#type' => 'vertical_tabs',
 	);
 	foreach($exams as $exam) {
-		if(empty($weight[$exam->eid])) continue;
+		//if(empty($weight[$exam->eid])) continue;
 		
-		if(db_select('students_going','g')->condition('eid',$exam->eid)->isNotNull('gid')->fields('g')->countQuery()->execute()->fetchField()==0) continue;
+		if(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE eid=:eid AND gid IS NOT NULL)', array(':eid'=>$exam->eid))->fetchField()==0)
+			continue;
 		
 		$query=db_select('students_score','c')->condition('c.eid', $exam->eid);
 		$num=$query->fields('c')->countQuery()->execute()->fetchField();
@@ -1560,6 +1560,12 @@ function score_view_admin() {
 
 function score_view_detail($exam) {
 	drupal_set_title(t('View Scores').' - '.$exam->enamefull);
+	$has_details=db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} st INNER JOIN {students_going} sg ON st.uid=sg.uid AND st.eid=sg.eid '.
+		'WHERE st.eid=:eid)', array(':eid'=>$exam->eid))->fetchField();
+	if($has_details) {
+		$output = drupal_render(drupal_get_form('score_automize_page_step_calculate', $exam->eid));
+		return $output;
+	}
 	$header = array(
 		array('data'=>t('No.')),
 		array('data' =>t('Student ID'), 'field'=>'s.uid'),
@@ -3765,14 +3771,18 @@ function score_automize_page_submit_calculate($form, &$form_state) {
 	$form_state['rebuild']=TRUE;
 }
 
-function score_automize_page_step_calculate($form, $form_state) {
-	$eid=$form_state['storage']['calculate'];
+function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
+	if(empty($eid))	$eid=$form_state['storage']['calculate'];
 	$exam=exam_load($eid);
 	$all_students=array();
 	$professions=db_query('SELECT p.pname FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
 		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname ORDER BY p.pid', array(':eid'=>$eid));
 	drupal_set_title(t('Total score sheet of !ename', array('!ename'=>$exam->enamefull)));
+	$should_show_save=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score} sc ON s.uid=sc.uid '.
+		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
+		array(':eid'=>$eid)
+	)->fetchField();
 	foreach($professions as $p) {
 		$rows=array();
 		$form['profession-'.$p->pname]=array(
@@ -3805,7 +3815,7 @@ function score_automize_page_step_calculate($form, $form_state) {
 		$totalrank=array();
 		foreach($students as $s) {
 			$scores[$s->uid]=db_query('SELECT tid, score FROM {students_score_temp} WHERE eid=:eid AND uid=:uid',
-				array(':eid'=>$form_state['values']['eid'], ':uid'=>$s->uid)
+				array(':eid'=>$eid, ':uid'=>$s->uid)
 			)->fetchAllKeyed();
 			$n=1+floor((count($scores[$s->uid])-5)/3);
 			$totalscore[$s->uid]=array_sum($scores[$s->uid]);
@@ -3897,12 +3907,14 @@ function score_automize_page_step_calculate($form, $form_state) {
 
 	$form['know']=array(
 		'#type' => 'checkbox',
+		'#access' => !$should_show_save,
 		'#title' => t('I know that after saving, I will not able to modify any of the exam scores.'),
 		'#default_value' => FALSE,
 	);
 	$form['save']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
+		'#access' => !$should_show_save,
 		'#submit' => array('score_automize_page_step_calculate_submit'),
 		'#states' => array(
 			'disabled' => array(
