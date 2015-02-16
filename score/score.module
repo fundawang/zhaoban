@@ -20,6 +20,34 @@ function array_transpose($array, $selectKey = false) {
     return $return;
 }
 
+/* Usage:
+	$data[] = array('volume' => 67, 'edition' => 2);
+	$data[] = array('volume' => 86, 'edition' => 1);
+	$data[] = array('volume' => 85, 'edition' => 6);
+	$data[] = array('volume' => 98, 'edition' => 2);
+	$data[] = array('volume' => 86, 'edition' => 6);
+	$data[] = array('volume' => 67, 'edition' => 7);
+
+	// Pass the array, followed by the column names and sort flags
+	$sorted = array_orderby($data, 'volume', SORT_DESC, 'edition', SORT_ASC);
+*/
+function array_orderby()
+{
+	$args = func_get_args();
+	$data = array_shift($args);
+	foreach ($args as $n => $field) {
+		if (is_string($field)) {
+			$tmp = array();
+			foreach ($data as $key => $row)
+				$tmp[$key] = $row[$field];
+			$args[$n] = $tmp;
+		}
+	}
+	$args[] = &$data;
+	call_user_func_array('array_multisort', $args);
+	return array_pop($args);
+}
+
 /**
  * Implementation of hook_help().
  */
@@ -3737,14 +3765,15 @@ function score_automize_page_step_calculate($form, $form_state) {
 	$exam=exam_load($eid);
 	$professions=db_query('SELECT p.pname FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname', array(':eid'=>$eid));
+		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname ORDER BY p.pid', array(':eid'=>$eid));
 	drupal_set_title(t('Total score sheet of !ename', array('!ename'=>$exam->enamefull)));
 	foreach($professions as $p) {
+		$rows=array();
 		$form['profession-'.$p->pname]=array(
 			'#type' => 'fieldset',
 			'#title' => t('Profession !pname', array('!pname'=>$p->pname)),
 			'#collapsible' => TRUE,
-			'#collapsed' => FALSE,
+			'#collapsed' => TRUE,
 		);
 		$teachers=db_query('SELECT st.tid, t.tname FROM {vl_teachers} t INNER JOIN {students_score_temp} st ON st.tid=t.tid '.
 			'WHERE st.eid=:eid GROUP BY st.tid ORDER BY st.tid', array(':eid'=>$eid)
@@ -3805,6 +3834,8 @@ function score_automize_page_step_calculate($form, $form_state) {
 			}
 			$rows[$s->uid]['totalrank']=$totalrank[$s->uid];
 		}
+
+		$rows=array_orderby($rows, 'totalrank', SORT_ASC, 'totalscore', SORT_DESC);
 
 		$output = theme('table', array('header'=>$header, 'rows'=>$rows));
 		$form['profession-'.$p->pname]['output']=array(
