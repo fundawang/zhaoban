@@ -3803,9 +3803,12 @@ function score_automize_page_step_calculate($form, $form_state) {
 			)->fetchAllKeyed();
 			$n=1+floor((count($scores[$s->uid])-5)/3);
 			$totalscore[$s->uid]=array_sum($scores[$s->uid]);
-			$larges=_score_array_large_n($scores[$s->uid],$n);
-			$smalls=_score_array_small_n($scores[$s->uid],$n);
-			$totalscore[$s->uid]-=array_sum($larges)+array_sum($smalls);
+			$larges[$s->uid]=_score_array_large_n($scores[$s->uid],$n);
+			$t=$scores[$s->uid];
+			arsort($t, SORT_NUMERIC);
+			$t=array_slice($t, $n, count($t), TRUE); 
+			$smalls[$s->uid]=_score_array_small_n($t,$n);
+			$totalscore[$s->uid]-=array_sum($larges[$s->uid])+array_sum($smalls[$s->uid]);
 			$totalscore[$s->uid]/=count($scores[$s->uid])-(float)$n*2;
 			$rows[$s->uid]=array(
 				'uid'=>$s->uid,
@@ -3825,9 +3828,12 @@ function score_automize_page_step_calculate($form, $form_state) {
 		foreach($students as $s) {
 			$n=1+floor((count($ranks[$s->uid])-5)/3);
 			$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
-			$larges=_score_array_large_n($ranks[$s->uid],$n);
-			$smalls=_score_array_small_n($ranks[$s->uid],$n);
-			$totalrank[$s->uid]-=array_sum($larges)+array_sum($smalls);
+			$larger[$s->uid]=_score_array_large_n($ranks[$s->uid],$n);
+			$t=$ranks[$s->uid];
+			arsort($t, SORT_NUMERIC);
+			$t=array_slice($t, $n, count($t), TRUE); 
+			$smallr[$s->uid]=_score_array_small_n($t,$n);
+			$totalrank[$s->uid]-=array_sum($larger[$s->uid])+array_sum($smallr[$s->uid]);
 			$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
 			foreach($teachers as $t) {
 				$rows[$s->uid][$t->tid.'r']=$ranks[$s->uid][$t->tid];
@@ -3836,8 +3842,34 @@ function score_automize_page_step_calculate($form, $form_state) {
 		}
 
 		$rows=array_orderby($rows, 'totalrank', SORT_ASC, 'totalscore', SORT_DESC);
+		$rows_format=$rows;
+		foreach($students as $s) {
+			$rows_format[$s->uid]['totalscore']=round($rows_format[$s->uid]['totalscore'],2);
+			$rows_format[$s->uid]['totalrank']=round($rows_format[$s->uid]['totalrank'],2);
+			foreach($teachers as $t) {
+				if($rows_format[$s->uid][$t->tid]==-1) {
+					$rows_format[$s->uid][$t->tid]=t('Absence');
+					$rows_format[$s->uid]['totalscore']=t('Absence');
+					$rows_format[$s->uid][$t->tid.'r']=t('Absence');
+					$rows_format[$s->uid]['totalrank']=t('Absence');
+					continue;
+				}
+				foreach($larges[$s->uid] as $k=>$v)
+					if($t->tid==$k)
+						$rows_format[$s->uid][$t->tid]='<s>'.$rows_format[$s->uid][$t->tid].'</s>';
+				foreach($smalls[$s->uid] as $k=>$v)
+					if($t->tid==$k)
+						$rows_format[$s->uid][$t->tid]='<s>'.$rows_format[$s->uid][$t->tid].'</s>';
+				foreach($larger[$s->uid] as $k=>$v)
+					if($t->tid==$k)
+						$rows_format[$s->uid][$t->tid.'r']='<s>'.$rows_format[$s->uid][$t->tid.'r'].'</s>';
+				foreach($smallr[$s->uid] as $k=>$v)
+					if($t->tid==$k)
+						$rows_format[$s->uid][$t->tid.'r']='<s>'.$rows_format[$s->uid][$t->tid.'r'].'</s>';
+			}
+		}
 
-		$output = theme('table', array('header'=>$header, 'rows'=>$rows));
+		$output = theme('table', array('header'=>$header, 'rows'=>$rows_format));
 		$form['profession-'.$p->pname]['output']=array(
 			'#markup' => $output,
 		);
@@ -3850,6 +3882,8 @@ function score_automize_page_step_calculate($form, $form_state) {
 		'div.sidebar {display: none;}' => array('type' => 'inline'),
 		'div#tasks {display: none;}' => array('type' => 'inline'),
 		'body.sidebar-first div.content-inner {margin-left: 0px;}' => array('type' => 'inline'),
+		'td {color: #000000; }' => array('type' => 'inline'),
+		'td > s {color: #bbbbbb; }' => array('type' => 'inline'),
 	);
 
 	$form['know']=array(
@@ -3860,16 +3894,19 @@ function score_automize_page_step_calculate($form, $form_state) {
 	$form['submit']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
+		'#submit' => array('score_automize_page_step_calculate_submit'),
+		'#validate' => array('score_automize_page_step_calculate_validate'),
 		'#states' => array(
 			'disabled' => array(
-				'input[name="know"]' => array('checked' =>FALSE),
-			),
-			'visible' => array(
-				'input[name="know"]' => array('checked' =>TRUE),
+				':input[name="know"]' => array('checked' =>FALSE),
 			),
 		),
 	);
 	return $form;
+}
+
+function score_automize_page_step_calculate_submit($form, &$form_state) {
+	$form_state['rebuild']=TRUE;
 }
 
 /*
