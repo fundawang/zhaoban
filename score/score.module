@@ -3555,6 +3555,11 @@ function score_automize_page_submit_tidgo($form, &$form_state) {
 }
 
 function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
+	$should_show_save=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score} sc ON s.uid=sc.uid '.
+		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
+		array(':eid'=>$eid)
+	)->fetchField();
+	if(empty($tid) && $should_show_save) return array();
 	$form['addscores']=array(
 		'#type' => 'fieldset',
 		'#title' => t('Add a new score sheet'),
@@ -3589,10 +3594,6 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 		'<th>'.t('Absence').'?</th>'.
 		'</th></thead><tbody>';
 	$trclass='odd';
-	$should_show_save=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score} sc ON s.uid=sc.uid '.
-		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
-		array(':eid'=>$eid)
-	)->fetchField();
 	foreach($query as $r) {
 		$form_state['storage']['addscores']['students'][]=$r->uid;
 		$form['addscores']['new-score-label'.$r->uid]=array(
