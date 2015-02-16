@@ -3763,6 +3763,7 @@ function score_automize_page_submit_calculate($form, &$form_state) {
 function score_automize_page_step_calculate($form, $form_state) {
 	$eid=$form_state['storage']['calculate'];
 	$exam=exam_load($eid);
+	$all_students=array();
 	$professions=db_query('SELECT p.pname FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
 		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname ORDER BY p.pid', array(':eid'=>$eid));
@@ -3818,6 +3819,7 @@ function score_automize_page_step_calculate($form, $form_state) {
 				$rows[$s->uid][$t->tid]=$scores[$s->uid][$t->tid];
 			}
 			$rows[$s->uid]['totalscore']=$totalscore[$s->uid];
+			$all_students[$s->uid]['totalscore']=$totalscore[$s->uid];
 		}
 
 		$rankscores = array_transpose($scores);
@@ -3839,6 +3841,7 @@ function score_automize_page_step_calculate($form, $form_state) {
 				$rows[$s->uid][$t->tid.'r']=$ranks[$s->uid][$t->tid];
 			}
 			$rows[$s->uid]['totalrank']=$totalrank[$s->uid];
+			$all_students[$s->uid]['totalrank']=$totalrank[$s->uid];
 		}
 
 		$rows=array_orderby($rows, 'totalrank', SORT_ASC, 'totalscore', SORT_DESC);
@@ -3878,6 +3881,7 @@ function score_automize_page_step_calculate($form, $form_state) {
 		$form=$form['profession-'.$p->pname];
 		unset($form['#type']);
 	}
+	$form['#students']=$all_students;
 	$form['#attached']['css']=array(
 		'div.sidebar {display: none;}' => array('type' => 'inline'),
 		'div#tasks {display: none;}' => array('type' => 'inline'),
@@ -3891,11 +3895,10 @@ function score_automize_page_step_calculate($form, $form_state) {
 		'#title' => t('I know that after saving, I will not able to modify any of the exam scores.'),
 		'#default_value' => FALSE,
 	);
-	$form['submit']=array(
+	$form['save']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
 		'#submit' => array('score_automize_page_step_calculate_submit'),
-		'#validate' => array('score_automize_page_step_calculate_validate'),
 		'#states' => array(
 			'disabled' => array(
 				':input[name="know"]' => array('checked' =>FALSE),
@@ -3906,6 +3909,28 @@ function score_automize_page_step_calculate($form, $form_state) {
 }
 
 function score_automize_page_step_calculate_submit($form, &$form_state) {
+	$eid=$form_state['storage']['eid'];
+	$exam=exam_load($eid);
+	$i=0;
+	foreach($form['#students'] as $s => $value) {
+		$q=db_merge('students_score')->key(array(
+			'uid' => $s,
+			'eid' => $eid,
+		))->fields(array(
+			'uid' => $s,
+			'eid' => $eid,
+			'score' => $value['totalscore'],
+			'rank' => $value['totalrank'],
+		))->execute();
+		if($q) $i++;
+	}
+	drupal_set_message(t('!num scores of !ename is saved.', array('!num'=>$i, '!ename'=>$exam->enamefull)));
+	watchdog(
+		'score',
+		'Saved the !num scores of !ename.',
+		array('!num'=>$i, '!ename'=>$exam->enamefull)
+	);
+	unset($form_state['storage']['calculate']);
 	$form_state['rebuild']=TRUE;
 }
 
