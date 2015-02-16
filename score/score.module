@@ -3821,15 +3821,15 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 				array(':eid'=>$eid, ':uid'=>$s->uid)
 			)->fetchAllKeyed();
 			$n=1+floor((count($scores[$s->uid])-5)/3);
-			$totalscore[$s->uid]=array_sum($scores[$s->uid]);
 			$larges[$s->uid]=_score_array_large_n($scores[$s->uid],$n);
 			$t=$scores[$s->uid];
 			arsort($t, SORT_NUMERIC);
 			$t=array_slice($t, $n, count($t), TRUE); 
 			$smalls[$s->uid]=_score_array_small_n($t,$n);
-			if(!$should_show_save) {
+			if($should_show_save) {
 				$totalscore[$s->uid]=$default_values[$s->uid]->score;
 			} else {
+				$totalscore[$s->uid]=array_sum($scores[$s->uid]);
 				$totalscore[$s->uid]-=array_sum($larges[$s->uid])+array_sum($smalls[$s->uid]);
 				$totalscore[$s->uid]/=count($scores[$s->uid])-(float)$n*2;
 			}
@@ -3851,15 +3851,15 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 		$ranks = array_transpose($ranks);
 		foreach($students as $s) {
 			$n=1+floor((count($ranks[$s->uid])-5)/3);
-			$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
 			$larger[$s->uid]=_score_array_large_n($ranks[$s->uid],$n);
 			$t=$ranks[$s->uid];
 			arsort($t, SORT_NUMERIC);
 			$t=array_slice($t, $n, count($t), TRUE); 
 			$smallr[$s->uid]=_score_array_small_n($t,$n);
-			if(!$should_show_save) {
+			if($should_show_save) {
 				$totalrank[$s->uid]=$default_values[$s->uid]->rank;
 			} else {
+				$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
 				$totalrank[$s->uid]-=array_sum($larger[$s->uid])+array_sum($smallr[$s->uid]);
 				$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
 			}
@@ -3869,6 +3869,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			$rows[$s->uid]['totalrank']=$totalrank[$s->uid];
 			$all_students[$s->uid]['totalrank']=$totalrank[$s->uid];
 		}
+
 
 		$rows=array_orderby($rows, 'totalrank', SORT_ASC, 'totalscore', SORT_DESC);
 		$rows_format=$rows;
