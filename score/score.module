@@ -3382,6 +3382,7 @@ function score_cron() {
 function score_automize_page($form, $form_state) {
 	global $user;
 	if(empty($form)) $form=array();
+	if($form_state['storage']['calculate']) return score_automize_page_step_calculate($form, $form_state);
 	$query=db_query('SELECT * FROM {vl_exam} e WHERE EXISTS(SELECT * FROM {students_going} sg WHERE sg.eid=e.eid AND sg.gid IS NOT NULL) AND e.uid=:uid',
 		array(':uid'=>$user->name));
 	$options=array();
@@ -3726,11 +3727,18 @@ function score_automize_page_submit_new_score_save($form, &$form_state) {
 	$form_state['rebuild']=TRUE;
 }
 
-function score_automize_page_submit_calculate($q, $form_state) {
-	$form=array();
+function score_automize_page_submit_calculate($form, &$form_state) {
+	$form_state['storage']['calculate']=$form_state['storage']['eid'];
+	$form_state['rebuild']=TRUE;
+}
+
+function score_automize_page_step_calculate($form, $form_state) {
+	$eid=$form_state['storage']['calculate'];
+	$exam=exam_load($eid);
 	$professions=db_query('SELECT p.pname FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname', array(':eid'=>$form_state['values']['eid']));
+		'WHERE sg.eid=:eid AND sg.gid IS NOT NULL GROUP BY p.pname', array(':eid'=>$eid));
+	drupal_set_title(t('Total score sheet of !ename', array('!ename'=>$exam->enamefull)));
 	foreach($professions as $p) {
 		$form['profession-'.$p->pname]=array(
 			'#type' => 'fieldset',
@@ -3739,24 +3747,23 @@ function score_automize_page_submit_calculate($q, $form_state) {
 			'#collapsed' => FALSE,
 		);
 		$teachers=db_query('SELECT st.tid, t.tname FROM {vl_teachers} t INNER JOIN {students_score_temp} st ON st.tid=t.tid '.
-			'WHERE st.eid=:eid GROUP BY st.tid ORDER BY st.tid', array(':eid'=>$form_state['values']['eid'])
+			'WHERE st.eid=:eid GROUP BY st.tid ORDER BY st.tid', array(':eid'=>$eid)
 		)->fetchAll();
 		$header=array(
 			t('Student ID'),
 			t('Real Name'),
-			t('Profession'),
 		);
 		foreach($teachers as $t) {
 			$header[]=$t->tname;
 		}
-		$header[]=t('Total score');
+		$header[]=array('data'=>t('Total score'), 'field','sort'=>'desc');
 		foreach($teachers as $t) {
 			$header[]=t('Rank of !name',array('!name'=>$t->tname));
 		}
-		$header[]=t('Total average rank');
+		$header[]=array('data'=>t('Total average rank'), 'sort'=>'asc');
 		$students=db_query('SELECT s.uid, s.name FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 			'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-			'WHERE sg.eid=:eid AND sg.gid IS NOT NULL AND p.pname=:pname', array(':eid'=>$form_state['values']['eid'], ':pname'=>$p->pname))->fetchAll();;
+			'WHERE sg.eid=:eid AND sg.gid IS NOT NULL AND p.pname=:pname', array(':eid'=>$eid, ':pname'=>$p->pname))->fetchAll();;
 		$scores=array();
 		$totalscore=array();
 		$ranks=array();
@@ -3769,37 +3776,69 @@ function score_automize_page_submit_calculate($q, $form_state) {
 			$totalscore[$s->uid]=array_sum($scores[$s->uid]);
 			$larges=_score_array_large_n($scores[$s->uid],$n);
 			$smalls=_score_array_small_n($scores[$s->uid],$n);
-			$totalscore[$s->uid]-=array_sum($larges)-array_sum($smalls);
+			$totalscore[$s->uid]-=array_sum($larges)+array_sum($smalls);
 			$totalscore[$s->uid]/=count($scores[$s->uid])-(float)$n*2;
 			$rows[$s->uid]=array(
 				'uid'=>$s->uid,
 				'name'=>$s->name,
-				'pname'=>$p->pname,
 			);
 			foreach($teachers as $t) {
 				$rows[$s->uid][$t->tid]=$scores[$s->uid][$t->tid];
 			}
-			$rows[$s->uid][]=$totalscore[$s->uid];
+			$rows[$s->uid]['totalscore']=$totalscore[$s->uid];
 		}
 
 		$rankscores = array_transpose($scores);
 		foreach($teachers as $t) {
 			$ranks[$t->tid]=_score_array_rank($rankscores[$t->tid]);
-			foreach($ranks[$t->tid] as $s => $r ) {
-				echo "$s => $r/";
-				$rows[$s][$t->tid.'r']=$r;
+		}
+		$ranks = array_transpose($ranks);
+		foreach($students as $s) {
+			$n=1+floor((count($ranks[$s->uid])-5)/3);
+			$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
+			$larges=_score_array_large_n($ranks[$s->uid],$n);
+			$smalls=_score_array_small_n($ranks[$s->uid],$n);
+			$totalrank[$s->uid]-=array_sum($larges)+array_sum($smalls);
+			$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
+			foreach($teachers as $t) {
+				$rows[$s->uid][$t->tid.'r']=$ranks[$s->uid][$t->tid];
 			}
+			$rows[$s->uid]['totalrank']=$totalrank[$s->uid];
 		}
 
 		$output = theme('table', array('header'=>$header, 'rows'=>$rows));
-		echo $output;
+		$form['profession-'.$p->pname]['output']=array(
+			'#markup' => $output,
+		);
 	}
 	if($professions->rowCount()==1) {
 		$form=$form['profession-'.$p->pname];
 		unset($form['#type']);
 	}
+	$form['#attached']['css']=array(
+		'div.sidebar {display: none;}' => array('type' => 'inline'),
+		'div#tasks {display: none;}' => array('type' => 'inline'),
+		'body.sidebar-first div.content-inner {margin-left: 0px;}' => array('type' => 'inline'),
+	);
 
-	var_dump($form); exit;
+	$form['know']=array(
+		'#type' => 'checkbox',
+		'#title' => t('I know that after saving, I will not able to modify any of the exam scores.'),
+		'#default_value' => FALSE,
+	);
+	$form['submit']=array(
+		'#type'=>'submit',
+		'#value'=>t('Save'),
+		'#states' => array(
+			'disabled' => array(
+				'input[name="know"]' => array('checked' =>FALSE),
+			),
+			'visible' => array(
+				'input[name="know"]' => array('checked' =>TRUE),
+			),
+		),
+	);
+	return $form;
 }
 
 /*
