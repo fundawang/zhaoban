@@ -3783,6 +3783,9 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
 		array(':eid'=>$eid)
 	)->fetchField();
+	if(!$should_show_save) {
+		$default_values=db_query('SELECT * FROM {students_score} WHERE eid=:eid', array(':eid'=>$eid))->fetchAll();
+	}
 	foreach($professions as $p) {
 		$rows=array();
 		$form['profession-'.$p->pname]=array(
@@ -3824,8 +3827,12 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			arsort($t, SORT_NUMERIC);
 			$t=array_slice($t, $n, count($t), TRUE); 
 			$smalls[$s->uid]=_score_array_small_n($t,$n);
-			$totalscore[$s->uid]-=array_sum($larges[$s->uid])+array_sum($smalls[$s->uid]);
-			$totalscore[$s->uid]/=count($scores[$s->uid])-(float)$n*2;
+			if(!$should_show_save) {
+				$totalscore[$s->uid]=$default_values[$s->uid]->score;
+			} else {
+				$totalscore[$s->uid]-=array_sum($larges[$s->uid])+array_sum($smalls[$s->uid]);
+				$totalscore[$s->uid]/=count($scores[$s->uid])-(float)$n*2;
+			}
 			$rows[$s->uid]=array(
 				'uid'=>$s->uid,
 				'name'=>$s->name,
@@ -3850,8 +3857,12 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			arsort($t, SORT_NUMERIC);
 			$t=array_slice($t, $n, count($t), TRUE); 
 			$smallr[$s->uid]=_score_array_small_n($t,$n);
-			$totalrank[$s->uid]-=array_sum($larger[$s->uid])+array_sum($smallr[$s->uid]);
-			$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
+			if(!$should_show_save) {
+				$totalrank[$s->uid]=$default_values[$s->uid]->rank;
+			} else {
+				$totalrank[$s->uid]-=array_sum($larger[$s->uid])+array_sum($smallr[$s->uid]);
+				$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
+			}
 			foreach($teachers as $t) {
 				$rows[$s->uid][$t->tid.'r']=$ranks[$s->uid][$t->tid];
 			}
