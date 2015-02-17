@@ -3416,7 +3416,8 @@ function score_cron() {
 function score_automize_page($form, $form_state) {
 	global $user;
 	if(empty($form)) $form=array();
-	if($form_state['storage']['calculate']) return score_automize_page_step_calculate($form, $form_state);
+
+	if(!empty($form_state['storage']['calculate'])) return score_automize_page_step_calculate($form, $form_state);
 	$query=db_query('SELECT * FROM {vl_exam} e WHERE EXISTS(SELECT * FROM {students_going} sg WHERE sg.eid=e.eid AND sg.gid IS NOT NULL) AND e.uid=:uid',
 		array(':uid'=>$user->name));
 	$options=array();
@@ -3468,12 +3469,22 @@ function score_automize_page($form, $form_state) {
 		'#limit_validation_errors' => array(array('eid'),array('gid')),
 	);
 
+	if(!empty($form_state['storage']['assign'])) return score_automize_page_step_reorder($form, $form_state);
 	if($gid) {
-		$query=db_query('SELECT DISTINCT t.tid, t.tname FROM {students_score_temp} st INNER JOIN {vl_teachers} t ON st.tid=t.tid '.
-			'INNER JOIN {students_going} sg ON st.uid=sg.uid AND st.eid=sg.eid AND sg.gid=:gid '.
-			'WHERE st.eid=:eid AND sg.gid=:gid ORDER BY t.tid',
-			array(':eid'=>$eid, ':gid'=>$gid)
-		);
+		$exam=exam_load($eid);
+		$is_uid_unknown=$exam->needdraw;
+		$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE gid=:gid AND gorder IS NOT NULL)',
+			array(':gid'=>$gid))->fetchField());
+		if($is_uid_unknown)
+			$query=db_query('SELECT DISTINCT t.tid, t.tname FROM {students_score_temp} st INNER JOIN {vl_teachers} t ON st.tid=t.tid '.
+				' WHERE st.eid=:eid AND uid LIKE :uid ORDER BY t.tid',
+				array(':eid'=>$eid, ':uid'=>db_like(sprintf('%s-%s-',$eid,$gid)).'%'))->fetchAll();
+		else
+			$query=db_query('SELECT DISTINCT t.tid, t.tname FROM {students_score_temp} st INNER JOIN {vl_teachers} t ON st.tid=t.tid '.
+				'INNER JOIN {students_going} sg ON st.uid=sg.uid AND st.eid=sg.eid AND sg.gid=:gid '.
+				'WHERE st.eid=:eid AND sg.gid=:gid ORDER BY t.tid',
+				array(':eid'=>$eid, ':gid'=>$gid)
+			);
 		$options=array();
 		foreach($query as $r) {
 			$options[$r->tid]=$r->tname;
@@ -3497,16 +3508,24 @@ function score_automize_page($form, $form_state) {
 
 		}
 
-		$form['addscores']=score_automize_page_modify_score($form_state, $eid, $gid, $form_state['values']['tid']);
+		$form['addscores']=score_automize_page_modify_score($form_state, $eid, $gid, isset($form_state['values']['tid'])?$form_state['values']['tid']:NULL);
 
 		$exam=exam_load($eid);
 		$q=db_query('SELECT count(*) FROM (SELECT tid FROM {students_score_temp} st WHERE st.eid=:eid GROUP BY st.tid) t',
 			array(':eid'=>$eid)
 		)->fetchField();
 
+		$form['assign']=array(
+			'#type' => 'submit',
+			'#access' => $is_uid_unknown,
+			'#value' => t('Reorder students in current going'),
+			'#limit_validation_errors' => array(array('eid'),array('gid')),
+			'#submit' => array('score_automize_page_submit_assign'),
+		);
+
 		$form['calculate']=array(
 			'#type' => 'submit',
-			'#access' => $q>=5,
+			'#access' => $q>=5 && !$is_uid_unknown,
 			'#value' => t('Calculate the total score of !ename', array('!ename'=>$exam->enamefull)),
 			'#submit' => array('score_automize_page_submit_calculate'),
 			'#limit_validation_errors' => array(array('eid')),
@@ -3525,14 +3544,23 @@ function _score_automize_page_eid_gid_select_options($eid=NULL) {
 	if(empty($eid)) return array();
 	$query=db_query('SELECT DISTINCT gid FROM {students_going} sg WHERE sg.eid=:eid AND sg.gid IS NOT NULL ORDER BY gid', array(':eid'=>$eid));
 	$options=array();
+	$exam=exam_load($eid);
+	$is_uid_unknown=$exam->needdraw;
 	foreach($query as $r) {
 		$going=going_load($r->gid);
 		$options[$r->gid]=sprintf('%s / %s', $going->formatTime, $going->rname);
-		$q=db_query('SELECT count(*) FROM ('.
-			'SELECT tid FROM {students_score_temp} st INNER JOIN {students_going} sg ON st.uid=sg.uid AND st.eid=sg.eid '.
-			'WHERE sg.eid=:eid and sg.gid=:gid GROUP BY st.tid) t',
-			array(':eid'=>$eid, ':gid'=>$r->gid)
-		)->fetchField();
+		$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE gid=:gid AND gorder IS NOT NULL)',
+			array(':gid'=>$r->gid))->fetchField());
+		if($is_uid_unknown)
+			$q=db_query('SELECT COUNT(*) FROM (SELECT tid FROM {students_score_temp} '.
+				'WHERE eid=:eid AND uid LIKE :uid GROUP BY tid) t',
+				array(':eid'=>$eid, ':uid'=>db_like(sprintf('%s-%s-',$eid,$r->gid)).'%'))->fetchField();
+		else
+			$q=db_query('SELECT count(*) FROM ('.
+				'SELECT tid FROM {students_score_temp} st INNER JOIN {students_going} sg ON st.uid=sg.uid AND st.eid=sg.eid '.
+				'WHERE sg.eid=:eid and sg.gid=:gid GROUP BY st.tid) t',
+				array(':eid'=>$eid, ':gid'=>$r->gid)
+			)->fetchField();
 		if($q)
 			$options[$r->gid].=sprintf(' (%s)',t('!num score sheets collected', array('!num'=>$q)));
 	}
@@ -3544,6 +3572,7 @@ function score_automize_page_submit_eidgidgo($form, &$form_state) {
 	$form_state['storage']['gid']=$form_state['values']['gid'];
 	unset($form_state['storage']['tid']);
 	unset($form_state['values']['tid']);
+	unset($form_state['storage']['assign']);
 	$form_state['rebuild']=TRUE;
 }
 
@@ -3559,6 +3588,11 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 		'WHERE NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) AND sc.eid=:eid)',
 		array(':eid'=>$eid)
 	)->fetchField();
+
+	$exam=exam_load($eid);
+	$is_uid_unknown=$exam->needdraw;
+	$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE gid=:gid AND gorder IS NOT NULL)',
+		array(':gid'=>$gid))->fetchField());
 	if(empty($tid) && $should_show_save) return array();
 	$form['addscores']=array(
 		'#type' => 'fieldset',
@@ -3573,51 +3607,69 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 	if($tid) $form['addscores']['#title']=t('Score sheet under !tname',
 		array('!tname'=>db_query('SELECT tname FROM {vl_teachers} WHERE tid=:tid', array(':tid'=>$tid))->fetchField()));
 
-	$exam=exam_load($eid);
-	$query=db_query('SELECT sg.gorder, s.uid, s.name FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
-		'WHERE sg.eid=:eid AND sg.gid=:gid ORDER BY sg.gorder', array(':eid'=>$eid, ':gid'=>$gid)
-		);
-	if($tid)
+	if($is_uid_unknown&&$tid)
+		$query=db_query('SELECT uid, score FROM {students_score_temp} WHERE eid=:eid AND tid=:tid AND uid LIKE :uid',
+				array(':eid'=>$eid, ':tid'=>$tid, ':uid'=>db_like(sprintf('%s-%s-',$eid,$gid)).'%'))->fetchAll();
+	else if($tid)
 		$query=db_query('SELECT sg.gorder, s.uid, s.name, st.score FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 			'INNER JOIN {students_score_temp} st ON sg.uid=st.uid AND sg.eid=st.eid AND st.tid=:tid '.
 			'WHERE sg.eid=:eid AND sg.gid=:gid ORDER BY sg.gorder', array(':eid'=>$eid, ':gid'=>$gid, ':tid'=>$tid)
-		);
+		)->fetchAll();
+	else
+		$query=db_query('SELECT sg.gorder, s.uid, s.name FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+			'WHERE sg.eid=:eid AND sg.gid=:gid ORDER BY sg.gorder, sg.uid', array(':eid'=>$eid, ':gid'=>$gid)
+		)->fetchAll();
 	$form_state['storage']['addscores']['students']=array();
 	$form['addscores']['tablestart']=array(
-		'#markup' => '<table>',
+		'#markup' => '<table><thead>',
 	);
-	$form['addscores']['tablestart']['#markup'].='<thead>'.
-		'<th>'.t('No.').'</th>'.
-		'<th>'.t('Student ID').'</th>'.
-		'<th>'.t('Real Name').'</th>'.
-		'<th>'.t('Score').'</th>'.
-		'<th>'.t('Absence').'?</th>'.
-		'</th></thead><tbody>';
+	if($is_uid_unknown)
+		$form['addscores']['tablestart']['#markup'].=
+			'<th>'.t('No.').'</th>'.
+			'<th>'.t('Score').'</th>'.
+			'<th>'.t('Absence').'?</th>';
+	else
+		$form['addscores']['tablestart']['#markup'].=
+			'<th>'.t('No.').'</th>'.
+			'<th>'.t('Student ID').'</th>'.
+			'<th>'.t('Real Name').'</th>'.
+			'<th>'.t('Score').'</th>'.
+			'<th>'.t('Absence').'?</th>';
+	$form['addscores']['tablestart']['#markup'].='</thead><tbody>';
 	$trclass='odd';
+	$i=1;
 	foreach($query as $r) {
-		$form_state['storage']['addscores']['students'][]=$r->uid;
-		$form['addscores']['new-score-label'.$r->uid]=array(
+		$uid=$r->uid;
+		if($is_uid_unknown)
+			$uid=sprintf('%s-%s-%03d',$eid,$gid,$i);
+		$form_state['storage']['addscores']['students'][]=$uid;
+		$form['addscores']['new-score-label'.$uid]=array(
 			'#markup' => sprintf('<tr class="%s">', $trclass),
 		);
 		if($trclass=='odd') $trclass='even';
 		else $trclass='odd';
-		$form['addscores']['new-score-label'.$r->uid]['#markup'] .= '<td>'.$r->gorder.'</td>';
-		$form['addscores']['new-score-label'.$r->uid]['#markup'] .= '<td>'.$r->uid.'</td>';
-		$form['addscores']['new-score-label'.$r->uid]['#markup'] .= '<td>'.$r->name.'</td>';
-		if($tid) {
-			$key='new-score-'.$tid.'-'.$r->uid;
-			$abkey='new-score-'.$tid.'-'.$r->uid.'-absence';
+		if($is_uid_unknown) {
+			$form['addscores']['new-score-label'.$uid]['#markup'] .= '<td>'.$i++.'</td>';
 		}
 		else {
-			$key='new-score-'.$r->uid;
-			$abkey='new-score-'.$r->uid.'-absence';
+			$form['addscores']['new-score-label'.$uid]['#markup'] .= '<td>'.$r->gorder.'</td>';
+			$form['addscores']['new-score-label'.$uid]['#markup'] .= '<td>'.$r->uid.'</td>';
+			$form['addscores']['new-score-label'.$uid]['#markup'] .= '<td>'.$r->name.'</td>';
+		}
+		if($tid) {
+			$key='new-score-'.$tid.'-'.$uid;
+			$abkey='new-score-'.$tid.'-'.$uid.'-absence';
+		}
+		else {
+			$key='new-score-'.$uid;
+			$abkey='new-score-'.$uid.'-absence';
 		}
 		$form['addscores'][$key]=array(
 			'#type' => 'textfield',
 			'#length' => 10,
 			'#size' => 10,
 			'#attributes' => array('autocomplete'=>'off'),
-			'#title' => t('The score of @uid @name', array('@uid'=>$r->uid, '@name'=>$r->name)),
+			'#title' => $is_uid_unknown?t('The score of No. @uid', array('@uid'=>$i-1)):t('The score of @uid', array('@uid'=>$uid)),
 			'#title_display' => 'invisible',
 			'#default_value' => (isset($r->score)&&$r->score>0)?$r->score:'',
 			'#prefix' => '<td>',
@@ -3637,7 +3689,7 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 			'#prefix' => '<td width="60%">',
 			'#suffix' => '</td></tr>',
 			'#default_value' => (isset($r->score)&&$r->score==-1)?TRUE:db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE eid=:eid AND uid=:uid AND score=-1)',
-				array(':uid'=>$r->uid, ':eid'=>$eid))->fetchField(),
+				array(':uid'=>$uid, ':eid'=>$eid))->fetchField(),
 		);
 	}
 	$form['addscores']['new-score-teachername']=array(
@@ -3717,7 +3769,7 @@ function score_automize_page_validate_new_score_save($form, $form_state) {
 				$key='new-score-'.$s;
 			$score=$form_state['values']['addscores'][$key];
 			if(!is_numeric($score) || (float)$score < 0 || (float)$score > 100)
-				form_set_error('addscores]['.$key, t('The score you\'ve inputted for !sid is invalid.',array('!sid'=>$s)));
+				form_set_error('addscores]['.$key, t('The input for !sid is invalid.',array('!sid'=>$form['addscores']['addscores'][$key]['#title'])));
 		}
 	}
 }
@@ -3961,6 +4013,127 @@ function score_automize_page_step_calculate_submit($form, &$form_state) {
 		array('!num'=>$i, '!ename'=>$exam->enamefull)
 	);
 	unset($form_state['storage']['calculate']);
+	$form_state['rebuild']=TRUE;
+}
+
+function score_automize_page_submit_assign($form, &$form_state) {
+	$form_state['storage']['eid']=$form_state['values']['eid'];
+	$form_state['storage']['gid']=$form_state['values']['gid'];
+	$form_state['storage']['assign']=$form_state['values']['eid'];
+	unset($form_state['storage']['tid']);
+	unset($form_state['values']['tid']);
+	$form_state['rebuild']=TRUE;
+}
+
+function score_automize_page_step_reorder($form_orig, $form_state) {
+	$form=array();
+	$form['eid']=$form_orig['eid'];
+	$form['gid']=$form_orig['gid'];
+	$form['eidgidgo']=$form_orig['eidgidgo'];
+	$form['eid']['#default_value']=$form_state['storage']['eid'];
+	$form['eid']['#disabled']=TRUE;
+	$form['gid']['#default_value']=$form_state['storage']['gid'];
+	$form['gid']['#disabled']=TRUE;
+	$form['reorder']=array(
+		'#type' => 'fieldset',
+		'#title' => t('Reorder students in current going'),
+		'#collapsible' => TRUE,
+		'#collapsed' => FALSE,
+		'#tree' => TRUE,
+	);
+	$form['reorder']['tablestart']=array(
+		'#markup' => sprintf('<div class="messages warning">%s</div>', t('Saving can be done only once, so be careful.')).
+			'<table><thead>'.
+			'<th style="width: 2em;">'.t('No.').'</th>'.
+			'<th>'.t('Student ID').'</th>'.
+			'</thead><tbody>',
+	);
+
+	$students=db_query('SELECT s.uid, s.name, sg.gorder FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
+		'WHERE sg.eid=:eid AND sg.gid=:gid ORDER BY s.uid',
+		array(':eid'=>$form_state['storage']['eid'], ':gid'=>$form_state['storage']['gid']))->fetchAll();
+	$i=1;
+	$options=array();
+	foreach($students as $s) {
+		$options[$s->uid]=sprintf('%s %s', $s->uid, $s->name);
+	}
+	$trclass="odd";
+	foreach($students as $s) {
+		$key=sprintf('%s-%s-%03d',$form_state['storage']['eid'],$form_state['storage']['gid'],$i);
+		$form['reorder'][$key]=array(
+			'#type' => 'select',
+			'#options' => $options,
+			'#required' => TRUE,
+			'#default_value' => NULL,
+			'#prefix' => sprintf('<tr class="%s"><td>%d</td><td>', $trclass, $i++),
+			'#suffix' => '</td></tr>',
+		);
+		$disabled=db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE uid=:uid AND eid=:eid AND score=-1)',
+				array(':eid'=>$form_state['storage']['eid'], ':uid'=>$key))->fetchField();
+		if($disabled)
+			$form['reorder'][$key]['#field_suffix']='<span class="messages error">'.t('Absence').'</span>';
+		$form['reorder'][$key]['#required']=!$form['reorder'][$key]['#disabled'];
+		if($trclass=='odd') $trclass='even';
+		else $trclass='odd';
+	}
+
+	$form['reorder']['tableend']=array(
+		'#markup' => '</tbody></table>',
+	);
+	$form['reorder']['save']=array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		'#submit' => array('score_automize_page_step_reorder_submit'),
+		'#validate' => array('score_automize_page_step_reorder_validate'),
+		'#limit_validation_errors' => array(array('reorder')),
+		'#prefix' => sprintf('<div class="messages warning">%s</div>', t('Saving can be done only once, so be careful.')),
+	);
+
+	return $form;
+	
+}
+
+function score_automize_page_step_reorder_validate($form, $form_state) {
+	$uids=array_filter($form_state['values']['reorder']);
+	$uid_filtered=array_unique($uids);
+	if(count($uids)!=count($uid_filtered)) {
+		foreach($uids as $ki => $vi) {
+			foreach($uids as $kj => $vj) {
+				if($ki<$kj && $vi==$vj) {
+					form_set_error('reorder]['.$ki, t('The student !name appears more than one time.',
+						array('!name'=>$form['reorder'][$ki]['#options'][$vj])));
+					form_set_error('reorder]['.$kj);
+				}
+			}
+		}
+	}
+}
+
+function score_automize_page_step_reorder_submit($form, &$form_state) {
+	$uids=array_filter($form_state['values']['reorder']);
+	$i=0;
+	foreach($uids as $k => $v) {
+		$t=explode('-',$k);
+		$gorder=(int)$t[2];
+		db_update('students_going')->condition('uid',$v)->condition('eid',$form_state['storage']['eid'])->fields(array(
+			'gid' => $form_state['storage']['gid'],
+			'gorder' => $gorder
+		))->execute();
+		db_update('students_score_temp')->condition('uid',$k)->fields(array(
+			'uid' => $v
+		))->execute();
+		$i++;
+	}
+	$exam=exam_load($form_state['storage']['eid']);
+	$going=going_load($form_state['storage']['gid']);
+	watchdog('score','!user reordered the students of !ename in !going',
+		array(
+			'!ename'=>$exam->enamefull,
+			'!going'=>$going->formatTime,
+		)
+	);
+	drupal_set_message(t('Reordered !num students in current going.',array('!num'=>$i)));
+	unset($form_state['storage']['assign']);
 	$form_state['rebuild']=TRUE;
 }
 
