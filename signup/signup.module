@@ -4887,7 +4887,7 @@ function signup_ticket_report($user) {
 	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
 	$query->addExpression('w.rname','wname');
 	$query->addExpression("IFNULL(g.time, '9999999999999999')",'citera');
-	$query->fields('e',array('ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname'));
+	$query->fields('e',array('ename','elevel','etype','needdraw'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname'));
 	$query->orderBy('sg.eid');
 	$result=$query->execute();
 	$pdf->setXY(155,35);
@@ -4906,7 +4906,7 @@ function signup_ticket_report($user) {
 			$pdf->Ln();
 			$pdf->setX(210);
 			if($r->etype=='2')
-				if(in_array($r->eid, array('146', '202', '204', '274', '108')) || strpos($r->gname,'专业复试')) ; // HACK FOR INTERVIEW OF ARTS MANAGEMENT
+				if($r->needdraw) ;
 				else
 					$pdf->Cell(65,7, sprintf("你是本考场总第%d名参加考试的考生。",$r->gorder));
 			else

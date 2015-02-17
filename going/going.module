@@ -1230,7 +1230,7 @@ function going_mygoing() {
 	$query->leftJoin('vl_room','w','g.waiting_room = w.rid');
 	$query->addExpression('w.rname','wname');
 	$query->addExpression("IFNULL(g.time, '9999999999999999')",'citera');
-	$query->fields('e',array('eid','ename','elevel','etype'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname','status'));
+	$query->fields('e',array('eid','ename','elevel','etype','needdraw'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname','status'));
 	$query->orderBy('citera')->orderBy('sg.eid');
 	$result=$query->execute();
 	
@@ -1245,7 +1245,7 @@ function going_mygoing() {
 	foreach($result as $r) {
 		$gorder='';
 		if(!is_null($r->gorder)) {
-			if(in_array($r->eid, array('146', '202', '204', '274', '108')) || strpos($r->gname,'专业复试'))
+			if($r->needdraw)
 				$gorder='';
 			else $gorder=$r->gorder;
 		}
