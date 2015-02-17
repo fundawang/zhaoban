@@ -806,24 +806,28 @@ function going_assign_students_validate($form, &$form_state) {
 }
 
 function going_assign_students_submit($form, &$form_state) {
+	$gid=arg(3);
 	$students=array_keys(array_filter($form_state['values']['students']));
 	shuffle($students);
 	
-	$query=db_select('students_going','sg')->condition('sg.gid',arg(3));
-	$query->addExpression('MAX(sg.gorder)');
-	$i=1+$query->execute()->fetchField();
-	$exams=explode(', ',db_select('vl_going','g')->fields('g',array('valid_exams'))->condition('gid',arg(3))->execute()->fetchField());
-	if(db_select('vl_exam','e')->fields('e',array('etype'))->condition('eid',$exams[0])->execute()->fetchField()=='1')
+	$i=1+db_query('SELECT MAX(gorder) FROM {students_going} WHERE gid=:gid',array(':gid'=>$gid))->fetchField();
+	$exams=explode(', ',db_query('SELECT valid_exams FROM {vl_going} WHERE gid=:gid',array(':gid'=>$gid))->fetchField());
+	$exam=exam_load($exams[0]);
+	if($exam->etype=='1')
 		sort($students);
-	for($j=0;$j<count($students);$j++) {
-			$student=$students[$j];
-			if(db_select('vl_going','g')->fields('g')->condition('gid',arg(3))->condition('gname','%专业复试','like')->countQuery()->execute()->fetchField()>0)
+	else
+		shuffle($students);
+	foreach($students as $student) {
+		foreach($exams as $eid) {
+			$exam=exam_load($eid);
+			if($exam->needdraw)
 				$i=NULL;
 			db_update('students_going')->fields(array(
 				'gid' => arg(3),
 				'gorder' => $i,
-			))->condition('uid',$student)->condition('eid',$exams,'IN')->isNull('gid')->execute();
+			))->condition('uid',$student)->condition('eid',$eid)->execute();
 			$i++;
+		}
 	}
 	$form_state['redirect']='definations/arrange';
 }
