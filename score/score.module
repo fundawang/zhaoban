@@ -3416,6 +3416,9 @@ function score_cron() {
 function score_automize_page($form, $form_state) {
 	global $user;
 	if(empty($form)) $form=array();
+	$form['#attached']['css']=array(
+		'div#scores-automize-page-eid-gid > div {padding: 0px;}' => array('type' => 'inline'),
+	);
 
 	if(!empty($form_state['storage']['calculate'])) return score_automize_page_step_calculate($form, $form_state);
 	$query=db_query('SELECT * FROM {vl_exam} e WHERE EXISTS(SELECT * FROM {students_going} sg WHERE sg.eid=e.eid AND sg.gid IS NOT NULL) AND e.uid=:uid',
