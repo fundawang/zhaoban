@@ -976,12 +976,10 @@ function score_mark_2nd_round_list() {
 	global $user;
 	$output='<p>'.t('The following professions are decided by your deparment. You can now select who will be enrolled into second round one by one.').'</p>';
 	$output.='<dl>';
-	$query=db_select('vl_professions','p')->fields('p')->condition('p.uid',$user->name)->condition('p.allow_round1','1');
-	$result=$query->execute();
+	$result=db_query('SELECT * FROM {vl_professions} WHERE uid=:uid AND allow_round1=1', array(':uid'=>$user->name));
 	foreach($result as $r) {
-		$students=db_select('students','s')->fields('s')
-			->condition('s.validated','1')->condition('s.profession_major',$r->pid)->countQuery()->execute()->fetchField();
-		if($students==0) continue;
+		$students=db_query('SELECT COUNT(*) FROM {students} WHERE validated=1 AND profession_major=:pid', array(':pid'=>$r->pid))->fetchField();
+		if(!$students) continue;
 		if(!score_mark_2nd_round_check(profession_load($r->pid))) continue;
 		$output .= '<dt>';
 		$output .= l($r->pname,'signup/markround2/'.$r->pid);
@@ -995,29 +993,26 @@ function score_mark_2nd_round_list() {
 
 function score_mark_2nd_round_list_check() {
 	global $user;
-	$query=db_select('students','s')->condition('s.validated','1');
-	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->condition('p.uid',$user->name)->groupBy('p.uid');
-	$query->addExpression('MAX(allow_round1)','num');
-	$can_students=$query->execute()->fetchField();
+	$can_students=db_query('SELECT MAX(p.allow_round1) FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'WHERE s.validated=1 AND p.uid=:uid GROUP BY p.uid', array(':uid'=>$user->name)
+	)->fetchField();
 
 	return (user_access('mark 2nd round students') && $can_students);
 }
 
 function score_mark_2nd_round_check($profession) {
 	global $user;
-	$query=db_select('students','s')->fields('s')->condition('s.validated','1')->condition('s.profession_major',$profession->pid);
-	$can_students=$query->countQuery()->execute()->fetchField();
+	$can_students=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE validated=1 AND profession_major=:pid)',
+		array(':pid'=>$profession->pid))->fetchField();
 	
-	$query=db_select('vl_professions','p')->fields('p')->condition('p.pid',$profession->pid)->condition('p.uid',$user->name)->condition('p.allow_round1','1');
-	$can_prof=$query->countQuery()->execute()->fetchField();
+	$can_prof=db_query('SELECT EXISTS(SELECT * FROM {vl_professions} WHERE pid=:pid AND uid=:uid AND allow_round1=1)',
+		array(':pid'=>$profession->pid, ':uid'=>$user->name))->fetchField();
 	
-	return ($can_students>=1 && $can_prof==1);
+	return ($can_students && $can_prof);
 }
 
 function score_mark_2nd_round($form, $form_state, $profession) {
 	global $user;
-	$prof=db_select('vl_professions','p')->condition('p.pid',$pid)->fields('p',array('pname'))->execute()->fetchField();
 	drupal_set_title(t('Mark round 2 students').' - '.$profession->pname);
 	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
 
@@ -1072,13 +1067,11 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 		'#submit' => array('score_mark_2nd_round_redraw'),
 	);
 	
-	$query=db_select('students_passthrough','sp')->condition('sp.pid',$profession->pid);
-	$query->innerJoin('students','s','sp.idcard_number=s.idcard_number');
-	$query=$query->fields('s');
-	$num=$query->countQuery()->execute()->fetchField();
+	$num=db_query('SELECT COUNT(*) FROM {students_passthrough} sp INNER JOIN {students} s ON sp.idcard_number=s.idcard_number '.
+		'WHERE sp.pid=:pid', array(':pid'=>$profession->pid))->fetchField();
 	if($num > 0)
 		$form['pass_through']=array(
-			'#markup' => '<div class="messages">'.t('There are !num extra passed through students also.',array('!num'=>$num)).'</div>',
+			'#markup' => '<div class="messages warning">'.t('There are !num extra passed through students also.',array('!num'=>$num)).'</div>',
 		);
 	
 	$query=db_select('students','s')->fields('s',array('uid','name','gender'))->condition('s.profession_major',$profession->pid)->groupBy('s.uid');
@@ -1086,30 +1079,40 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 	$query=$query->isNotNull('sg.gid');
 
 	// Step 1, filter examplace
-	$query=$query->condition('s.examplace',$saint_default_place);
+	if($saint_default_place!='000000')
+		$query=$query->condition('s.examplace',$saint_default_place);
 	
 	// Step 2, filter sortorder
-	$exams = unserialize(db_select('vl_professions','p')->fields('p',array('exams'))->condition('p.pid',$profession->pid)->execute()->fetchField());
+	$exams = $profession->exams;
 	switch($saint_default_sort) {
 		case 's': // sort by score
-			$header['keyword']['data']=t('Total score');
-			ksort($exams);
-			$total_score=array();
-			foreach($exams as $eid=>$weight){
-				if(substr($eid,0,1)!='1') break; 
-				if(floatval($weight) == 0 ) continue;
-				$query->innerJoin('students_score','e'.$eid,'e'.$eid.'.uid=s.uid');
-				$query=$query->condition('e'.$eid.'.eid', $eid);
-				if(in_array($profession->did,array('D5','D6','D7','D8')))
-					$total_score[]='e'.$eid.'.rank*'.$weight;
-				else
+			if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+				$header['keyword']['data']=t('Rank/Score in 1st round');
+				$eids=array_keys($exams);
+				sort($eids);
+				while(substr($eids[count($eids)-1],0,1)!='1')
+					array_pop($eids);
+				$eid=db_query('SELECT sg.eid, MAX(g.time) as time FROM {students_going} sg INNER JOIN {vl_going} g ON sg.gid=g.gid '.
+					'GROUP BY sg.eid HAVING eid IN (:eids) ORDER BY time DESC', array(':eids'=>$eids))->fetchField();
+				$query->innerJoin('students_score','sc','sc.uid=s.uid');
+				$query->fields('sc', array('score','rank'))->condition('sc.eid', $eid);
+				$query->addExpression('sc.rank*1', 'rank');
+				$query->addExpression('sc.score*1', 'score');
+				$query->orderBy('rank', 'ASC')->orderBy('score', 'DESC');
+			} else {
+				$header['keyword']['data']=t('Total score');
+				ksort($exams);
+				$total_score=array();
+				foreach($exams as $eid=>$weight){
+					if(substr($eid,0,1)!='1') break; 
+					if(floatval($weight) == 0 ) continue;
+					$query->innerJoin('students_score','e'.$eid,'e'.$eid.'.uid=s.uid');
+					$query=$query->condition('e'.$eid.'.eid', $eid);
 					$total_score[]='e'.$eid.'.score*'.$weight;
-			}
-			$query->addExpression(implode('+',$total_score), 'total_score');
-			if(in_array($profession->did,array('D5','D6','D7','D8')))
-				$query=$query->orderBy('total_score', 'ASC')->orderBy('s.uid');
-			else
+				}
+				$query->addExpression(implode('+',$total_score), 'total_score');
 				$query=$query->orderBy('total_score', 'DESC')->orderBy('s.uid');
+			}
 			break;
 		
 		case 'o': // sort by gorder
@@ -1137,7 +1140,10 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 		);
 		switch($saint_default_sort) {
 			case 's':
-				$options[$r->uid]['keyword']=$r->total_score;
+				if(in_array($profession->did,array('D5','D6','D7','D8')))
+					$options[$r->uid]['keyword']=sprintf('%.2f / %.2f', $r->rank, $r->score);
+				else
+					$options[$r->uid]['keyword']=$r->total_score;
 				break;
 			case 'o':
 				$options[$r->uid]['keyword']=$r->gorder;
@@ -1175,7 +1181,11 @@ function _score_mark_2nd_round_determine_best_sortorder($profession) {
 	foreach($exams as $eid=>$weight){
 		if(floatval($weight)>0) break;
 	}
-	if(substr($eid,0,1)==1) $result['s'] = t('By total score, from top to bottom');
+
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+		$result['s']=t('By rank in 1st round exam, from best to worst');
+	} else
+		if(substr($eid,0,1)==1) $result['s'] = t('By total score, from top to bottom');
 	
 	// Step 2, if we can sort by going order, i.e, at least one exam typed interview
 	foreach($exams as $eid=>$weight){
