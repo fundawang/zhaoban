@@ -1587,8 +1587,8 @@ function score_view_detail($exam) {
 	array('data' =>t('Rank'), 'field'=>'rank', 'sort'=>'asc'),
 	);
 
-	$query=db_select('students_score','c')->fields('c',array('rank'))->condition('eid',$exam->eid)->orderBy('c.rank','desc')->condition('c.rank','1','<>');
-	$should_show_rank=$query->execute()->fetchField()?1:0;
+	$should_show_rank=db_query('SELECT EXISTS(SELECT * FROM {students_score} WHERE eid=:eid AND rank<>1 AND rank IS NOT NULL ORDER BY rank DESC)',
+		array(':eid'=>$exam->eid))->fetchField();
 
 	if(!$should_show_rank) {
 		 unset($header[count($header)-1]);
@@ -3839,6 +3839,9 @@ function score_automize_page_submit_calculate($form, &$form_state) {
 }
 
 function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
+	if(preg_match('/(?i)msie [1-8]/',$_SERVER['HTTP_USER_AGENT'])) {
+		drupal_set_message(t('It is suggested using Chrome-like browser to print this page.'), 'warning');
+	}
 	if(empty($eid))	$eid=$form_state['storage']['calculate'];
 	$exam=exam_load($eid);
 	$all_students=array();
@@ -3853,6 +3856,9 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 	if($should_hide_save) {
 		$default_values=db_query('SELECT * FROM {students_score} WHERE eid=:eid', array(':eid'=>$eid))->fetchAllAssoc('uid');
 	}
+	$should_calculate_rank=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_score_temp} sc ON s.uid=sc.uid '.
+		'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'WHERE sc.eid=:eid AND p.did IN (:prof))', array(':eid'=>$eid, ':prof'=>array('D5','D6','D7','D8')))->fetchField();
 	foreach($professions as $p) {
 		$rows=array();
 		$form['profession-'.$p->pname]=array(
@@ -3872,10 +3878,12 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			$header[]=$t->tname;
 		}
 		$header[]=array('data'=>t('Total score'), 'field','sort'=>'desc');
-		foreach($teachers as $t) {
-			$header[]=t('Rank of !name',array('!name'=>$t->tname));
+		if($should_calculate_rank) {
+			foreach($teachers as $t) {
+				$header[]=t('Rank of !name',array('!name'=>$t->tname));
+			}
+			$header[]=array('data'=>t('Total average rank'), 'sort'=>'asc');
 		}
-		$header[]=array('data'=>t('Total average rank'), 'sort'=>'asc');
 		$students=db_query('SELECT s.uid, s.name FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
 			'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
 			'WHERE sg.eid=:eid AND sg.gid IS NOT NULL AND p.pname=:pname', array(':eid'=>$eid, ':pname'=>$p->pname))->fetchAll();;
@@ -3911,44 +3919,48 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			$all_students[$s->uid]['totalscore']=$totalscore[$s->uid];
 		}
 
-		$rankscores = array_transpose($scores);
-		foreach($teachers as $t) {
-			$ranks[$t->tid]=_score_array_rank($rankscores[$t->tid]);
-		}
-		$ranks = array_transpose($ranks);
-		foreach($students as $s) {
-			$n=1+floor((count($ranks[$s->uid])-5)/3);
-			$larger[$s->uid]=_score_array_large_n($ranks[$s->uid],$n);
-			$t=$ranks[$s->uid];
-			arsort($t, SORT_NUMERIC);
-			$t=array_slice($t, $n, count($t), TRUE); 
-			$smallr[$s->uid]=_score_array_small_n($t,$n);
-			if($should_hide_save) {
-				$totalrank[$s->uid]=$default_values[$s->uid]->rank;
-			} else {
-				$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
-				$totalrank[$s->uid]-=array_sum($larger[$s->uid])+array_sum($smallr[$s->uid]);
-				$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
-			}
+		if($should_calculate_rank) {
+			$rankscores = array_transpose($scores);
 			foreach($teachers as $t) {
-				$rows[$s->uid][$t->tid.'r']=$ranks[$s->uid][$t->tid];
+				$ranks[$t->tid]=_score_array_rank($rankscores[$t->tid]);
 			}
-			$rows[$s->uid]['totalrank']=$totalrank[$s->uid];
-			$all_students[$s->uid]['totalrank']=$totalrank[$s->uid];
+			$ranks = array_transpose($ranks);
+			foreach($students as $s) {
+				$n=1+floor((count($ranks[$s->uid])-5)/3);
+				$larger[$s->uid]=_score_array_large_n($ranks[$s->uid],$n);
+				$t=$ranks[$s->uid];
+				arsort($t, SORT_NUMERIC);
+				$t=array_slice($t, $n, count($t), TRUE); 
+				$smallr[$s->uid]=_score_array_small_n($t,$n);
+				if($should_hide_save) {
+					$totalrank[$s->uid]=$default_values[$s->uid]->rank;
+				} else {
+					$totalrank[$s->uid]=array_sum($ranks[$s->uid]);
+					$totalrank[$s->uid]-=array_sum($larger[$s->uid])+array_sum($smallr[$s->uid]);
+					$totalrank[$s->uid]/=count($ranks[$s->uid])-(float)$n*2;
+				}
+				foreach($teachers as $t) {
+					$rows[$s->uid][$t->tid.'r']=$ranks[$s->uid][$t->tid];
+				}
+				$rows[$s->uid]['totalrank']=$totalrank[$s->uid];
+				$all_students[$s->uid]['totalrank']=$totalrank[$s->uid];
+			}
 		}
-
 
 		$rows=array_orderby($rows, 'totalrank', SORT_ASC, 'totalscore', SORT_DESC);
 		$rows_format=$rows;
 		foreach($students as $s) {
 			$rows_format[$s->uid]['totalscore']=round($rows_format[$s->uid]['totalscore'],2);
-			$rows_format[$s->uid]['totalrank']=round($rows_format[$s->uid]['totalrank'],2);
+			if($should_calculate_rank)
+				$rows_format[$s->uid]['totalrank']=round($rows_format[$s->uid]['totalrank'],2);
 			foreach($teachers as $t) {
 				if($rows_format[$s->uid][$t->tid]==-1) {
 					$rows_format[$s->uid][$t->tid]=t('Absence');
 					$rows_format[$s->uid]['totalscore']=t('Absence');
-					$rows_format[$s->uid][$t->tid.'r']=t('Absence');
-					$rows_format[$s->uid]['totalrank']=t('Absence');
+					if($should_calculate_rank) {
+						$rows_format[$s->uid][$t->tid.'r']=t('Absence');
+						$rows_format[$s->uid]['totalrank']=t('Absence');
+					}
 					continue;
 				}
 				foreach($larges[$s->uid] as $k=>$v)
@@ -3957,12 +3969,14 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 				foreach($smalls[$s->uid] as $k=>$v)
 					if($t->tid==$k)
 						$rows_format[$s->uid][$t->tid]='<s>'.$rows_format[$s->uid][$t->tid].'</s>';
-				foreach($larger[$s->uid] as $k=>$v)
-					if($t->tid==$k)
-						$rows_format[$s->uid][$t->tid.'r']='<s>'.$rows_format[$s->uid][$t->tid.'r'].'</s>';
-				foreach($smallr[$s->uid] as $k=>$v)
-					if($t->tid==$k)
-						$rows_format[$s->uid][$t->tid.'r']='<s>'.$rows_format[$s->uid][$t->tid.'r'].'</s>';
+				if($should_calculate_rank) {
+					foreach($larger[$s->uid] as $k=>$v)
+						if($t->tid==$k)
+							$rows_format[$s->uid][$t->tid.'r']='<s>'.$rows_format[$s->uid][$t->tid.'r'].'</s>';
+					foreach($smallr[$s->uid] as $k=>$v)
+						if($t->tid==$k)
+							$rows_format[$s->uid][$t->tid.'r']='<s>'.$rows_format[$s->uid][$t->tid.'r'].'</s>';
+				}
 			}
 		}
 
@@ -3982,6 +3996,17 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 		'body.sidebar-first div.content-inner {margin-left: 0px;}' => array('type' => 'inline'),
 		'td {color: #000000; }' => array('type' => 'inline'),
 		'td > s {color: #bbbbbb; }' => array('type' => 'inline'),
+		'@page { size: A4 landscape; margin-top:1cm; margin-bottom: 3cm; margin-left: 0.5cm; margin-right: 0.5cm;}'.
+			'@bottom-right { content: '.t('"Page "@page" of "@total', array('@page'=>'counter(page)', '@total'=>'counter(pages)')).';}'.
+			'header > div.header-inner { display: none; }'.
+			'footer > div#footer-inner { display: none; }'.
+			'input { display: none; }'.
+			'div#menu-bar { display: none; }'.
+			'div#breadcrumb { display: none; }'.
+			'div#messages { display: none; }'.
+			'th, td {font-size: 0.05em;}'.
+			'tr {-webkit-print-color-adjust: exact; }'.
+		'' => array('type' => 'inline', 'media'=>'print'),
 	);
 
 	$form['know']=array(
@@ -4001,6 +4026,14 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			),
 		),
 	);
+	$form['print']=array(
+		'#type'=>'button',
+		'#value'=>t('Print'),
+		'#attributes' => array(
+			'onclick' => 'javascript: window.print(); return false;'
+		),
+	);
+
 	return $form;
 }
 
