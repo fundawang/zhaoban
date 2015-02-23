@@ -826,8 +826,8 @@ function going_assign_students_submit($form, &$form_state) {
 				'gid' => arg(3),
 				'gorder' => $i,
 			))->condition('uid',$student)->condition('eid',$eid)->execute();
-			$i++;
 		}
+		$i++;
 	}
 	$form_state['redirect']='definations/arrange';
 }
