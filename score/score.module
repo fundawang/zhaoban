@@ -1120,7 +1120,8 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 			krsort($exams);
 			foreach($exams as $eid=>$weight){
 				if(substr($eid,0,1)!=1) continue;
-				if(db_select('vl_exam','e')->condition('e.eid',$eid)->fields('e',array('etype'))->execute()->fetchField()==2) break;
+				$exam=exam_load($eid);
+				if($exam->etype==2) break;
 			}
 			$query=$query->fields('sg',array('gid','gorder'))->condition('sg.eid',$eid)->orderBy('sg.gid')->orderBy('sg.gorder')->orderBy('s.uid');
 			break;
