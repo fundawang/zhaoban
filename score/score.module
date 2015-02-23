@@ -3781,6 +3781,9 @@ function score_automize_page_validate_new_score_save($form, $form_state) {
 					array(':uid'=>$s, ':eid'=>$form_state['storage']['eid'], ':tid'=>$tid))->fetchField())
 					form_set_error('addscores][new-score-'.$s, t('You have already input the score of !sid under !tname.',array('!sid'=>$s, '!tname'=>$tname)));
 			}
+		} else {
+			form_set_error('addscores][new-score-teachername',
+				t('@name is not in the list of current year.', array('@name'=>$tname)));
 		}
 	}
 	foreach($form_state['storage']['addscores']['students'] as $s) {
