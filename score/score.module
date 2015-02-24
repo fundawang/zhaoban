@@ -1494,11 +1494,8 @@ function score_view_admin() {
 	$form=array();
 	
 	// Fetch all exams at first
-	$query=db_select('vl_exam','e')->fields('e',array('eid'));
-	$query->addExpression("CONCAT_WS('', e.ename, e.elevel)", 'exam');
-	$query->innerJoin('vl_research_sec','r','e.uid=r.uid');
-	$query->fields('r',array('uid','rname'));
-	$rdbo=$query->execute();
+	$rdbo=db_query("SELECT CONCAT_WS('', e.ename, e.elevel) as exam, e.eid, r.uid, r.rname, r.did ".
+		'FROM {vl_exam} e INNER JOIN {vl_research_sec} r ON e.uid=r.uid ORDER BY r.did');
 	$exams=array();
 	$weight=array();
 	$st=array();
@@ -1507,7 +1504,7 @@ function score_view_admin() {
 		$exams[]=$r;
 	}
 	
-	$rdbo=db_select('vl_professions','p')->fields('p',array('exams'))->execute();
+	$rdbo=db_query('SELECT exams FROM {vl_professions}');
 	foreach($rdbo as $r) {
 		$t=unserialize($r->exams);
 		foreach($t as $eid=>$w)
@@ -1528,42 +1525,32 @@ function score_view_admin() {
 		if(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE eid=:eid AND gid IS NOT NULL)', array(':eid'=>$exam->eid))->fetchField()==0)
 			continue;
 		
-		$query=db_select('students_score','c')->condition('c.eid', $exam->eid);
-		$num=$query->fields('c')->countQuery()->execute()->fetchField();
-		$query=db_select('students_score','c')->condition('c.eid', $exam->eid)->where('CAST(c.score AS DECIMAL)>0');
-		$query->addExpression('AVG(c.score)');
-		$st[$exam->eid]=$query->execute()->fetchField();
-		if(!isset($st[$exam->uid])) $st[$exam->uid]=1;
-		$st[$exam->uid]*=$st[$exam->eid];
-		$rows[$exam->uid][]=array(
+		$num=db_query('SELECT COUNT(*) FROM {students_score} WHERE eid=:eid', array(':eid'=>$exam->eid))->fetchField();
+		$st[$exam->eid]=db_query('SELECT AVG(score) FROM {students_score} WHERE eid=:eid AND CAST(score AS DECIMAL)>0',
+			array(':eid'=>$exam->eid))->fetchField();
+		if(!isset($st[$exam->did])) $st[$exam->did]=1;
+		$st[$exam->did]*=$st[$exam->eid];
+		$rows[$exam->did][]=array(
 			$num?l($exam->exam, 'score/view/'.$exam->eid):$exam->exam,
 			$st[$exam->eid]?t('The average score of this exam is !num',array('!num'=>sprintf('%.2f',$st[$exam->eid]))):t('Not Uploaded yet'),
 		);
-		unset($form[$exam->uid][$exam->eid]);
-		$output[$exam->uid]=theme('table', array('header'=>$header, 'rows'=>$rows[$exam->uid]));
-		if(!isset($form[$exam->uid]) && count($rows[$exam->uid])) {
-			$form[$exam->uid]=array(
+		unset($form[$exam->did][$exam->eid]);
+		$output[$exam->did]=theme('table', array('header'=>$header, 'rows'=>$rows[$exam->uid]));
+		if(!isset($form[$exam->did]) && count($rows[$exam->did])) {
+			$form[$exam->did]=array(
 				'#type'=>'fieldset',
 				'#title'=>$exam->rname,
 				'#collapsible'=>TRUE,
 				'#group'=>'score_admin',
 			);
 		}
-		$form[$exam->uid][$exam->uid]=array('#markup'=>$output[$exam->uid]);
+		$form[$exam->did][$exam->did]=array('#markup'=>$output[$exam->did]);
 	}
 	
 	foreach(array_keys($rows) as $key) {
 		$output[$key]=theme('table', array('header'=>$header, 'rows'=>$rows[$key]));
 		$form[$key][$key]=array('#markup'=>$output[$key]);
 		if(count($rows[$key])==0) unset($form[$key]);
-	}
-	
-
-	$rdbo=db_select('vl_research_sec','r')->fields('r')->execute();
-	foreach($rdbo as $r) {
-		if(array_key_exists($r->uid, $st)|| empty($st[$r->uid]))
-			$form[$r->uid]['#collapsed'] = TRUE;
-		else $form[$r->uid]['#collapsed'] = FALSE;
 	}
 	
 	return $form;
