@@ -1033,25 +1033,6 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 		'#options' => $sortorders,
 		'#default_value' => $saint_default_sort,
 	);
-	$options=array();
-	$examplaces=_score_mark_2nd_round_enabled_examplace($profession->pid);
-	foreach($examplaces as $examplace) {
-		$options[$examplace]=db_select('vl_city_district','cd')
-			->condition('cd.cid',$examplace)->fields('cd',array('name_simp'))->execute()->fetchField();
-	}
-	
-	// Test if we have marked enough examplace
-	$saint_default_place=isset($form_state['values']['examplace'])?$form_state['values']['examplace']:((count($options)==1&&$examplace!=='110000')?$examplace:'110000');
-	if(count($options)==0) $saint_default_place='000000';
-	if(count($options)>1 || (count($options)==1&&$examplace!='110000')) {
-		$form['examplace'] = array(
-			'#type' => 'select',
-			'#title' => t('Exam Place'),
-			'#options' => $options,
-			'#prefix' => '&nbsp;&nbsp;&nbsp;',
-			'#default_value' => $saint_default_place,
-		);
-	}
 
 	$form['redraw']=array(
 		'#type' => 'button',
@@ -1060,7 +1041,7 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 		'#suffix'=> '</div><p/>',
 		'#validate' => array(),
 		'#submit' => array('score_mark_2nd_round_redraw'),
-	);
+	); 
 	
 	$num=db_query('SELECT COUNT(*) FROM {students_passthrough} sp INNER JOIN {students} s ON sp.idcard_number=s.idcard_number '.
 		'WHERE sp.pid=:pid', array(':pid'=>$profession->pid))->fetchField();
@@ -1074,9 +1055,7 @@ function score_mark_2nd_round($form, $form_state, $profession) {
 	$query=$query->isNotNull('sg.gid');
 
 	// Step 1, filter examplace
-	if($saint_default_place!='000000')
-		$query=$query->condition('s.examplace',$saint_default_place);
-	
+
 	// Step 2, filter sortorder
 	$exams = $profession->exams;
 	switch($saint_default_sort) {
@@ -1341,7 +1320,6 @@ function score_transfer_check($going) {
 }
 
 function score_transfer($form, $form_state, $going) {
-	$gid=$going->gid;
 	global $user;
 	drupal_set_title(t('Transfer students').' - '.$going->gname);
 	$form=array();
@@ -1354,33 +1332,28 @@ function score_transfer($form, $form_state, $going) {
 		'pname'=>array('data'=>t('Current Profession'), 'field'=>'p.pid'),
 	);
 
-	$query=db_select('vl_going','g')->condition('g.gid',$going->gid)->fields('g');
-	$query->innerJoin('vl_room','r','g.place=r.rid');
-	$query->fields('r',array('rname'));
-	$g_info=$query->execute()->fetchObject();
-
-	$query->innerJoin('students_going','sg','sg.gid=g.gid');
-	$query->innerJoin('vl_exam','e','e.eid=sg.eid');
-	$query->fields('e',array('eid'))->groupBy('e.eid');
-	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)",'ename');
-	$exams=$query->execute()->fetchAll();
+	$exams=db_query("SELECT e.eid, CONCAT_WS('',e.ename,e.elevel) AS ename FROM {vl_going} g ".
+		'INNER JOIN {students_going} sg ON sg.gid=g.gid '.
+		'INNER JOIN {vl_exam} e ON e.eid=sg.eid '.
+		'WHERE g.gid=:gid GROUP BY e.eid',
+		array(':gid'=>$going->gid))->fetchAll();
 	foreach($exams as $r) {
 		$header['e'.$r->eid]=array('data'=>$r->ename, 'field'=>'e'.$r->eid, 'sort'=>'desc');
 	}
 
-	$squery=db_select('students_going','sg')->condition('sg.gid',$gid);
+	$squery=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 	$squery->innerJoin('students','s','s.uid=sg.uid');
 	$squery->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'))->fields('p',array('pname'));
 	$t=$squery->execute()->rowCount();
 	foreach($exams as $r) {
-		$query=db_select('students_going','sg')->condition('sg.gid',$gid);
+		$query=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 		$query->innerJoin('students','s','s.uid=sg.uid');
 		$query->fields('s',array('uid','name','gender'));
 		$query->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
 		$query->condition('e'.$r->eid.'.eid',$r->eid);
 		$query->addExpression('e'.$r->eid.'.score','e'.$r->eid);
-		if($t!=$query->execute()->rowCount())
+		if($t!=count($exams))
 			unset($header['e'.$r->eid]);
 		else {
 			$squery->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
@@ -1407,7 +1380,7 @@ function score_transfer($form, $form_state, $going) {
 	}
 
 	$form['desc']=array(
-		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $g_info->gname, $g_info->rname, _going_datetime_to_string($g_info->time)).'</div>',
+		'#markup' => '<div class="messages">'.sprintf('%s / %s / %s', $going->gname, $going->rname, _going_datetime_to_string($going->time)).'</div>',
 	);
 
 	$form['students']=array(
@@ -1418,8 +1391,7 @@ function score_transfer($form, $form_state, $going) {
 			'#empty' => t('No students to operate.'),
 	);
 
-	$profs=db_select('vl_professions','p')->condition('p.uid',$user->name)->condition('p.enabled',0,'<>')
-		->orderBy('p.pid')->fields('p',array('pid','pname'))->execute()->fetchAllKeyed();
+	$profs=db_query('SELECT pid, pname FROM {vl_professions} WHERE uid=:uid ORDER BY pid', array(':uid'=>$user->name))->fetchAllKeyed();
 	$form['targetprof']=array(
 		'#type' => 'select',
 		'#title'=>t('The target profession of selected students is'),
