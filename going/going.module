@@ -129,7 +129,7 @@ function going_load($gid)
 {
 	$going=cache_get('going:'.$gid);
 	if(empty($going)) {
-		$going=db_query('SELECT g.*, r.rid, r.rname, r.cid FROM {vl_going} g INNER JOIN {vl_room} r ON g.place=r.rid '.
+		$going=db_query('SELECT g.*, r.rid, r.rname, r.cid, r.capacity FROM {vl_going} g INNER JOIN {vl_room} r ON g.place=r.rid '.
 			'WHERE g.gid=:gid', array(':gid'=>$gid))->fetchObject();
 		if(!empty($going)) {
 			$going->formatTime=_going_datetime_to_string($going->time);
@@ -740,10 +740,18 @@ function going_assign_students($form, $form_state, $going) {
 	}
 	
 	drupal_set_title(t('Assign students').' - '.$going->gname);
+
+	$exam=exam_load($exam);
+
+	if($exam->etype==1)
+		$markup='<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.
+			t('@room/@people people', array('@room'=>$going->rname, '@people'=>$going->capacity)).'</div>';
+	else
+		$markup='<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>';
 	
 	$form['info']=array(
 		'#type' => 'markup',
-		'#markup'=>'<div class="messages">'.$going->formatTime.' / '.$going->gname.' / '.$going->rname.'</div>',
+		'#markup'=>$markup,
 	);
 	$i=1;
 	$options=array();

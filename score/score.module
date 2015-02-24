@@ -109,6 +109,7 @@ function score_menu() {
 		'weight' => 0,
 		'page callback' => 'score_input_going_list',
 		'access callback' => 'score_input_going_list_check',
+		'access arguments' => array(1),
 		'type' => MENU_LOCAL_TASK,
 	);
 
@@ -137,6 +138,7 @@ function score_menu() {
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('score_automize_page'),
 		'access callback' => 'score_input_going_list_check',
+		'access arguments' => array(1),
 		'type' => MENU_LOCAL_TASK,
 	);
 
@@ -379,49 +381,39 @@ function score_permission() {
 	);
 }
 
-function score_input_going_list_check() {
-	$query=db_select('students_going','sg')->isNotNull('sg.gid')->fields('sg');
-	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
-	if(!user_access('review all score') && $GLOBALS['user']->uid)
-		$query->condition('e.uid',$GLOBALS['user']->name);
-	$r=$query->countQuery()->execute()->fetchField();
-	if(user_access('input score') || user_access('review my score'))
-		return $r>0;
-	else if(user_access('review all score'))
-		return $r>0;
-	else
-		return FALSE;
+function score_input_going_list_check($path=NULL) {
+	if(user_access('input score')&&!user_access('review all score')) {
+		return db_query('SELECT EXISTS(SELECT * FROM {students_going} sg INNER JOIN {vl_exam} e ON sg.eid=e.eid '.
+			'WHERE sg.gid IS NOT NULL AND e.uid=:uid)', array(':uid'=>$GLOBALS['user']->name))->fetchField();
+	} else 
+		if(user_access('review all score')) return empty($path);
 }
 
 function score_input_going_list_batch_check() {
-	$query=db_select('students_going','sg')->isNotNull('sg.gid')->fields('sg');
-	$query->innerJoin('vl_exam','e','sg.eid=e.eid');
-	$query->condition('e.uid',$GLOBALS['user']->name);
-	$r=$query->countQuery()->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students_going} sg INNER JOIN {vl_exam} e ON sg.eid=e.eid '.
+		'WHERE e.uid=:uid AND sg.gid IS NOT NULL)', array(':uid'=>$GLOBALS['user']->name))->fetchField();
 	if(user_access('input score') || user_access('review my score'))
-		return $r>0;
+		return $r;
 	else return FALSE;
 }
 
 function score_check_perm_view() {
-	$query=db_select('students_going');
-	$query->addExpression('MAX(gid)', 'g');
-	$r=$query->execute()->fetchField();
+	$r=db_query('SELECT MAX(gid) FROM {students_going}')->fetchField();
 	return user_access('review all score') && $r;
 }
 
 function score_check_perm_prepare3rd() {
-	$r=db_select('students','s')->condition('s.pass_round1_major',1)->fields('s')->countQuery()->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major=1)')->fetchField();
 	return user_access('review all score') && $r;
 }
 
 function score_check_perm_inputgk() {
-	$r=db_select('students','s')->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round3_major=1)')->fetchField();
 	return user_access('input gaokao score')&& $r;
 }
 
 function score_check_perm_gk() {
-	$r=db_select('students','s')->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();;
+	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round3_major=1)')->fetchField();
 	return (user_access('input gaokao score') || user_access('view gaokao score'))&& $r;
 }
 
@@ -437,7 +429,6 @@ function score_input_check_access($exam, $going=NULL) {
 }
 
 function score_input_going_list() {
-
 	if (!user_access('input score')) return '';
 	
 	global $user;
@@ -453,16 +444,20 @@ function score_input_going_list() {
 		'#collapsed' => FALSE,
 	);
 
-	$query=db_select('vl_exam','e')->fields('e',array('eid'))->fields('s',array('gid'));
-	$query->innerJoin('students_going','s','s.eid=e.eid');
-	$query->addExpression("CONCAT_WS('',e.ename,e.elevel)", 'enamefull');
-	$query=$query->condition('e.uid',$GLOBALS['user']->name)->isNotNull('s.gid')->groupBy('e.eid')->groupBy('s.gid');
-	if($query->countQuery()->execute()->fetchField()==0) {
+	$query=db_query("SELECT e.eid, sg.gid, CONCAT_WS('',e.ename,e.elevel) AS enamefull FROM {vl_exam} e ".
+		'INNER JOIN {students_going} sg ON sg.eid=e.eid '.
+		'WHERE e.uid=:uid AND sg.gid IS NOT NULL GROUP BY e.eid, sg.gid',
+		array(':uid'=>$GLOBALS['user']->name));
+	$exams=$query->fetchAll();
+	if(empty($exams)) {
 		$item = menu_get_item();
 		$content = system_admin_menu_block($item);
+		drupal_add_css(
+			'div#tasks { display: none; } ',
+			array('type' => 'inline')
+		);
 		return theme('admin_block_content', array('content' => $content));
 	}
-	$exams=$query->execute();
 	$output1 = '';
 	foreach($exams as $exam) {
 		$output1 .= '<dt>';
