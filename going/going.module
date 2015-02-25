@@ -700,7 +700,7 @@ function going_assign_students($form, $form_state, $going) {
 		'rndnum' => array('data'=>t('No.')),
 		'uid' => array('data'=>t('Student ID'), 'field'=>'s.uid'),
 		'gender' => array('data'=>t('Gender'), 'field'=>'s.gender'),
-		'profession' => array('data'=>t('Profession'), 'field'=>'s.profession_major'),
+		'profession' => array('data'=>t('Profession'), 'field'=>'profession_sort'),
 		'province' => array('data'=>t('Province'), 'field'=>'sk.province'),
 		'addition' => array('data'=>t('Additional')),
 	);
@@ -723,6 +723,7 @@ function going_assign_students($form, $form_state, $going) {
 		
 		if($going->cid && substr($exam,0,1)=='1') $citera .= " AND s.examplace='".$going->cid."'";
 		$query=db_select('students','s')->fields('s',array('uid'));
+		$query->addExpression('CONCAT(s.examplace, s.profession_major)', 'profession_sort');
 		$query->innerJoin('students_going','sg','s.uid=sg.uid');
 		$query->leftJoin('students_gk','sk','s.uid=sk.uid');
 		$subquery=db_select('students_passthrough','sp')->fields('sp')->where('s.idcard_number=sp.idcard_number');
@@ -760,7 +761,7 @@ function going_assign_students($form, $form_state, $going) {
 	$options=array();
 	foreach($students as $no) {
 		foreach($no as $uid=>$exam) {
-			$query=db_select('students','s')->fields('s',array('name','profession_major','gender'))->condition('s.uid',$uid);
+			$query=db_select('students','s')->fields('s',array('name','profession_major','gender','examplace'))->condition('s.uid',$uid);
 			$query->leftJoin('students_contact','sc','s.uid=sc.uid');
 			$query->leftJoin('students_gk','sk','s.uid=sk.uid');
 			$query->innerJoin('vl_city_district','cd','s.examplace=cd.cid');
@@ -777,10 +778,12 @@ function going_assign_students($form, $form_state, $going) {
 				'rndnum' => (isset($options[$uid]['rndnum'])?$options[$uid]['rndnum']:$i++),
 				'uid' => '<span title="'.$uid.'">'.substr_replace($uid, '**', 6, 2).'</span>',
 				'gender' => $r->gender=='2'?t('Female'):t('Male'),
-				'profession' => db_select('vl_professions','p')->fields('p',array('pname'))->condition('p.pid',$r->profession_major)->execute()->fetchField(),
+				'profession' => db_query('SELECT pname FROM {vl_professions} WHERE pid=:pid',array(':pid'=>$r->profession_major))->fetchField(),
 				'province' => $r->province?db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$r->province)->execute()->fetchField():t('Our own student'),
 				'addition' => $addition,
 			);
+			if($r->examplace!='110000')
+				$options[$uid]['profession'].='/'.$r->name_simp;
 			$form[$uid] = array(
 				'#type' => 'hidden',
 				'#value' => $exam,
