@@ -873,6 +873,8 @@ function going_print_orderlist($going)
 	
 	$exam_ids=explode(', ', $going->valid_exams);
 	$exam_type=db_select('vl_exam','e')->fields('e',array('etype'))->condition('e.eid',$exam_ids[0])->execute()->fetchField();
+	$exam=exam_load($going->exams[0]);
+	$exam_type=$exam->etype;
 
 	set_time_limit(300);
 
@@ -897,12 +899,9 @@ function going_print_orderlist($going)
 	$pdf->SetMargins(6, 6, 6);
 	$pdf->SetAutoPageBreak(false);
 
-	//set some language-dependent strings
-	$pdf->setLanguageArray($l);
-
 	// ---------------------------------------------------------
 
-	if(strpos($going->gname,'专业复试')===false) {
+	if(!$exam->needdraw) {
 		// Add a page
 		// This method has several options, check the source code documentation for more information.
 		$pdf->AddPage();
@@ -929,7 +928,7 @@ function going_print_orderlist($going)
 		
 		$pdf->SetFontSize(20);
 		
-		$pdf->Text(50,8,'中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生考试考试'.($exam_type=='1'?'座次':'次序').'表');
+		$pdf->Text(50,8,'中央音乐学院'.variable_get('zhaoban_current_year',date('Y')).'年本科招生考试考试'.($exam->etype=='1'?'座次':'次序').'表');
 		$pdf->LN();
 		$pdf->SetFontSize(24);
 		$pdf->SetX(50);
@@ -947,12 +946,11 @@ function going_print_orderlist($going)
 		$pdf->SetFillColor(0,0,0);
 		$pdf->SetDrawColor(255,255,255);
 		
-		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$going->gid);
-		$query->innerJoin('students','s','s.uid=sg.uid');
-		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder')->groupBy('s.uid');
-		$students=$query->execute();
-		if($students->rowCount()==0) return MENU_NOT_FOUND;
+		$students=db_query('SELECT sg.gorder, s.uid, s.name, p.pname FROM {students_going} sg '.
+			'INNER JOIN {students} s ON s.uid=sg.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+			'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder',
+			array(':gid'=>$going->gid))->fetchAll();
+		if(empty($students)) return MENU_NOT_FOUND;
 		$i=1;
 		foreach($students as $student) {
 			if($student->gorder>31)
@@ -1005,7 +1003,7 @@ function going_print_orderlist($going)
 		
 		$pdf->setXY(160,15);
 		if($going->waiting_room)
-			$placename='候:'.db_select('vl_room','r')->fields('r',array('rname'))->condition('rid',$going->waiting_room)->execute()->fetchField();
+			$placename='候:'.db_query('SELECT rname FROM {vl_room} WHERE rid=:rid',array(':rid'=>$going->waiting_room))->fetchField();
 		else
 			$placename=$going->rname;
 		$pdf->Cell(41,16,$placename,0,0,'R');
@@ -1026,12 +1024,11 @@ function going_print_orderlist($going)
 		$pdf->Cell(50,10,'姓名',0,1,'C');
 		
 		//$students=db_query('SELECT sg.gorder as gorder, s.uid AS uid, s.name as cname FROM {students_going} sg INNER JOIN {students} s ON s.uid=sg.uid WHERE sg.gid=\'%s\' ORDER BY gorder', $gid);
-		$query=db_select('students_going','sg')->fields('sg',array('gorder'))->condition('sg.gid',$going->gid);
-		$query->innerJoin('students','s','s.uid=sg.uid');
-		$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-		$query=$query->fields('s',array('uid','name'))->fields('p',array('pname'))->orderBy('gorder')->groupBy('s.uid');
-		$students=$query->execute();
-		if($students->rowCount()==0) return MENU_NOT_FOUND;
+		$students=db_query('SELECT sg.gorder, s.uid, s.name, p.pname FROM {students_going} sg '.
+			'INNER JOIN {students} s ON s.uid=sg.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+			'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder',
+			array(':gid'=>$going->gid))->fetchAll();
+		if(empty($students)) return MENU_NOT_FOUND;
 		$i=0;
 		$pdf->SetFontSize(20);
 		foreach($students as $student) {
@@ -1045,7 +1042,6 @@ function going_print_orderlist($going)
 	
 	//file_delete($fname);
 	$pdf->Output('orderlist.pdf', 'I');
-	
 
 }
 
@@ -1132,8 +1128,11 @@ function going_print_score_report($going)
 	$pdf->SetLineWidth(0.5);
 	$pdf->SetLineStyle(array('dash'=>2));
 	
-	$results=$query->execute();
-	if($results->rowCount()==0) return MENU_NOT_FOUND;
+	$results=db_query('SELECT s.uid, s.name, sg.gorder, sg.opus, p.pname FROM {students_going} sg '.
+		'INNER JOIN {students} s ON sg.uid=s.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder',
+		array(':gid'=>$going->gid))->fetchAll();
+	if(empty($results)) return MENU_NOT_FOUND;
 	$pdf->SetFont('droidsansfallback', 'B', 12, '', true);
 	$i=1;
 	foreach($results as $r) {
@@ -1141,11 +1140,10 @@ function going_print_score_report($going)
 		$pdf->SetFillColor(255,255,255);
 		$ruid=$r->uid;
 		$rname=$r->name;
-		if(preg_match('/二轮/',$going->gname) || preg_match('/钢琴表演/',$going->gname)) {
+		if(in_array(139,$going->exams) || in_array(251,$going->exams) || in_array(252,$going->exams) || in_array(261,$going->exams || in_array(262,$going->exams))) {
 			$ruid=substr($r->uid,0,6).'**'.substr($r->uid,8,1);
 			$rname='';
 		}
-		//$pdf->Cell(40,2,'/', 0, false, 'C',true);
 
 		$exams =unserialize($r->opus);
 		$t='';
@@ -1219,11 +1217,8 @@ function going_mygoing() {
 		if(!isset($q[3])) $q[3]=1;
 	}
 
-	$query=db_select('students','s')->fields('s')->condition('s.uid',$uid);
-	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->innerJoin('vl_department','d','p.did=d.did');
-	$query->fields('p',array('pname'))->fields('d',array('dname'));
-	$student=$query->execute()->fetchObject();
+	$student=db_query('SELECT s.*, p.pname, d.dname FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'INNER JOIN {vl_department} d ON p.did=d.did WHERE s.uid=:uid',array(':uid'=>$uid))->fetchObject();
 	$output  = '<p>';
 	$output .= t('Dear student @uid @name, you\'ve selected @dep @prof profession this year.',
 		array(

@@ -657,6 +657,11 @@ function exams_profession_edit_submit($form, &$form_state) {
 	}
 	// Editing profession
 	else {
+		$old_profession=profession_load(arg(3));
+		$old_eids=array_keys($old_profession->exams);
+		$new_eids=array_keys($exams);
+		$eids_to_add=array_diff($new_eids, $old_eids);
+		$eids_to_remove=array_diff($old_eids, $new_eids);
 		db_update('vl_professions')->fields(array(
 			'did' => $form_state['values']['did'],
 			'uid' => $form_state['values']['uid'],
@@ -672,6 +677,7 @@ function exams_profession_edit_submit($form, &$form_state) {
 			WATCHDOG_INFO,
 			l(t('View'), 'definations/professions/edit/'.arg(3))
 		);
+		module_invoke_all('profession_after_update', arg(3), $eids_to_add, $eids_to_remove);
 	}
 	$form_state['redirect'] = 'definations/professions';
 	cache_clear_all('profession:'.arg(3), 'cache');

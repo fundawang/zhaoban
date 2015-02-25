@@ -1694,6 +1694,7 @@ function signup_user_professions_form($form, $form_state, $user) {
 			'#type' => 'select',
 			'#options' => $examplaces,
 			'#required' => TRUE,
+			'#disabled' => $user->isvalidated,
 			'#title' => t('Exam Place'),
 			'#default_value' => isset($form_state['values']['examplace']) ? $form_state['values']['examplace'] : $default_values['examplace'],
 			'#description' => '<span id="infodesc">'.t('Please note that you could select various examing place here.').'</span>',
@@ -1728,6 +1729,7 @@ function signup_user_professions_form($form, $form_state, $user) {
 	$form['save'] = array(
 		'#type' => 'submit',
 		'#value' => t('Save'),
+		'#access' => !($user->isvalidated),
 		'#weight' => 50,
 	);
 	$form['#validate']=array('signup_user_professions_form_validate');
@@ -2031,6 +2033,7 @@ function signup_user_examinations_form($form, $form_state, $user) {
 	$form['save'] = array(
 		'#type' => 'submit',
 		'#value' => t('Save'),
+		'#access' => !$isvalidated,
 		'#weight' => 50,
 	);
 
@@ -3857,9 +3860,6 @@ function signup_3rd_round_by_province_report($prov) {
 	$pdf->setTitle(variable_get('zhaoban_current_year',date('Y')).'年中央音乐学院本科招生考试合格考生名册 '.$provname,'');
 	$pdf->SetAutoPageBreak(true, 12);
 
-	//set some language-dependent strings
-	$pdf->setLanguageArray($l);
-
 	// ---------------------------------------------------------
 
 	// Add a page
@@ -5160,6 +5160,21 @@ function signup_search_students($citera) {
 	drupal_set_title(t('Search students').' - '.$citera);
 	
 	return $output;
+}
+
+function signup_profession_after_update($pid, $eids_to_add, $eids_to_remove) {
+	$students=db_query('SELECT uid FROM {students} WHERE profession_major=:pid',array(':pid'=>$pid))->fetchAll();
+	foreach($students as $s) {
+		foreach($eids_to_add as $eid) {
+			db_insert('students_going')->fields(array(
+				'uid' => $s->uid,
+				'eid' => $eid,
+			))->execute();
+		}
+		foreach($eids_to_remove as $eid) {
+			db_delete('students_going')->condition('uid',$s->uid)->condition('eid',$eid)->execute();
+		}
+	}
 }
 
 function signup_weixin($request, $user) {
