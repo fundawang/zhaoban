@@ -161,7 +161,7 @@ function going_menu_assign_modify($going)
 	if(substr($exam_ids[0],0,1)<>'1')
 		$query->condition('s.pass_round1_major','1');
 	$empty_students=$query->countQuery()->execute()->fetchField();
-	return (going_menu_perm() && !$is_passed && $empty_students);
+	return (user_access('administer going') && !$is_passed && $empty_students);
 }
 function going_print_orderlist_perm($going)
 {
@@ -660,11 +660,14 @@ function going_assign_list() {
 			'<nobr>'.implode('</nobr><br/><nobr>',explode(' ',_going_datetime_to_string($r->time))).'</nobr>',
 		);
 		if(!$is_passed) {
-			if(going_menu_assign_modify(going_load($r->gid)))
+			if(going_menu_assign_modify(going_load($r->gid))) {
 				$rows[count($rows)-1][]='<nobr>'.l(t('fill'), "definations/arrange/fill/$r->gid").'</nobr>';
-			else
+				$rows[count($rows)-1][]='<nobr>'.(($num)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>';
+			}
+			else {
 				$rows[count($rows)-1][]='';
-			$rows[count($rows)-1][]='<nobr>'.(($num)?l(t('empty'), "definations/arrange/empty/$r->gid"):'').'</nobr>';
+				$rows[count($rows)-1][]='';
+			}
 		} else {
 			$rows[count($rows)-1][]=array(
 				'data'=>'<nobr/>','colspan'=>3,
