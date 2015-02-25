@@ -3671,22 +3671,22 @@ function signup_3rd_round_by_province_download($prov) {
 	
 	$def = array(
 		array("KSH",		"C",	14),
-		array("XM",		"C",	24),
+		array("XM",			"C",	24),
 		array("XBDM",		"C",	1),
 		array("SFZH",		"C",	18),
-		array("BYXXMC",	"C",	20),
+		array("BYXXMC",		"C",	20),
 		array("YXDM",		"C",	5),
 		array("YXMC",		"C",	40),
 		array("CCDM",		"C",	1),
 		array("ZYDM",		"C",	6),
 		array("ZYMC",		"C",	30),
-		array("STKKM",	"C",	30),
-		array("STKCSF",	"N",	7,3),
-		array("YXKSKM",	"C",	30),
+		array("STKKM",		"C",	30),
+		array("STKCSF",		"N",	7,3),
+		array("YXKSKM",		"C",	30),
 		array("YXSKCSF",	"N",	7,3),
-		array("YXZYMC",	"N",	4,0),
-		array("YXKSDD",	"C",	30),
-		array("BZ",		"C",	60),
+		array("YXZYMC",		"N",	4,0),
+		array("YXKSDD",		"C",	30),
+		array("BZ",			"C",	60),
 	);
 
 	// creation
