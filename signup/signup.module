@@ -3136,7 +3136,7 @@ function signup_overview_set_validated() {
 					);
 				}
 				$permissions=user_role_permissions(array(5=>'aaa'));
-				if(array_key_exists('print admission ticket', $permissions))
+				if(array_key_exists('print admission ticket', $permissions[5]))
 					$form['enableticket'] = array(
 						'#type' => 'markup',
 						'#markup' => t('Printing admission ticket enabled.')
@@ -3204,6 +3204,7 @@ function signup_overview_set_validated_submit($form, $form_state) {
 		if($form_state['triggering_element']['#name']=='enableticket') {
 			user_role_grant_permissions(5, array('print admission ticket', 'check my going'));
 			user_role_grant_permissions(4, array('administer own going', 'print order list', 'input score', 'review my score'));
+			drupal_set_message(t('Ticket Printing feature has been enabled.'));
 		}
 
 	}
