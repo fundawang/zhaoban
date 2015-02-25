@@ -3700,13 +3700,13 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 
 	drupal_add_js(
 			"jQuery(document).ready(function(){".
-			'var $inp = jQuery("input[type=text]");'.
+			'var $inp = jQuery("div#scores-automize-page-add-scores input[type=text]");'.
 			'$inp.bind("keydown", function (e){'.
 				"var key = e.which;".
 				" if (key == 13) {".
 				"   e.preventDefault();".
 				'   var nxtIdx = $inp.index(this) + 1;'.
-				"   jQuery('input[type=text]:eq(' + nxtIdx + ')').focus();".
+				"   jQuery('div#scores-automize-page-add-scores input[type=text]:eq(' + nxtIdx + ')').focus();".
 				"}".
 			"});".
 			"});",
