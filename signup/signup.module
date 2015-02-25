@@ -3274,6 +3274,9 @@ function signup_2nd_round_by_profession_detail($prof) {
 	else
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
+
+	if($prof->allow_round1==0)
+		$output .= '<p>'.drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_open')).'</p>';
 	
 	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
 	$options=array('000000'=>t('All students'));
@@ -3340,6 +3343,21 @@ function signup_2nd_round_by_profession_detail($prof) {
 	$output .= "</div>";
 	
 	return $output;
+}
+
+function signup_2nd_round_by_profession_detail_open($form, $form_state) {
+	if(empty($form)) $form=array();
+	$form['open']=array(
+		'#type' => 'submit',
+		'#value' => t('Make this profession open to students'),
+	);
+	return $form;
+}
+
+function signup_2nd_round_by_profession_detail_open_submit($form, $form_state) {
+	$prof=profession_load(arg(3));
+	db_update('vl_professions')->condition('pid',$prof->pid)->fields(array('allow_round1'=>2))->execute();
+	drupal_set_message(t('The 2nd round result of @pname is opened to students now.',array('@pname'=>$prof->pname)));
 }
 
 function signup_3rd_round_by_profession() {
