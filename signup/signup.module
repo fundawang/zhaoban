@@ -4752,7 +4752,7 @@ function signup_ticket_report($user) {
 		$n=node_load($nid);
 		$a=node_view($n);
 		$output=drupal_render($a);
-		$output.='<div><span id="numDiv"></span> ';
+		$output.='<div id="ticketcountdown"><span id="numDiv"></span> ';
 		$output.=t('seconds left to print ticket report.').'</div>';
 		$output.=sprintf('<form method="post"><input id="print" type="submit" disabled="disabled" value="%s"/></form>', t('Please read the rules (@num seconds left).', array('@num'=>300)));
 		drupal_add_js(
@@ -4775,6 +4775,10 @@ function signup_ticket_report($user) {
 				'jQuery("#print").hide();'.
 				'});',
 			'inline'
+		);
+		drupal_add_css(
+			'div#ticketcountdown { color: red; font-size: 3em; line-height: 5em;} ',
+			array('type' => 'inline')
 		);
 		return $output;
 	}
