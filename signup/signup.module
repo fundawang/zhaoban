@@ -3492,7 +3492,6 @@ function signup_3rd_round_by_profession_detail($prof) {
 				break;
 		}
 		
-		
 		$rows[] = array(
 			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
 			'<nobr>'.$r->name.'</nobr>',
