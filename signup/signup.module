@@ -3277,6 +3277,9 @@ function signup_2nd_round_by_profession_detail($prof) {
 
 	if($prof->allow_round1==0)
 		$output .= '<p>'.drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_open')).'</p>';
+	else if($prof->allow_round1==2)
+		drupal_set_message(t('The 2nd round result of @pname is opened to students now.',array('@pname'=>$prof->pname)));
+
 	
 	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
 	$options=array('000000'=>t('All students'));
