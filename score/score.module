@@ -3864,7 +3864,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			$scores[$s->uid]=db_query('SELECT tid, score FROM {students_score_temp} WHERE eid=:eid AND uid=:uid',
 				array(':eid'=>$eid, ':uid'=>$s->uid)
 			)->fetchAllKeyed();
-			$n=1+floor((count($scores[$s->uid])-5)/3);
+			$n=_score_get_number_of_teacher_to_remove($scores[$s->uid]);
 			$larges[$s->uid]=_score_array_large_n($scores[$s->uid],$n);
 			$t=$scores[$s->uid];
 			arsort($t, SORT_NUMERIC);
@@ -3895,7 +3895,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			}
 			$ranks = array_transpose($ranks);
 			foreach($students as $s) {
-				$n=1+floor((count($ranks[$s->uid])-5)/3);
+				$n=_score_get_number_of_teacher_to_remove($ranks[$s->uid]);
 				$larger[$s->uid]=_score_array_large_n($ranks[$s->uid],$n);
 				$t=$ranks[$s->uid];
 				arsort($t, SORT_NUMERIC);
@@ -4004,6 +4004,52 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 	);
 
 	return $form;
+}
+
+function _score_get_number_of_teacher_to_remove($scores) {
+	switch(count($scores)) {
+		case 5:
+		case 6:
+		case 7:
+			return 1;
+		case 8:
+		case 9:
+		case 10:
+		case 11:
+		case 12:
+		case 13:
+			return 2;
+		case 14:
+		case 15:
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+			return 3;
+		case 20:
+		case 21:
+		case 22:
+		case 23:
+		case 24:
+		case 25:
+			return 4;
+		case 26:
+		case 27:
+		case 28:
+		case 29:
+		case 30:
+		case 31:
+			return 5;
+		case 32:
+		case 33:
+		case 34:
+		case 35:
+		case 36:
+		case 37:
+			return 6;
+		default:
+			return FALSE;
+	}
 }
 
 function score_automize_page_step_calculate_submit($form, &$form_state) {
