@@ -778,7 +778,7 @@ function going_assign_students($form, $form_state, $going) {
 				'rndnum' => (isset($options[$uid]['rndnum'])?$options[$uid]['rndnum']:$i++),
 				'uid' => '<span title="'.$uid.'">'.substr_replace($uid, '**', 6, 2).'</span>',
 				'gender' => $r->gender=='2'?t('Female'):t('Male'),
-				'profession' => db_query('SELECT pname FROM {vl_professions} WHERE pid=:pid',array(':pid'=>$r->profession_major))->fetchField(),
+				'profession' => db_query('SELECT CONCAT(pname,pnamememo) FROM {vl_professions} WHERE pid=:pid',array(':pid'=>$r->profession_major))->fetchField(),
 				'province' => $r->province?db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$r->province)->execute()->fetchField():t('Our own student'),
 				'addition' => $addition,
 			);

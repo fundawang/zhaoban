@@ -1391,7 +1391,8 @@ function score_transfer($form, $form_state, $going) {
 			'#empty' => t('No students to operate.'),
 	);
 
-	$profs=db_query('SELECT pid, pname FROM {vl_professions} WHERE uid=:uid ORDER BY pid', array(':uid'=>$user->name))->fetchAllKeyed();
+	$profs=db_query('SELECT pid, CONCAT(pname,pnamememo) FROM {vl_professions} WHERE uid=:uid ORDER BY pid',
+		array(':uid'=>$user->name))->fetchAllKeyed();
 	$form['targetprof']=array(
 		'#type' => 'select',
 		'#title'=>t('The target profession of selected students is'),

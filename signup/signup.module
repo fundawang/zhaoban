@@ -2805,7 +2805,7 @@ function signup_overview_by_profession() {
 				if(user_access('view own draft') && !user_access('view draft'))
 						if($GLOBALS['user']->name !== $r->uid) continue;
 			$rows[] = array(
-			'<nobr>'.l($r->pname, 'signup/overview/profession/'.$r->pid, array(
+			'<nobr>'.l($r->pname.$r->pnamememo, 'signup/overview/profession/'.$r->pid, array(
 				'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
 				)
 			).'</nobr>',
@@ -2835,7 +2835,7 @@ function signup_overview_by_profession_detail($prof) {
 	
 	drupal_add_js(drupal_get_path('module', 'signup') .'/signup.js');
 
-	drupal_set_title(t('By Profession').' - '.$prof->pname);
+	drupal_set_title(t('By Profession').' - '.$prof->pname.$prof->pnamememo);
 
 	if(db_query('SELECT EXISTS(SELECT * FROM {students} WHERE validated=1)')->fetchField())
 		$valins="s.validated=1 ";
