@@ -3278,15 +3278,12 @@ function signup_2nd_round_by_profession_detail($prof) {
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
 
-	if($prof->allow_round1==1)
-		$output .= '<p>'.drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_open')).'</p>';
+	if($prof->allow_round1==0)
+		$output .= drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_reject'));
+	else if($prof->allow_round1==1)
+		$output .= drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_open'));
 	else if($prof->allow_round1==2)
 		drupal_set_message(t('The 2nd round result of @pname is opened to students now.',array('@pname'=>$prof->pname)));
-
-	
-	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
-	$options=array('000000'=>t('All students'));
-	$options+=array((string)($r->cid)=>$r->name);
 
 	$rows = array();
 	$header = array(
@@ -3322,13 +3319,13 @@ function signup_2nd_round_by_profession_detail($prof) {
 				break;
 			case uc_MAINLAND_STUDENT:
 			case uc_HKTW_STUDENT:
-				$province = $r->province ? db_select('vl_province','p')->fields('p',array('simplified_name'))->condition('p.pid',$r->province)->execute()->fetchField() : t('N/A');
+				$province = $r->province ? db_query('SELECT simplified_name FROM {vl_province} WHERE pid=:pid',array(':pid'=>$r->province))->fetchField() : t('N/A');
 				$per = $r->personnel_record_at;
 				if(!$per) $per=t('N/A');
 				$plink = $r->province;
 				break;
 			case uc_OVERSEA_STUDENT:
-				$province = db_select('vl_city_district','cd')->fields('cd',array('name'))->condition('cd.cid',$r->city_district)->execute()->fetchField();
+				$province = db_query('SELECT name FROM {vl_city_district} WHERE cid=:cid',array(':cid'=>$r->city_district))->fetchField();
 				$per = t('N/A');
 				$plink = $r->province;
 				break;
@@ -3369,27 +3366,34 @@ function signup_2nd_round_by_profession_detail_open_submit($form, $form_state) {
 	cache_clear_all('profession:'.$prof->pid, 'cache');
 }
 
+function signup_2nd_round_by_profession_detail_reject($form, $form_state) {
+	if(empty($form)) $form=array();
+	if(db_query('SELECT EXISTS(SELECT * FROM {students} s WHERE s.pass_round1_major=1 AND s.idcard_number NOT IN '.
+		'(SELECT sp.idcard_number FROM {students_passthrough} sp) AND s.profession_major=:pid)', array(':pid'=>arg(3)))->fetchField())
+		$form['open']=array(
+			'#type' => 'submit',
+			'#value' => t('Reject the 2nd result of this profession'),
+		);
+
+	return $form;
+}
+
+function signup_2nd_round_by_profession_detail_reject_submit($form, $form_state) {
+	$prof=profession_load(arg(3));
+	db_update('vl_professions')->condition('pid',$prof->pid)->fields(array('allow_round1'=>1))->execute();
+	cache_clear_all('profession:'.$prof->pid, 'cache');
+}
+
 function signup_3rd_round_by_profession() {
 	$output = '<div id="baoming_user_stat" class="baoming_view_section node">';
 	
-	if(db_select('students','s')->fields('s')->condition('s.validated',1)->countQuery()->execute()->fetchField() >0)
-		$valins="s.validated=1 ";
-	else 
-		$valins="1";
-		
 	// Compute total number of registered students.
-	$total_students=db_select('students','s')
-		->fields('s')
-		->condition('s.idcard_number','','<>')
-		->condition('s.profession_major','0','<>')
-		->condition('s.pass_round3_major','0','<>')
-		->where($valins)
-		->countQuery()->execute()->fetchField();
+	$total_students=db_query('SELECT COUNT(*) FROM {students} WHERE s.pass_round3_major <> 0')->fetchField();
 	
 	$output .= '<p>'.t('There are currently !num students marked as being enrolled into the 3rd round examination.', array('!num'=>$total_students)).'</p>';
-	$students_mainland=db_select('students','s')->fields('s')->condition('s.pass_round3_major','0','<>')->condition('s.ucategory',1)->countQuery()->execute()->fetchField();
-	$students_determined=db_select('students','s')->fields('s')->condition('s.pass_round3_major','10')->condition('s.ucategory',1)->countQuery()->execute()->fetchField();
-	$students_tobe_determined=db_select('students','s')->fields('s')->condition('s.pass_round3_major','1')->condition('s.ucategory',1)->countQuery()->execute()->fetchField();
+	$students_mainland=db_query('SELECT COUNT(*) FROM {students} WHERE s.pass_round3_major <> 0 AND s.ucategory=1')->fetchField();
+	$students_determined=db_query('SELECT COUNT(*) FROM {students} WHERE s.pass_round3_major=10 AND s.ucategory=1')->fetchField();
+	$students_tobe_determined=db_query('SELECT COUNT(*) FROM {students} WHERE s.pass_round3_major=1 AND s.ucategory=1')->fetchField();
 	$output .= '<p>'.t('Out of !total mainland students, there are !determ determined students, !tobedeterm to-be-determined students.', array('!total'=>$students_mainland, '!determ'=>$students_determined, '!tobedeterm'=>$students_tobe_determined)).'</p>';
 	$header = array(
 		array('data'=>t('Profession'), 'field'=>'pid', 'sort'=>'asc'),
@@ -3399,7 +3403,7 @@ function signup_3rd_round_by_profession() {
 	$query = db_select('students','s')->condition('s.idcard_number','','<>')->condition('s.pass_round3_major','0','<>');
 	$query->innerJoin('vl_professions','p','s.profession_major = p.pid');
 	$query->addExpression('COUNT(*)', 'num');
-	$query = $query->where($valins)
+	$query = $query
 		->fields('p',array('pid','uid','pname','pnamememo'))
 		->groupBy('s.profession_major')
 		->extend('TableSort')->orderByHeader($header);
@@ -3436,10 +3440,6 @@ function signup_3rd_round_by_profession_detail($prof) {
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
 	
-	$r=db_select('vl_city_district','cd')->fields('cd',array('cid','name'))->condition('cd.cid','110000')->execute()->fetchObject();
-	$options=array('000000'=>t('All students'));
-	$options+=array((string)($r->cid)=>$r->name);
-
 	$rows = array();
 	$header = array(
 		array('data' =>t('Student ID'), 'field'=>'s.uid'),
@@ -3699,24 +3699,16 @@ function signup_3rd_round_by_province_download($prov) {
 	if (!$fhandle) {
 		return NULL;
 	}
-	$query=db_select('students','s')->condition('s.pass_round3_major','0','<>');
-	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
-	$query->leftJoin('students_gk','sg','s.uid=sg.uid');
-	if(db_table_exists('students_total_score')) {
-		$query->innerJoin('students_total_score','ss','s.uid=ss.uid and s.profession_major=ss.pid');
-		$query=$query->fields('ss',array('total_score','total_rank','rank'));
-	}
-	$query=$query->condition('sg.province',$prov->pid)
-		->fields('s',array('name','idcard_number','gender'))
-		->fields('sc',array('personnel_record_at'))
-		->fields('sg',array('sid'))
-		->fields('p',array('did','pname','gb_pid','gb_pname'))
-		->orderBy('s.idcard_number');
-	$result=$query->execute();
+	$result=db_query('SELECT s.name, s.idcard_number, s.gender, sc.personnel_record_at, sg.sid, p.did, p.pname, p.gb_pid, p.gb_pname, ss.* '.
+		'FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'INNER JOIN {students_contact} sc ON s.uid=sc.uid '.
+		'INNER JOIN {students_gk} sg ON s.uid=sg.uid '.
+		'INNER JOIN {students_total_score} ss ON s.uid=ss.uid and s.profession_major=ss.pid '.
+		'WHERE s.pass_round3_major <> 0 AND sg.province=:province ORDER BY s.idcard_number',
+		array(':province'=>$prov->pid))->fetchAll();
 	
 	// If there is no any record, output 404 error.
-	if($result->rowCount()==0) {
+	if(empty($result)==0) {
 		return MENU_NOT_FOUND;
 	}
 		
