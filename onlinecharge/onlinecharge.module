@@ -334,38 +334,8 @@ function onlinecharge_user_access($user) {
 
 function onlinecharge_user_orders($form, $form_state, $user) {
 	
-	for($i=1;$i<=3;$i++) {
-		$fee=db_query('SELECT * FROM {vl_charging_standard} WHERE ucategory=:ucategory AND period=:i AND fee>0',
-			array(':ucategory'=>$user->ucategory, ':i'=>$i))->fetchObject();
-		if($fee==FALSE) continue;
-		$r=db_query('SELECT EXISTS(SELECT * FROM {orders} WHERE standard=:stid AND uid=:uid)',
-			array(':stid'=>$fee->scid, ':uid'=>$user->uid))->fetchField();
-		$is_passthough=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} sp WHERE sp.idcard_number=s.idcard_number) '.
-			'FROM {students} s WHERE s.uid=:uid', array(':uid'=>$user->name))->fetchField();
-		if(empty($r)) {
-			if($fee->period > 1) {
-				$p=db_query('SELECT EXISTS(SELECT * FROM {students} s INNER JOIN {students_going} sg ON s.uid=sg.uid '.
-					'INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-					'WHERE s.uid=:uid AND s.pass_round1_major=1 AND sg.eid>:eid AND p.allow_round1=2)',
-					array(':uid'=>$user->name, ':eid'=>$i*100))->fetchField();
-				if(!$p) {
-					if(empty($is_passthough)) break;
-				}
-			}
-			db_insert('orders')->fields(array(
-				'uid' => $user->uid,
-				'orderno' => onlinecharge_generate_random_orderno(),
-				'ordertime' => time(),
-				'standard' => $fee->scid,
-				'ordertitle' => $fee->title,
-				'amount' => ($is_passthough&&$i>1)?0:$fee->fee,
-				'gateway' => NULL,
-				'gatewaytransactionno' => NULL,
-				'status' => ($is_passthough&&$i>1)?100:0,
-			))->execute();
-		}
-	}
-	
+	module_invoke_all('orders_generate', $user);
+
 	$form=array();
 	$form['screenwidth']=array(
 		'#type' => 'hidden',
@@ -1147,11 +1117,14 @@ function onlinecharge_user_logout() {
 	}
 }
 
-function onlinecharge_user_login() {
+function onlinecharge_user_login($edit, $account) {
 	$cookies=array('user_uid', 'user_username', 'orders_orderno', 'orders_orderdate', 'orders_gateway', 'orders_status');
 	foreach($cookies as $c) {
 		user_cookie_delete($c);
 	}
+	module_invoke_all('orders_generate', $account);
+	if(db_query('SELECT EXISTS(SELECT * FROM {orders} WHERE uid=:uid AND status<>100)', array(':uid'=>$account->uid))->fetchField()) 
+		drupal_set_message(l(t('There are unpaid orders.'), 'user/'.$account->uid.'/payment'), 'warning');
 }
 
 function onlinecharge_payment_status($user) {

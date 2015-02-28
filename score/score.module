@@ -1346,6 +1346,7 @@ function score_transfer($form, $form_state, $going) {
 	$squery->innerJoin('vl_professions','p','s.profession_major=p.pid');
 	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'))->fields('p',array('pname'));
 	$t=$squery->execute()->rowCount();
+
 	foreach($exams as $r) {
 		$query=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 		$query->innerJoin('students','s','s.uid=sg.uid');
@@ -1353,13 +1354,9 @@ function score_transfer($form, $form_state, $going) {
 		$query->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
 		$query->condition('e'.$r->eid.'.eid',$r->eid);
 		$query->addExpression('e'.$r->eid.'.score','e'.$r->eid);
-		if($t!=count($exams))
-			unset($header['e'.$r->eid]);
-		else {
-			$squery->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
-			$squery->condition('e'.$r->eid.'.eid',$r->eid);
-			$squery->addExpression('CAST(e'.$r->eid.'.score as DECIMAL)','e'.$r->eid);
-		}
+		$squery->innerJoin('students_score','e'.$r->eid,'e'.$r->eid.'.uid=s.uid');
+		$squery->condition('e'.$r->eid.'.eid',$r->eid);
+		$squery->addExpression('CAST(e'.$r->eid.'.score as DECIMAL)','e'.$r->eid);
 	}
 
 	$squery->extend('TableSort')->orderByHeader($header);
@@ -1503,7 +1500,7 @@ function score_view_admin() {
 			$st[$exam->eid]?t('The average score of this exam is !num',array('!num'=>sprintf('%.2f',$st[$exam->eid]))):t('Not Uploaded yet'),
 		);
 		unset($form[$exam->did][$exam->eid]);
-		$output[$exam->did]=theme('table', array('header'=>$header, 'rows'=>$rows[$exam->uid]));
+		$output[$exam->did]=theme('table', array('header'=>$header, 'rows'=>$rows[$exam->did]));
 		if(!isset($form[$exam->did]) && count($rows[$exam->did])) {
 			$form[$exam->did]=array(
 				'#type'=>'fieldset',
@@ -3974,7 +3971,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			'div#menu-bar { display: none; }'.
 			'div#breadcrumb { display: none; }'.
 			'div#messages { display: none; }'.
-			'th, td {font-size: 0.05em;}'.
+			'th, td {font-size: 10pt;}'.
 			'tr {-webkit-print-color-adjust: exact; }'.
 		'' => array('type' => 'inline', 'media'=>'print'),
 	);

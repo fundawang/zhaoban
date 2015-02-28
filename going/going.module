@@ -149,6 +149,7 @@ function goingfull_load($gid)
 
 function going_menu_assign_modify($going)
 {
+	if($going->gid='----') return TRUE;
 	if(!empty($going->cid) && $going->cid <> '110000')
 		$is_passed=0;
 	else $is_passed=date('YmdHi0000') > $going->time;
@@ -1217,15 +1218,15 @@ function going_mygoing() {
 		if(!isset($q[3])) $q[3]=1;
 	}
 
-	$student=db_query('SELECT s.*, p.pname, d.dname FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+	$student=db_query('SELECT s.*, p.pname, p.pnamememo, d.dname FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
 		'INNER JOIN {vl_department} d ON p.did=d.did WHERE s.uid=:uid',array(':uid'=>$uid))->fetchObject();
 	$output  = '<p>';
-	$output .= t('Dear student @uid @name, you\'ve selected @dep @prof profession this year.',
+	$output .= t('Dear student @uid @name, you\'ve selected @dep !prof profession this year.',
 		array(
 			'@uid' =>$student->uid,
 			'@name'=>$student->name,
 			'@dep' =>$student->dname,
-			'@prof'=>$student->pname,
+			'!prof'=>$student->pname.sprintf('<span style="color:red; font-weight: bold;">%s</span>',$student->pnamememo),
 		)
 	);
 	$output .= t('Your current examine schedule are here:');
@@ -1242,6 +1243,11 @@ function going_mygoing() {
 	$query->fields('e',array('eid','ename','elevel','etype','needdraw'))->fields('sg',array('uid','eid','gid','gorder'))->fields('g',array('time','gname','status'));
 	$query->orderBy('citera')->orderBy('sg.eid');
 	$result=$query->execute();
+	$result=db_query('SELECT e.eid, e.ename, e.elevel, e.etype, e.needdraw, sg.uid, sg.eid, sg.gid, sg.gorder, g.time, '.
+		"r.rname, w.rname AS wname, IFNULL(g.time, '9999999999999999') AS citera ".
+		'FROM {students_going} sg INNER JOIN {vl_exam} e ON sg.eid=e.eid '.
+		'LEFT JOIN {vl_going} g ON sg.gid=g.gid LEFT JOIN {vl_room} r ON g.place=r.rid '.
+		'LEFT JOIN {vl_room} w ON g.waiting_room=w.rid WHERE sg.uid=:uid ORDER BY citera, sg.eid', array(':uid'=>$uid))->fetchAll();
 	
 	$header=array(
 		t('Exam Name'),
@@ -1261,14 +1267,22 @@ function going_mygoing() {
 		$should_show=1;
 		$eperiod=intval(substr($r->eid,0,1));
 		if(!$q[$eperiod]) $should_show=0;
-		$rows[]=array(
-			$r->ename.($r->elevel?$r->elevel:''),
-			$should_show?($r->rname?$r->rname:t('To be arranged')):'',
-			$should_show?($r->wname?$r->wname:''):'',
-			$should_show?_going_datetime_to_string($r->time):'',
-			$should_show?$gorder:'',
-		);
-
+		if($should_show) {
+			$rows[$r->eid]=array(
+				$r->ename.($r->elevel?$r->elevel:''),
+				$r->rname?$r->rname:t('To be arranged'),
+				$r->wname?$r->wname:'',
+				_going_datetime_to_string($r->time),
+				$gorder,
+			);
+		} else 
+			$rows[$r->eid]=array(
+				$r->ename.($r->elevel?$r->elevel:''),
+				'',
+				'',
+				'',
+				'',
+			);
 	}
 	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
 	
