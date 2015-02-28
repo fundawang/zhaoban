@@ -1226,34 +1226,6 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 				'pass_round1_major'=>1
 		))->condition('uid',$student)
 		->execute();
-		if(module_exists('onlinecharge')) {
-			for($i=2;$i<=3;$i++) {
-				$query=db_select('orders','o')->fields('o');
-				$query->innerJoin('users','u','o.uid=u.uid');
-				$query->condition('u.name',$student);
-				$query->innerJoin('vl_charging_standard','sc','sc.scid=o.standard');
-				$query->condition('sc.period',$i);
-				$subquery=db_select('students_going','sg')->where('sg.uid=u.name')->condition('sg.eid','200','>')->fields('sg');
-				$query->exists($subquery);
-				if($query->countQuery()->execute()->fetchField()==0) {
-					$uid=db_select('users','u')->condition('u.name',$student)->fields('u',array('uid'))->execute()->fetchField();
-					$localuser=user_load($uid);
-					$fee=db_select('vl_charging_standard','sc')->condition('sc.period',$i)->condition('sc.ucategory',$localuser->ucategory)->fields('sc')->execute()->fetchObject();
-					if($fee->fee<=0) continue;
-					db_insert('orders')->fields(array(
-						'uid' => $localuser->uid,
-						'orderno' => onlinecharge_generate_random_orderno(),
-						'ordertime' => time(),
-						'standard' => $fee->scid,
-						'ordertitle' => $fee->title,
-						'amount' => $fee->fee,
-						'gateway' => NULL,
-						'gatewaytransactionno' => NULL,
-						'status' => 0,
-					))->execute();
-				}
-			}
-		}
 	}
 	
 	drupal_set_message(
