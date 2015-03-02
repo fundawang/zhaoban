@@ -368,7 +368,7 @@ function onlinecharge_user_orders($form, $form_state, $user) {
 		);
 	}
 	$result=db_query('SELECT o.*, sc.period FROM {orders} o INNER JOIN {vl_charging_standard} sc ON sc.scid=o.standard '.
-		'WHERE o.uid=:uid ORDER BY sc.period', array(':uid'=>$user->uid));
+		'WHERE o.uid=:uid ORDER BY sc.period, o.orderno', array(':uid'=>$user->uid));
 	foreach($result as $r) {
 		$form['round'.$r->period]['period'.$r->period]=array(
 			'#type' => 'hidden',
