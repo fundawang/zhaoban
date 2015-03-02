@@ -3538,8 +3538,8 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 	$exam=exam_load($eid);
 	if($exam->etype==2) {
 		$is_uid_unknown=$exam->needdraw;
-		$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE gid=:gid AND gorder IS NOT NULL)',
-			array(':gid'=>$gid))->fetchField());
+		$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE eid=:eid AND gid=:gid AND gorder IS NOT NULL)',
+			array(':eid'=>$eid,':gid'=>$gid))->fetchField());
 	} else {
 		$is_uid_unknown=db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE eid=:eid AND uid LIKE :uid)',
 			array(':eid'=>$eid,':uid'=>db_like(sprintf('%s-%s-',$eid,$gid)).'%'))->fetchField() || 
