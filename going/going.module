@@ -1222,8 +1222,8 @@ function going_mygoing() {
 		module_invoke('onlinecharge', 'user_login', NULL, $user);
 		$q=onlinecharge_payment_status($user);
 		if(!isset($q[1])) $q[1]=1;
-		if(!isset($q[2])) $q[2]=0;
-		if(!isset($q[3])) $q[3]=0;
+		if(!isset($q[2])) $q[2]=1;
+		if(!isset($q[3])) $q[3]=1;
 	}
 
 	$student=db_query('SELECT s.*, p.pname, p.pnamememo, d.dname FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.

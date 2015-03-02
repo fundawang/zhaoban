@@ -3946,6 +3946,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			'div#menu-bar { display: none; }'.
 			'div#breadcrumb { display: none; }'.
 			'div#messages { display: none; }'.
+			'table.sticky-header {display: none;}'.
 			'th, td {font-size: '.(count($header)>30?'5':'10').'pt;}'.
 			'tr {-webkit-print-color-adjust: exact; }'.
 		'' => array('type' => 'inline', 'media'=>'print'),

@@ -4812,8 +4812,8 @@ function signup_ticket_report($user) {
 	if(module_exists('onlinecharge')) {
 		$q=onlinecharge_payment_status($user);
 		if(!isset($q[1])) $q[1]=TRUE;
-		if(!isset($q[2])) $q[2]=FALSE;
-		if(!isset($q[3])) $q[3]=FALSE;
+		if(!isset($q[2])) $q[2]=TRUE;
+		if(!isset($q[3])) $q[3]=TRUE;
 	} else $q=array(TRUE, TRUE, TRUE, TRUE);
 
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
