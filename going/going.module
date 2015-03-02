@@ -718,7 +718,10 @@ function going_assign_students($form, $form_state, $going) {
 				break;
 			case '2':
 			case '3':
-				$citera='s.validated=1 AND s.pass_round1_major=1';
+				if(in_array($exam, array(208,285,210,286)))
+					$citera="s.validated=1";
+				else
+					$citera='s.validated=1 AND s.pass_round1_major=1';
 				break;
 		}
 		
@@ -783,6 +786,8 @@ function going_assign_students($form, $form_state, $going) {
 				'province' => $r->province?db_select('vl_province','p')->fields('p',array('name'))->condition('p.pid',$r->province)->execute()->fetchField():t('Our own student'),
 				'addition' => $addition,
 			);
+			if(in_array($exam, array(208,285,210,286)))
+				$options[$uid]['uid']=$uid;
 			if($r->examplace!='110000')
 				$options[$uid]['profession'].='/'.$r->name_simp;
 			$form[$uid] = array(
@@ -949,7 +954,7 @@ function going_print_orderlist($going)
 		
 		$students=db_query('SELECT sg.gorder, s.uid, s.name, p.pname FROM {students_going} sg '.
 			'INNER JOIN {students} s ON s.uid=sg.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-			'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder',
+			'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder, sg.uid',
 			array(':gid'=>$going->gid))->fetchAll();
 		if(empty($students)) return MENU_NOT_FOUND;
 		$i=1;
@@ -1027,7 +1032,7 @@ function going_print_orderlist($going)
 		//$students=db_query('SELECT sg.gorder as gorder, s.uid AS uid, s.name as cname FROM {students_going} sg INNER JOIN {students} s ON s.uid=sg.uid WHERE sg.gid=\'%s\' ORDER BY gorder', $gid);
 		$students=db_query('SELECT sg.gorder, s.uid, s.name, p.pname FROM {students_going} sg '.
 			'INNER JOIN {students} s ON s.uid=sg.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-			'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder',
+			'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder, sg.uid',
 			array(':gid'=>$going->gid))->fetchAll();
 		if(empty($students)) return MENU_NOT_FOUND;
 		$i=0;
@@ -1131,7 +1136,7 @@ function going_print_score_report($going)
 	
 	$results=db_query('SELECT s.uid, s.name, sg.gorder, sg.opus, p.pname FROM {students_going} sg '.
 		'INNER JOIN {students} s ON sg.uid=s.uid INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
-		'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder',
+		'WHERE sg.gid=:gid GROUP BY s.uid ORDER BY sg.gorder, sg.uid',
 		array(':gid'=>$going->gid))->fetchAll();
 	if(empty($results)) return MENU_NOT_FOUND;
 	$pdf->SetFont('droidsansfallback', 'B', 12, '', true);
@@ -1141,7 +1146,7 @@ function going_print_score_report($going)
 		$pdf->SetFillColor(255,255,255);
 		$ruid=$r->uid;
 		$rname=$r->name;
-		if(in_array(139,$going->exams) || in_array(251,$going->exams) || in_array(252,$going->exams) || in_array(261,$going->exams || in_array(262,$going->exams))) {
+		if(in_array(139,$going->exams) || in_array(251,$going->exams) || in_array(252,$going->exams) || in_array(261,$going->exams) || in_array(262,$going->exams)) {
 			$ruid=substr($r->uid,0,6).'**'.substr($r->uid,8,1);
 			$rname='';
 		}
@@ -1169,7 +1174,7 @@ function going_print_score_report($going)
 		$maxy=$y;
 		if(!empty($t)) {
 			$height=$pdf->getStringHeight(0, $t);
-			if($pdf->GetY()+$height>260) {
+			if($pdf->GetY()+$height>250) {
 				$pdf->AddPage();
 				$pdf->SetY(33);
 			}
@@ -1180,9 +1185,10 @@ function going_print_score_report($going)
 		}
 		$pdf->SetY($y);
 		$height=$pdf->getStringHeight(0, $rname);
-		if($pdf->GetY()+$height>260) {
+		if($pdf->GetY()+$height>250) {
 			$pdf->AddPage();
 			$pdf->SetY(33);
+			//$maxy=33;
 		}
 		$y=$pdf->getY();
 		$pdf->Cell(10,2,$i++, 0, false, 'C',true);
@@ -1212,10 +1218,12 @@ function going_mygoing() {
 	$uid=$GLOBALS['user']->name;
 	$q=array(1,1,1,1);
 	if(module_exists('onlinecharge')) {
-		$q=onlinecharge_payment_status($GLOBALS['user']);
+		$user=user_load($GLOBALS['user']->uid);
+		module_invoke('onlinecharge', 'user_login', NULL, $user);
+		$q=onlinecharge_payment_status($user);
 		if(!isset($q[1])) $q[1]=1;
-		if(!isset($q[2])) $q[2]=1;
-		if(!isset($q[3])) $q[3]=1;
+		if(!isset($q[2])) $q[2]=0;
+		if(!isset($q[3])) $q[3]=0;
 	}
 
 	$student=db_query('SELECT s.*, p.pname, p.pnamememo, d.dname FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
@@ -1229,6 +1237,16 @@ function going_mygoing() {
 			'!prof'=>$student->pname.sprintf('<span style="color:red; font-weight: bold;">%s</span>',$student->pnamememo),
 		)
 	);
+	$prof=profession_load($student->profession_major);
+	$exams=array_keys($prof->exams);
+	if(db_query("SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND eid NOT IN (:eids) AND eid NOT LIKE '3%')",
+		array(':uid'=>$uid, ':eids'=>$exams))->fetchField()) {
+		if(db_query("SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND eid NOT IN (:eids) AND gid IS NOT NULL AND eid LIKE '2%' )",
+			array(':uid'=>$uid, ':eids'=>$exams))->fetchField())
+			$output .= t('You have a secondary profession which is enrolled in the 2nd round examination. If you do not see the arrangement yet, please refer to the bulletin board.');
+		else ;
+			//$output .= t('You have a secondary profession, but the secondary profession is not enrolled in the 2nd round examination.');
+	}
 	$output .= t('Your current examine schedule are here:');
 	$output .= '</p>';
 	
@@ -1273,7 +1291,7 @@ function going_mygoing() {
 				$r->rname?$r->rname:t('To be arranged'),
 				$r->wname?$r->wname:'',
 				_going_datetime_to_string($r->time),
-				$gorder,
+				$r->eid=='108'?'':$gorder,
 			);
 		} else 
 			$rows[$r->eid]=array(
@@ -1287,6 +1305,31 @@ function going_mygoing() {
 	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
 	
 	return $output;
+}
+
+function going_orders_generate($user) {
+	if(1) return;
+	$prof=profession_load(db_query('SELECT profession_major FROM {students} s WHERE s.uid=:uid',array(':uid'=>$user->name))->fetchField());
+	$exams=array_keys($prof->exams);
+	$c=db_query("SELECT EXISTS(SELECT * FROM {students_going} WHERE uid=:uid AND gid IS NOT NULL AND eid LIKE '2%' AND eid NOT IN (:eids))",
+		array(':uid'=>$user->name, ':eids'=>$exams))->fetchField();
+	if($c) {
+		$fee=db_query('SELECT * FROM {vl_charging_standard} WHERE ucategory=:ucategory AND period=2 AND fee>0',
+			array(':ucategory'=>$user->ucategory))->fetchObject();
+		if(db_query('SELECT NOT EXISTS(SELECT * FROM {orders} WHERE uid=:uid AND ordertitle=:title)',
+			array('uid'=>$user->uid, ':title'=>$fee->title.'('.t('Secondary Profession').')'))->fetchField())
+			db_insert('orders')->fields(array(
+				'uid' => $user->uid,
+				'orderno' => onlinecharge_generate_random_orderno(),
+				'ordertime' => time(),
+				'standard' => $fee->scid,
+				'ordertitle' => $fee->title.'('.t('Secondary Profession').')',
+				'amount' => $fee->fee,
+				'gateway' => NULL,
+				'gatewaytransactionno' => NULL,
+				'status' => 0,
+			))->execute();
+	}
 }
 
 function going_weixin($request, $user) {

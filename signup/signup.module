@@ -3232,6 +3232,7 @@ function signup_2nd_round_by_profession() {
 	
 	$output .= '<p>'.t('There are !num students which have been marked as enrolled into 2nd round examination.', array('!num'=>$total_students)).'</p>';
 	$header = array(
+		array('data'=>t('Status'), 'field'=>'allow_round1', 'style'=>'width: 60px;'),
 		array('data'=>t('Profession'), 'field'=>'pid', 'sort'=>'asc'),
 		array('data'=>t('Number of students (%)'), 'field'=>'num'),
 	);
@@ -3240,7 +3241,7 @@ function signup_2nd_round_by_profession() {
 	$query->innerJoin('vl_professions','p','s.profession_major = p.pid');
 	$query->addExpression('COUNT(*)', 'num');
 	$query = $query->where($valins)
-		->fields('p',array('pid','uid','pname','pnamememo'))
+		->fields('p',array('pid','uid','pname','pnamememo','allow_round1'))
 		->groupBy('s.profession_major')
 		->extend('TableSort')->orderByHeader($header);
 	
@@ -3253,11 +3254,12 @@ function signup_2nd_round_by_profession() {
 			if(user_access('view own draft') && !user_access('view draft'))
 				if($GLOBALS['user']->name !== $r->uid) continue;
 			$rows[] = array(
-			'<nobr>'.l($r->pname, 'signup/2ndround/profession/'.$r->pid, array(
-				'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
-				)
-				).'</nobr>',
-			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
+				$r->allow_round1==2?('<img src="/misc/watchdog-ok.png" align="middle"/>'.t('Published')):'',
+				'<nobr>'.l($r->pname, 'signup/2ndround/profession/'.$r->pid, array(
+					'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
+					)
+					).'</nobr>',
+				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
 			);
 		}
 	}
@@ -3278,12 +3280,16 @@ function signup_2nd_round_by_profession_detail($prof) {
 		$sql_department_insert = '1';
 	$output = '<div id="baoming_user_list" class="baoming_view_section node">';
 
-	if($prof->allow_round1==0)
-		$output .= drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_reject'));
-	else if($prof->allow_round1==1)
-		$output .= drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_open'));
-	else if($prof->allow_round1==2)
-		drupal_set_message(t('The 2nd round result of @pname is opened to students now.',array('@pname'=>$prof->pname)));
+	if(user_access('view passround1')) {
+		if($prof->allow_round1==0) {
+			$output .= '<div class="container-inline">'.drupal_render(drupal_get_form('signup_2nd_round_by_profession_detail_open'));
+		}
+		else if($prof->allow_round1==2)
+			drupal_set_message(t('The 2nd round result of @pname is opened to students now.',array('@pname'=>$prof->pname)));
+	}
+
+	$passthrough_students=db_query('SELECT s.uid FROM {students} s INNER JOIN {students_passthrough} sp '.
+		'ON s.idcard_number=sp.idcard_number WHERE s.profession_major=:pid', array(':pid'=>$prof->pid))->fetchCol();
 
 	$rows = array();
 	$header = array(
@@ -3334,7 +3340,7 @@ function signup_2nd_round_by_profession_detail($prof) {
 		
 		$rows[] = array(
 			'<nobr>'.l($r->uid, 'user/'.$r->sys_uid).'</nobr>',
-			'<nobr>'.$r->name.'</nobr>',
+			'<nobr>'.$r->name.(in_array($r->uid, $passthrough_students)?('/'.t('Passthrough')):'').'</nobr>',
 			$r->gender == 1 ? t('Male'): t('Female'),
 			$province,
 			$per,
@@ -3351,11 +3357,17 @@ function signup_2nd_round_by_profession_detail($prof) {
 function signup_2nd_round_by_profession_detail_open($form, $form_state) {
 	if(empty($form)) $form=array();
 	if(db_query('SELECT EXISTS(SELECT * FROM {students} s WHERE s.pass_round1_major=1 AND s.idcard_number NOT IN '.
-		'(SELECT sp.idcard_number FROM {students_passthrough} sp) AND s.profession_major=:pid)', array(':pid'=>arg(3)))->fetchField())
+		'(SELECT sp.idcard_number FROM {students_passthrough} sp) AND s.profession_major=:pid)', array(':pid'=>arg(3)))->fetchField()) {
 		$form['open']=array(
 			'#type' => 'submit',
 			'#value' => t('Make this profession open to students'),
 		);
+		$form['reject']=array(
+			'#type' => 'submit',
+			'#value' => t('Reject the 2nd result of this profession'),
+			'#submit' => array('signup_2nd_round_by_profession_detail_reject_submit')
+		);
+	}
 
 	return $form;
 }
@@ -3366,22 +3378,13 @@ function signup_2nd_round_by_profession_detail_open_submit($form, $form_state) {
 	cache_clear_all('profession:'.$prof->pid, 'cache');
 }
 
-function signup_2nd_round_by_profession_detail_reject($form, $form_state) {
-	if(empty($form)) $form=array();
-	if(db_query('SELECT EXISTS(SELECT * FROM {students} s WHERE s.pass_round1_major=1 AND s.idcard_number NOT IN '.
-		'(SELECT sp.idcard_number FROM {students_passthrough} sp) AND s.profession_major=:pid)', array(':pid'=>arg(3)))->fetchField())
-		$form['open']=array(
-			'#type' => 'submit',
-			'#value' => t('Reject the 2nd result of this profession'),
-		);
-
-	return $form;
-}
-
-function signup_2nd_round_by_profession_detail_reject_submit($form, $form_state) {
+function signup_2nd_round_by_profession_detail_reject_submit($form, &$form_state) {
 	$prof=profession_load(arg(3));
 	db_update('vl_professions')->condition('pid',$prof->pid)->fields(array('allow_round1'=>1))->execute();
+	db_update('students')->condition('profession_major',$prof->pid)->fields(array('pass_round1_major'=>0))->execute();
 	cache_clear_all('profession:'.$prof->pid, 'cache');
+	$form_state['redirect']='signup/2ndround';
+	drupal_set_message(t('The 2nd round result of @pname is rejected.',array('@pname'=>$prof->pname)));
 }
 
 function signup_3rd_round_by_profession() {
@@ -4809,8 +4812,8 @@ function signup_ticket_report($user) {
 	if(module_exists('onlinecharge')) {
 		$q=onlinecharge_payment_status($user);
 		if(!isset($q[1])) $q[1]=TRUE;
-		if(!isset($q[2])) $q[2]=TRUE;
-		if(!isset($q[3])) $q[3]=TRUE;
+		if(!isset($q[2])) $q[2]=FALSE;
+		if(!isset($q[3])) $q[3]=FALSE;
 	} else $q=array(TRUE, TRUE, TRUE, TRUE);
 
 	require_once(drupal_get_path('module','signup').'/../tcpdf/tcpdf.php');
@@ -4927,7 +4930,7 @@ function signup_ticket_report($user) {
 			$pdf->Ln();
 			$pdf->setX(210);
 			if($r->etype=='2')
-				if($r->needdraw) ;
+				if($r->needdraw||$r->eid=='108') ;
 				else
 					$pdf->Cell(65,7, sprintf("你是本考场总第%d名参加考试的考生。",$r->gorder));
 			else
@@ -4969,6 +4972,13 @@ function signup_schools_autocomplete($string) {
 	}
 
 	drupal_json_output($matches);
+}
+
+function signup_user_login($edit, $user) {
+	$r=db_query('SELECT p.allow_round1, s.pass_round1_major FROM {vl_professions} p INNER JOIN {students} s ON s.profession_major=p.pid AND s.uid=:uid',
+		array(':uid'=>$user->name))->fetchObject();
+	if($r->allow_round1==2 && $r->pass_round1_major==0)
+		drupal_set_message(t('You are not enrolled in the 2nd round exam.'), 'warning');
 }
 
 function signup_cron() {

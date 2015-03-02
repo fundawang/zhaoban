@@ -1242,6 +1242,7 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 				'allow_round1'=>0
 		))->condition('pid',arg(2))
 		->execute();
+		cache_clear_all('profession:'.arg(2), 'cache');
 		$form_state['redirect']='signup/2ndround/profession/'.arg(2);
 	} else 
 		$form_state['redirect']='signup/markround2';
@@ -1316,7 +1317,8 @@ function score_transfer($form, $form_state, $going) {
 	$squery=db_select('students_going','sg')->condition('sg.gid',$going->gid);
 	$squery->innerJoin('students','s','s.uid=sg.uid');
 	$squery->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'))->fields('p',array('pname'));
+	$squery->addExpression("CONCAT(p.pname, '(', pnamememo, ')')",'pname');
+	$squery->fields('s',array('uid','name','gender'))->fields('sg',array('gorder'));
 	$t=$squery->execute()->rowCount();
 
 	foreach($exams as $r) {
@@ -1916,10 +1918,10 @@ function score_mark_3rd_round_submit($form, $form_state) {
 }
 
 function score_myscore_check($user=NULL) {
-	if(!empty($GLOBALS['menu_admin'])) return TRUE;
+	if(empty($user) && !empty($GLOBALS['menu_admin'])) return TRUE;
 	if(!is_null($user)) {
 		$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$user->name))->fetchField();
-		return user_access('review all score') && $r;
+		return user_access('review all score') && user_access('check students own scores', $user) && $r;
 	}
 	if(empty($GLOBALS['user']->uid)) return FALSE;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$GLOBALS['user']->name))->fetchField();
@@ -3541,7 +3543,8 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 	} else {
 		$is_uid_unknown=db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE eid=:eid AND uid LIKE :uid)',
 			array(':eid'=>$eid,':uid'=>db_like(sprintf('%s-%s-',$eid,$gid)).'%'))->fetchField() || 
-			db_query('SELECT NOT EXISTS(SELECT * FROM {students_score_temp} WHERE eid=:eid)', array(':eid'=>$eid))->fetchField();
+			db_query('SELECT NOT EXISTS(SELECT * FROM {students_score_temp} ss INNER JOIN {students_going} sg ON ss.uid=sg.uid AND ss.eid=sg.eid '.
+				'WHERE ss.eid=:eid AND sg.gid=:gid)', array(':eid'=>$eid, ':gid'=>$gid))->fetchField();
 	}
 	if(empty($tid) && $should_show_save) return array();
 	$form['addscores']=array(
@@ -3621,7 +3624,7 @@ function score_automize_page_modify_score(&$form_state, $eid, $gid, $tid) {
 			'#attributes' => array('autocomplete'=>'off'),
 			'#title' => $is_uid_unknown?t('The score of No. @uid', array('@uid'=>$i-1)):t('The score of @uid', array('@uid'=>$uid)),
 			'#title_display' => 'invisible',
-			'#default_value' => (isset($r->score)&&$r->score>0)?$r->score:'',
+			'#default_value' => (isset($r->score)&&$r->score>=0)?$r->score:'',
 			'#prefix' => '<td>',
 			'#suffix' => '</td>',
 			'#states' => array(
@@ -3943,7 +3946,7 @@ function score_automize_page_step_calculate($form, $form_state, $eid=NULL) {
 			'div#menu-bar { display: none; }'.
 			'div#breadcrumb { display: none; }'.
 			'div#messages { display: none; }'.
-			'th, td {font-size: 10pt;}'.
+			'th, td {font-size: '.(count($header)>30?'5':'10').'pt;}'.
 			'tr {-webkit-print-color-adjust: exact; }'.
 		'' => array('type' => 'inline', 'media'=>'print'),
 	);
