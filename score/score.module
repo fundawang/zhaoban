@@ -1237,15 +1237,12 @@ function score_mark_2nd_round_submit($form, &$form_state) {
 			'!prof'=>$prof),
 		WATCHDOG_INFO);
 
-	if(count(_score_mark_2nd_round_enabled_examplace(arg(2)))==0) {
-		db_update('vl_professions')->fields(array(
-				'allow_round1'=>0
-		))->condition('pid',arg(2))
-		->execute();
-		cache_clear_all('profession:'.arg(2), 'cache');
-		$form_state['redirect']='signup/2ndround/profession/'.arg(2);
-	} else 
-		$form_state['redirect']='signup/markround2';
+	db_update('vl_professions')->fields(array(
+			'allow_round1'=>0
+	))->condition('pid',arg(2))
+	->execute();
+	cache_clear_all('profession:'.arg(2), 'cache');
+	$form_state['redirect']='signup/2ndround/profession/'.arg(2);
 }
 
 function score_transfer_list_check() {
@@ -1703,7 +1700,7 @@ function score_prepare_3rd_detail($profession) {
 			if($r['total_score']==0) continue;
 		}
 		// FIXME: HACKAGE FOR CELLA
-		$rows[]=array(
+		$rows[$r['uid']]=array(
 			(isset($r['tsrank'])&&$r['tsrank']!=999)?$r['tsrank']:$i,
 			l($r['uid'], 'user/'.$r['uuid']),
 			$r['name'],
@@ -1714,31 +1711,33 @@ function score_prepare_3rd_detail($profession) {
 		foreach($profession_exams as $eid=>$weight) {
 			if($weight!=0||substr($eid,0,1)=='3') {
 				if(in_array($profession->did,array('D5','D6','D7','D8')) && substr($eid,0,1)!='3')
-					$rows[count($rows)-1][]=($r['r'.$eid]==999||is_null($r['r'.$eid]))?'0':number_format($r['r'.$eid], 2, '.' ,'');
-				else
-					$rows[count($rows)-1][]=($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
+					$rows[$r['uid']][]=($r['r'.$eid]==999||is_null($r['r'.$eid]))?'0':number_format($r['r'.$eid], 2, '.' ,'');
+				else {
+					$rows[$r['uid']][]=$r['e'.$eid]==-1?t('Absence'):sprintf('%.2f', $r['e'.$eid]);
+					//($eid=='350')?$r['e'.$eid]:(($r['e'.$eid]==NULL)?('0.00'):(number_format($r['e'.$eid], 2, '.', '')));
+				}
 				if(in_array($eid, array(321,322,323,324)) && $r['e'.$eid]) {
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='(';
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format($r['e'.str_replace('32','30',$eid)],1);
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].='/';
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=number_format($r['e'.str_replace('32','31',$eid)],2);
-					$rows[count($rows)-1][count($rows[count($rows)-1])-1].=')';
+					$rows[$r['uid']][count($rows[$r['uid']])-1].='(';
+					$rows[$r['uid']][count($rows[$r['uid']])-1].=number_format($r['e'.str_replace('32','30',$eid)],1);
+					$rows[$r['uid']][count($rows[$r['uid']])-1].='/';
+					$rows[$r['uid']][count($rows[$r['uid']])-1].=number_format($r['e'.str_replace('32','31',$eid)],2);
+					$rows[$r['uid']][count($rows[$r['uid']])-1].=')';
 				}
 			}
 		}
 		if(in_array($profession->did,array('D5','D6','D7','D8'))) {
-			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
-			$rows[count($rows)-1][]=round($r['total_rank'], 2);
+			$rows[$r['uid']][]=number_format($r['total_score'], 2, '.' ,'');
+			$rows[$r['uid']][]=round($r['total_rank'], 2);
 		} else
-			$rows[count($rows)-1][]=number_format($r['total_score'], 2, '.' ,'');
+			$rows[$r['uid']][]=number_format($r['total_score'], 2, '.' ,'');
 		if($r['profession_major']!==$profession->pid)
-			$rows[count($rows)-1][]='* '.t('This is a secondary profession student');
+			$rows[$r['uid']][]='* '.t('This is a secondary profession student');
 		else
-			$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
+			$rows[$r['uid']][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
 		
 		$a=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} WHERE idcard_number=:idcard)', array(':idcard'=>$r['idcard_number']))->fetchField();
 		if($a) {
-			$rows[count($rows)-1][count($rows[count($rows)-1])-2]=t('PASSTHROUGHED');
+			$rows[$r['uid']][count($rows[$r['uid']])-2]=t('PASSTHROUGHED');
 		}
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows, 'empty'=>t('No students to display.')));
@@ -3306,9 +3305,8 @@ function score_cron() {
 	}
 	
 	// Force set those passthrough students's score
-	$query=db_select('students','s')->fields('s',array('uid','profession_major'))->condition('s.validated',1);
-	$query->innerJoin('students_passthrough','sp','s.idcard_number=sp.idcard_number');
-	$result = $query->execute();
+	$result=db_query('SELECT s.uid, s.profession_major FROM {students} s INNER JOIN {students_passthrough} sp ON '.
+		's.idcard_number=sp.idcard_number WHERE s.validated=1')->fetchAll();
 	foreach ($result as $r) {
 		db_delete('students_score')
 			->condition('uid',$r->uid)
@@ -3414,8 +3412,8 @@ function score_automize_page($form, $form_state) {
 		$exam=exam_load($eid);
 		if($exam->etype==2) {
 			$is_uid_unknown=$exam->needdraw;
-			$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE gid=:gid AND gorder IS NOT NULL)',
-				array(':gid'=>$gid))->fetchField());
+			$is_uid_unknown=$is_uid_unknown&&!(db_query('SELECT EXISTS(SELECT * FROM {students_going} WHERE eid=:eid AND gid=:gid AND gorder IS NOT NULL)',
+				array(':eid'=>$eid,':gid'=>$gid))->fetchField());
 		} else {
 			$is_uid_unknown=db_query('SELECT EXISTS(SELECT * FROM {students_score_temp} WHERE eid=:eid AND uid LIKE :uid)',
 				array(':eid'=>$eid,':uid'=>db_like(sprintf('%s-%s-',$eid,$gid)).'%'))->fetchField() || 

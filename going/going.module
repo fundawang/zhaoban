@@ -1303,6 +1303,7 @@ function going_mygoing() {
 			);
 	}
 	$output .= theme('table',array('rows'=>$rows, 'header'=>$header));
+	$output .= t('The actural lasting time of writing exam subjects to what is written in the paper sheet.');
 	
 	return $output;
 }
