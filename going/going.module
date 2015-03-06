@@ -1188,7 +1188,7 @@ function going_print_score_report($going)
 		if($pdf->GetY()+$height>250) {
 			$pdf->AddPage();
 			$pdf->SetY(33);
-			//$maxy=33;
+			$maxy=33;
 		}
 		$y=$pdf->getY();
 		$pdf->Cell(10,2,$i++, 0, false, 'C',true);
