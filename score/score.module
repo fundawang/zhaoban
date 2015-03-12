@@ -531,6 +531,7 @@ function score_input_going_form($form, $form_state, $exam, $going=NULL) {
 	$text='';
 	$j=1;
 	
+	$should_show_save=FALSE;
 	foreach($students as $student) {
 		$form['uid'][$student->uid]=array('#markup'=>l($student->uid, 'user/'.$student->uuid));
 		$text.=$student->gorder."\t";
@@ -549,11 +550,13 @@ function score_input_going_form($form, $form_state, $exam, $going=NULL) {
 		}
 		if($should_opus >0 )
 			$form['opus'][$student->uid]=array('#markup'=>'<ul><li>'.implode('</li><li>', $ops).'</li></ul>');
-		$should_disabled=db_select('students_score','sc')->fields('sc')->condition('uid',$student->uid)->condition('eid',$student->eid)->countQuery()->execute()->fetchField();
+		$should_disabled=db_query('SELECT EXISTS(SELECT * FROM {students_score} WHERE uid=:uid AND eid=:eid)', array(':uid'=>$student->uid, ':eid'=>$student->eid))->fetchField();
 		if($should_disabled || empty($going))
 			$form['score-'.$student->uid]=array('#markup'=>db_select('students_score','sc')->fields('sc',array('score'))->condition('uid',$student->uid)->condition('eid',$student->eid)->execute()->fetchField());
-		else
+		else {
 			$form['score-'.$student->uid]=array('#type'=>'textfield', '#title'=> t('!name\'s score', array('!name'=>$student->uid)),'#size'=>20, '#required'=>TRUE, '#prefix'=>'<div class="container-inline">', '#suffix'=>'</div>');
+			$should_show_save=TRUE;
+		}
 	}
 	drupal_add_js(drupal_get_path('module','score').'/ZeroClipboard.js');
 	drupal_add_css(drupal_get_path('module', 'score') .'/jquery.toastmessage.css');
@@ -561,6 +564,10 @@ function score_input_going_form($form, $form_state, $exam, $going=NULL) {
 	$form['submit']=array(
 		'#type'=>'submit',
 		'#value'=>t('Save'),
+		'#access' => $should_show_save,
+	);
+	$form['submitsuffix']=array(
+		'#type' => 'markup',
 		'#suffix'=>'<input type="button" id="copytoclip" value="'.t('Copy to clipboard').'" class="form-submit"/><script>ZeroClipboard.setMoviePath(\'/'.drupal_get_path('module','score').'/ZeroClipboard.swf\'); var clip = new ZeroClipboard.Client(); clip.setText(\''.$text.'\'); clip.glue(\'copytoclip\'); clip.addEventListener(\'onComplete\', my_complete ); function my_complete( client, text ) { jQuery().toastmessage({position: \'middle-center\', stayTime: 2000}); jQuery().toastmessage(\'showSuccessToast\', \''.t('Copy Succeeded.').'\');}</script>'
 	);
 	if(empty($going)) unset($form['submit']);
@@ -600,11 +607,13 @@ function theme_score_input_going_form($variables) {
 		$i++;
 	}
 
-	$output.=$warn;
+	if($form['submit']['#access'])
+		$output.=$warn;
 	$output.=drupal_render($form['info']);
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 	
 	$output.=drupal_render($form['submit']);
+	$output.=drupal_render($form['submitsuffix']);
 	$output.=drupal_render_children($form);
 	return $output;;
 }
