@@ -26,3 +26,7 @@ div.error {
 div.captcha > img {
 	float: right; position: relative; left: -720px; top: 10px;
 }
+
+tr.selected > td > a {
+	color: yellow;
+}
