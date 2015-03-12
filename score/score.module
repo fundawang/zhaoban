@@ -4029,6 +4029,7 @@ function score_automize_page_step_calculate_submit($form, &$form_state) {
 	$exam=exam_load($eid);
 	$i=0;
 	foreach($form['#students'] as $s => $value) {
+		if($value['totalscore']=='') continue;
 		$q=db_merge('students_score')->key(array(
 			'uid' => $s,
 			'eid' => $eid,
