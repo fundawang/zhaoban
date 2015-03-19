@@ -2008,7 +2008,7 @@ function score_myscore($user=NULL) {
 		array(
 			'@dep' =>$profession->dname,
 			'@prof'=>$profession->pname.$profession->pnamememo,
-			'@plan'=>$profession->plan,
+			'@plan'=>is_numeric($profession->plan)?t('@num people',array('@num'=>$profession->plan)):$profession->plan,
 		)
 	);
 	
