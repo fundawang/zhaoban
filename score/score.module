@@ -3292,7 +3292,7 @@ function score_cron() {
 		}
 
 		// Now calulate the actural rank
-		$students=db_select('students_total_score','s')->fields('s',array('uid'))->condition('s.pid',$r->pid)->execute();
+		$students=db_query('SELECT uid FROM {students_total_score} WHERE pid=:pid',array(':pid'=>$r->pid))->fetchAll();
 		foreach($students as $s) {
 			if(in_array(substr($r->pid,0,2),array('D5','D6','D7','D8'))) {
 				$query=db_select('students_total_score','sc')->condition('sc.pid',$r->pid)->condition('sc.uid',$s->uid);
@@ -3308,13 +3308,13 @@ function score_cron() {
 				))->execute();
 			}
 			else {
-				$score=db_select('students_total_score','sc')->condition('sc.uid',$s->uid)->fields('sc',array('total_score'))->execute()->fetchField();
-				$query=db_select('students_total_score','sc')->condition('sc.total_score',$score*1,'>');
-				$query->innerJoin('students','s','sc.uid=s.uid');
-				$query->condition('s.profession_major',$r->pid)->condition('s.pass_round1_major',1)->condition('s.uid',$s->uid,'<>')->condition('sc.total_score',0,'<>');
-				$query->addExpression('count(*)','num');
-				db_update('students_total_score')->condition('uid',$s->uid)->fields(array(
-					'rank'=>($score==0)?'999':$query->execute()->fetchField()+1,
+				$score=db_query('SELECT total_score FROM {students_total_score} WHERE uid=:uid AND pid=:pid',
+					array(':uid'=>$s->uid, ':pid'=>$r->pid))->fetchField();
+				$rank=db_query('SELECT COUNT(*) FROM {students_total_score} WHERE pid=:pid AND uid<>:uid AND total_score<>0 AND total_score>:score',
+					array(':pid'=>$r->pid, ':uid'=>$s->uid, ':score'=>$score)
+				)->fetchField();
+				db_update('students_total_score')->condition('uid',$s->uid)->condition('pid',$r->pid)->fields(array(
+					'rank'=>($score==0)?'999':$rank+1,
 				))->execute();
 			}
 		}
