@@ -622,7 +622,7 @@ function score_input_going_form_validate($form, &$form_state) {
 	foreach($form_state['values'] as $field=>$value) {
 		if(!is_null($form_state['values']['score-'.$field])) {
 			$score=$form_state['values']['score-'.$field];
-			if(!is_numeric($score) || (float)$score < 0 || (float)$score > 100)
+			if(!is_numeric($score) || (float)$score < -1 || (float)$score > 100)
 				form_set_error('score-'.$field, t('The score you\'ve inputted for !sid is invalid.',array('!sid'=>$field)));
 		}
 	}
@@ -967,7 +967,7 @@ function score_batch_validate($form, $form_state) {
 					if(floatval(trim($row[count($row)-1])) < 1)
 						form_set_error('score', t('The score of student !uid: !score is not valid.', array('!uid'=>$row[0], '!score'=>$row[count($row)-1])));
 				}
-				else if(floatval(trim($row[count($row)-1])) !== -1 && (floatval(trim($row[count($row)-1])) < 0 || floatval(trim($row[count($row)-1])) > 100))
+				else if(floatval(trim($row[count($row)-1])) < -1 || floatval(trim($row[count($row)-1])) > 100)
 					form_set_error('score', t('The score of student !uid: !score is not valid.', array('!uid'=>$row[0], '!score'=>$row[count($row)-1])));
 			} else { // The score of the student have been imported already.
 				form_set_error('score', t('The score of student !uid has been already imported.', array('!uid'=>$row[0])));
@@ -1586,9 +1586,10 @@ function score_prepare_3rd_detail($profession) {
 			'!user'=>format_username($GLOBALS['user']),
 			'!prof'=>$profession->pname),
 		WATCHDOG_DEBUG);
-	drupal_add_css(
-		'div#sidebar-left { display: none; } '.
-		'.one-sidebar div#content { width: 95%; } ',
+	drupal_add_css(''.
+		'div.sidebar {display: none;}'.
+		'div#tasks {display: none;}'.
+		'body.sidebar-first div.content-inner {margin-left: 0px;}',
 		array('type' => 'inline')
 	);
 	$profession_exams = $profession->exams;
@@ -1648,7 +1649,7 @@ function score_prepare_3rd_detail($profession) {
 	
 	$query=db_select('students','s')->fields('s',array('uid','idcard_number','ucategory','name','gender','profession_major'));
 	// FIXME: HACK FOR CELLA
-	if(in_array($profession->pid, array('D603', 'D604', 'D716','D717'))) {
+	if(in_array($profession->pid, array('D311', 'D313', 'D603', 'D604', 'D716','D717'))) {
 		$query->condition('s.pass_round1_major',1);
 		$squery=db_select('students_total_score','sts')->fields('sts',array('total_score'))->condition('sts.pid',$profession->pid)->where('sts.uid=s.uid');
 		$query->exists($squery);
@@ -1727,9 +1728,9 @@ function score_prepare_3rd_detail($profession) {
 				}
 				if(in_array($eid, array(321,322,323,324)) && $r['e'.$eid]) {
 					$rows[$r['uid']][count($rows[$r['uid']])-1].='(';
-					$rows[$r['uid']][count($rows[$r['uid']])-1].=number_format($r['e'.str_replace('32','30',$eid)],1);
+					$rows[$r['uid']][count($rows[$r['uid']])-1].=$r['e'.str_replace('32','30',$eid)]==-1?t('Absence'):number_format($r['e'.str_replace('32','30',$eid)],1);
 					$rows[$r['uid']][count($rows[$r['uid']])-1].='/';
-					$rows[$r['uid']][count($rows[$r['uid']])-1].=number_format($r['e'.str_replace('32','31',$eid)],2);
+					$rows[$r['uid']][count($rows[$r['uid']])-1].=$r['e'.str_replace('32','31',$eid)]==-1?t('Absence'):number_format($r['e'.str_replace('32','31',$eid)],2);
 					$rows[$r['uid']][count($rows[$r['uid']])-1].=')';
 				}
 			}
@@ -1767,7 +1768,7 @@ function score_mark_3rd_round_list() {
 	);
 
 	$rows=array();
-	$query=db_select('vl_professions','p')->fields('p',array('pid','pname','did'))->orderBy('p.pid');
+	$query=db_select('vl_professions','p')->fields('p',array('pid','pname','pnamememo','did'))->orderBy('p.pid');
 	$query->innerJoin('vl_department','d','p.did=d.did');
 	$query->fields('d',array('dname'));
 	$subquery=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1)->where('s.profession_major=p.pid');
@@ -1787,7 +1788,7 @@ function score_mark_3rd_round_list() {
 		$outmainland_out=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1,'<>')->condition('s.pass_round3_major',1)->fields('s')->countQuery()->execute()->fetchField();
 		$rows[]=array(
 			$r->dname,
-			l($r->pname, 'signup/markround3/'.$r->pid),
+			l($r->pname.$r->pnamememo, 'signup/markround3/'.$r->pid),
 			$mainland_in.' / '.$mainland_out,
 			$outmainland_in.' / '.$outmainland_out,
 		);
@@ -1807,15 +1808,15 @@ function score_mark_3rd_round_list() {
 
 function score_mark_3rd_round_check($profession) {
 	global $user;
-	$query=db_select('students','s')->condition('pass_round1_major',0,'>')->fields('s');
-	if(!empty($profession))
-		$query->condition('s.profession_major',$profession->pid);
-	$r=$query->countQuery()->execute()->fetchField();
-	return user_access('mark 3rd round students') && $r && $user->uid==3 || $user->uid==1;
+	if(empty($profession))
+		$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0)')->fetchField();
+	else
+		$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND profession_major=:prof)',array(':prof'=>$profession->pid))->fetchField();
+	return user_access('mark 3rd round students') && $r;
 }
 
 function score_mark_3rd_round($form, $form_state, $profession) {
-	drupal_set_title(t('Mark the 3rd round student').' -  '.$profession->pname);
+	drupal_set_title(t('Mark the 3rd round student').' -  '.$profession->pname.$profession->pnamememo);
 	drupal_add_css(drupal_get_path('module', 'going') .'/going.css');
 
 	$header=array(
@@ -1927,11 +1928,11 @@ function score_mark_3rd_round_submit($form, $form_state) {
 
 function score_myscore_check($user=NULL) {
 	if(empty($user) && !empty($GLOBALS['menu_admin'])) return TRUE;
+	if(empty($GLOBALS['user']->uid)) return FALSE;
 	if(!is_null($user)) {
 		$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$user->name))->fetchField();
-		return user_access('review all score') && user_access('check students own scores', $user) && $r;
+		return user_access('review all score') && $r;
 	}
-	if(empty($GLOBALS['user']->uid)) return FALSE;
 	$r=db_query('SELECT EXISTS(SELECT * FROM {students} WHERE pass_round1_major>0 AND uid=:uid)', array(':uid'=>$GLOBALS['user']->name))->fetchField();
 	return user_access('check students own scores') && $r;
 }
@@ -1960,7 +1961,7 @@ function score_myscore($user=NULL) {
 	if(!isset($student->pass_round3_major)) return MENU_NOT_FOUND;
 
 	if($student->ucategory==1 && $student->pass_round3_major>=1) {
-		$sid=db_select('students_gk','sg')->fields('sg',array('sid'))->condition('sg.uid',$student->uid)->execute()->fetchField();
+		$sid=db_query('SELECT sid FROM {students_gk} WHERE uid=:uid',array(':uid'=>$student->uid))->fetchField();
 		if(empty($sid)) {
 			$output = '<p>'.t('You did not fill up your gaokao sid, please <a href="@url">click here</a> to fill it at first.',
 				array('@url'=>sprintf('/user/%s/edit/%s?destination=/myscore', $user->uid, signup_user_GAOKAO))).'</p>';
@@ -2006,20 +2007,17 @@ function score_myscore($user=NULL) {
 	$output .= t('You\'ve selected @dep @prof profession this year. The plan of this profession is @plan.',
 		array(
 			'@dep' =>$profession->dname,
-			'@prof'=>$profession->pname,
+			'@prof'=>$profession->pname.$profession->pnamememo,
 			'@plan'=>$profession->plan,
 		)
 	);
 	
 	$output .= t('And your scores goes for:').'</p>';
 	
-	$query=db_select('students','s')->condition('s.uid',$uid);
-	$query->innerJoin('students_score','sc','s.uid=sc.uid');
-	$query->innerJoin('vl_exam','e','sc.eid=e.eid');
-	$query->fields('e')->fields('sc')->orderBy('sc.eid');
-	$rdbo=$query->execute();
+	$rdbo=db_query('SELECT e.*, sc.* FROM {students_score} sc INNER JOIN {vl_exam} e ON sc.eid=e.eid WHERE sc.uid=:uid ORDER BY sc.eid',
+		array(':uid'=>$uid))->fetchAll();
 	
-	$is_passedthrough=db_select('students_passthrough','sp')->fields('sp')->condition('sp.idcard_number',$student->idcard_number)->countQuery()->execute()->fetchField();
+	$is_passedthrough=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} WHERE idcard_number=:idcard)',array(':idcard'=>$student->idcard_number))->fetchField();
 	
 	$exams = unserialize($profession->exams);
 	$rows=array();
@@ -2030,14 +2028,14 @@ function score_myscore($user=NULL) {
 				$r->ename.$r->elevel,
 				$is_passedthrough?t('Passed through'):t('Numeric Value'),
 				$is_passedthrough?t('Passed through'):t('The large the better'),
-				$is_passedthrough?t('Passed through'):round($r->score, 2)
+				$is_passedthrough?t('Passed through'):$r->score==-1?t('Absence'):round($r->score, 2)
 			);
 		} else {
 			$rows[]=array(
 				$r->ename.$r->elevel,
 				$is_passedthrough?t('Passed through'):t('Mean rank'),
 				$is_passedthrough?t('Passed through'):t('The small the better'),
-				$is_passedthrough?t('Passed through'):$r->rank
+				$is_passedthrough?t('Passed through'):round($r->rank,2)
 			);
 		}
 	}
@@ -2053,7 +2051,8 @@ function score_myscore($user=NULL) {
 		array(':uid'=>$student->uid, ':pid'=>$student->profession_major))->fetchObject();
 	if(empty($ts)) return MENU_NOT_FOUND;
 
-	if($student->profession_major=='D301') {
+	if($student->profession_major=='D301' || $student->profession_major=='D302' || $student->profession_major=='D303' ||
+		$student->profession_major=='D311' || $student->profession_major=='D313' || $student->profession_major=='D401' ) {
 		$formula='';
 		ksort($exams);
 		foreach($exams as $eid => $eweight){
@@ -2078,33 +2077,36 @@ function score_myscore($user=NULL) {
 	switch($student->pass_round3_major) {
 		case 10:
 			$output .= '<b>';
-			if(($student->profession_major=='D301' || $student->profession_major=='D303') && $student->ucategory==1) {
-				if($student->profession_major=='D301') {
-					$output .= t('You are marked as qualified student.');
-					$max_min_score=db_query('SELECT MAX(total_score) AS max, MIN(total_score) AS min '.
-						'FROM {students_total_score} ts INNER JOIN {students} s '.
-						'ON ts.uid=s.uid AND ts.pid=s.profession_major '.
-						'WHERE s.pass_round3_major>0 AND s.profession_major=:pid AND s.ucategory=1',
-						array(':pid'=>$student->profession_major)
-					)->fetchObject();
-					$output .= t('The maximum score of @num passed students in this profession is @max, and the minimum is @min.',
-						array('@max'=>round($max_min_score->max,2), '@min'=>round($max_min_score->min,2),
-							'@num'=>db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>0 AND profession_major=:pid',
-								array(':pid'=>$student->profession_major))->fetchField()));
-					$output .= t('Based on your total score, you are ranking at @rank.', array('@rank'=>$ts->rank));
-					$output .= t('Your gaokao score will be standardized to 100, then calculate average value with scores of profession to get an overall score, when considering marking in within this year.',array('@rank'=>$ts->rank));
-				}
-				else
-					$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
+			if(($student->profession_major=='D301' || $student->profession_major=='D302' || $student->profession_major=='D303' ||
+		$student->profession_major=='D311' || $student->profession_major=='D313' || $student->profession_major=='D401' ) && $student->ucategory==1) {
+				$output .= t('You are marked as qualified student.');
+				$max_min_score=db_query('SELECT MAX(total_score) AS max, MIN(total_score) AS min '.
+					'FROM {students_total_score} ts INNER JOIN {students} s '.
+					'ON ts.uid=s.uid AND ts.pid=s.profession_major '.
+					'WHERE s.pass_round3_major>0 AND s.profession_major=:pid AND s.ucategory=1',
+					array(':pid'=>$student->profession_major)
+				)->fetchObject();
+				$output .= t('The maximum score of @num passed students in this profession is @max, and the minimum is @min.',
+					array('@max'=>round($max_min_score->max,2), '@min'=>round($max_min_score->min,2),
+						'@num'=>db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>0 AND profession_major=:pid AND ucategory=1',
+							array(':pid'=>$student->profession_major))->fetchField()));
+				$rank=db_query('SELECT count(*) FROM {students_total_score} sc WHERE sc.pid=:pid AND sc.rank<=:rank AND '.
+					'EXISTS(SELECT * FROM {students} s WHERE s.ucategory=1 AND s.pass_round3_major=10 AND s.uid=sc.uid)',
+					array(':pid'=>$student->profession_major, ':rank'=>$ts->rank))->fetchField();
+				$output .= t('Based on your total score, you are ranking at @rank.', array('@rank'=>$rank));
 			}
 			else {
-				$output .= t('You are marked as planed students.');
+				$did=substr($student->profession_major,0,2);
+				if(in_array($did, array('D5','D6','D7','D8')))
+					$output .= t('You are marked as planed students.',array(),array('context'=>'music performance'));
+				else
+					$output .= t('You are marked as planed students.',array(),array('context'=>'composition'));
 			}
 			if($student->ucategory==1 ||$student->ucategory==2 )
-				$output .= t('Please consider about your willings of gaokao.');
+				$output .= t('Please consider about your willings of gaokao.')._score_myscore_enrollmnet_rules($student->profession_major);
 			$output .= '</b>';
 			if($student->ucategory==1)
-				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+				$output .= t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 1:
 			$output .= '<b>';
@@ -2112,20 +2114,19 @@ function score_myscore($user=NULL) {
 				$output .= t('You are marked as quanlified students ranking @rank, but your gaokao score will affect your order when considering marking in.',array('@rank'=>$ts->rank));
 			else {
 				$output .= t('You are marked as qualified student.');
-				if($student->profession_major=='D401') {
-					$rank=$ts->rank-db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major>1 '.
-						'AND ucategory<>1 AND profession_major=:prof', array(':prof'=>'D401'))->fetchField();
-					$output .= t('Your total score is ranked as @rank.',array('@rank'=>$rank));
-				}
+				$did=substr($student->profession_major,0,2);
+				if(in_array($did, array('D5','D6','D7','D8')))
+					$output .= t('You are marked as qualified students, and your order of substitution is @outrank.',
+						array('@outrank'=>$ts->outrank),array('context'=>'music performance'));
 				else
-					$output .= t('Based on your total scores, ');
-				$output .= t('Your order of substitution is @outrank.',array('@outrank'=>$ts->outrank));
+					$output .= t('You are marked as qualified students, and your order of substitution is @outrank.',
+						array('@outrank'=>$ts->outrank),array('context'=>'composition'));
 			}
 			if($student->ucategory==1 ||$student->ucategory==2 )
-				$output .= t('Please consider about your willings of gaokao.');
+				$output .= t('Please consider about your willings of gaokao.')._score_myscore_enrollmnet_rules($student->profession_major);
 			$output .= '</b>';
 			if($student->ucategory==1)
-				$output .= '<br/>'.t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
+				$output .= t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
 		case 0:
 			$output .= t('You are marked as unqualified students.');
@@ -2135,6 +2136,11 @@ function score_myscore($user=NULL) {
 	$output .= '</p>';
 	
 	return $output;
+}
+
+function _score_myscore_enrollmnet_rules($pid) {
+	$profession=profession_load($pid);
+	return '<p>'.t('ENROLLMENT RULE',array(),array('context'=>$profession->gb_pid)).'</p>';
 }
 
 function score_input_gaokao_overview() {
@@ -3183,7 +3189,7 @@ function score_weixin($request, $user) {
 }
 
 function score_cron() {
-	$timestamp=db_query('SELECT timestamp FROM {watchdog} WHERE w.uid<>0 AND w.type=:type ORDER BY timestamp DESC', array(':type'=>'score'))
+	$timestamp=db_query('SELECT timestamp FROM {watchdog} WHERE uid<>0 AND type=:type ORDER BY timestamp DESC', array(':type'=>'score'))
 		->fetchField();
 	if($timestamp < time()-3600*24) return;
 	// Force recalculate the total_score of all students
@@ -3350,7 +3356,7 @@ function score_cron() {
 		$query->innerJoin('students_score','s','t.uid=s.uid');
 		$query->condition('s.eid',$solfeggio-10)->fields('t',array('uid'));
 		$query->addExpression($solfeggio,'eid');
-		$query->addExpression('t.score*0.5+s.score*0.5','score');
+		$query->addExpression('if(t.score<0,0,t.score)*0.5+if(s.score<0,0,s.score)*0.5','score');
 		$query->addExpression('0','rank');
 		db_insert('students_score')
 			->from($query)

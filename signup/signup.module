@@ -3255,7 +3255,7 @@ function signup_2nd_round_by_profession() {
 				if($GLOBALS['user']->name !== $r->uid) continue;
 			$rows[] = array(
 				$r->allow_round1==2?('<img src="/misc/watchdog-ok.png" align="middle"/>'.t('Published')):'',
-				'<nobr>'.l($r->pname, 'signup/2ndround/profession/'.$r->pid, array(
+				'<nobr>'.l($r->pname.(empty($r->pnamememo)?'':'('.$r->pnamememo.')'), 'signup/2ndround/profession/'.$r->pid, array(
 					'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
 					)
 					).'</nobr>',
@@ -3272,7 +3272,7 @@ function signup_2nd_round_by_profession() {
 }
 
 function signup_2nd_round_by_profession_detail($prof) {
-	drupal_set_title(t('By Profession').' - '.$prof->pname);
+	drupal_set_title(t('By Profession').' - '.$prof->pname.(empty($prof->pnamememo)?'':'('.$prof->pnamememo.')'));
 	
 	if($prof)
 		$sql_department_insert = "p.pid='".$prof->pid."'";
@@ -3398,6 +3398,7 @@ function signup_3rd_round_by_profession() {
 	$students_determined=db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major=10 AND ucategory=1')->fetchField();
 	$students_tobe_determined=db_query('SELECT COUNT(*) FROM {students} WHERE pass_round3_major=1 AND ucategory=1')->fetchField();
 	$output .= '<p>'.t('Out of !total mainland students, there are !determ determined students, !tobedeterm to-be-determined students.', array('!total'=>$students_mainland, '!determ'=>$students_determined, '!tobedeterm'=>$students_tobe_determined)).'</p>';
+	$output .= drupal_render(drupal_get_form('signup_3rd_round_publish'));
 	$header = array(
 		array('data'=>t('Profession'), 'field'=>'pid', 'sort'=>'asc'),
 		array('data'=>t('Number of students (%)'), 'field'=>'num'),
@@ -3420,7 +3421,7 @@ function signup_3rd_round_by_profession() {
 			if(user_access('view own draft') && !user_access('view draft'))
 				if($GLOBALS['user']->name !== $r->uid) continue;
 			$rows[] = array(
-				'<nobr>'.l($r->pname, 'signup/3rdround/profession/'.$r->pid, array('title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),)).'</nobr>',
+				'<nobr>'.l($r->pname.$r->pnamememo, 'signup/3rdround/profession/'.$r->pid, array('title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname.$r->pnamememo)),)).'</nobr>',
 				sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
 			);
 		}
@@ -3433,9 +3434,29 @@ function signup_3rd_round_by_profession() {
 	return $output;
 }
 
+function signup_3rd_round_publish($form, $form_state) {
+	if(empty($form)) $form=array();
+	if(array_key_exists('check students own scores', $perms[5]))
+		drupal_set_message(t('The exam result are published to the students.'));
+	else {
+		$form['submit']=array(
+			'#type' => 'submit',
+			'#value' => t('Make this result open to the students'),
+		);
+	}
+	return $form;
+}
+
+function signup_3rd_round_publish_submit($form, $form_state) {
+	user_role_grant_permissions(5, array('check students own scores'));
+	watchdog('user', 'exam result is published to the students.', array(),
+		WATCHDOG_INFO
+	);
+}
+
 function signup_3rd_round_by_profession_detail($prof) {
 	
-	drupal_set_title(t('By Profession').' - '.$prof->pname);
+	drupal_set_title(t('By Profession').' - '.$prof->pname.$prof->pnamememo);
 	
 	if($prof)
 		$sql_department_insert = "p.pid='".$prof->pid."'";
@@ -3464,7 +3485,7 @@ function signup_3rd_round_by_profession_detail($prof) {
 		->fields('gk')
 		->fields('ts',array('outrank'))
 		->where($sql_department_insert)->condition('s.pass_round3_major','0','<>')
-		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')
+		->extend('TableSort')->orderByHeader($header)->orderBy('ts.outrank')->orderBy('s.uid')
 		->extend('PagerDefault')->limit(20);
 	if(in_array(substr($prof->pid,0,2),array('D5','D6','D7','D8'))) {
 		$query->orderBy('ts.total_rank')->orderBy('ts.total_score', 'desc');
@@ -3711,7 +3732,7 @@ function signup_3rd_round_by_province_download($prov) {
 		array(':province'=>$prov->pid))->fetchAll();
 	
 	// If there is no any record, output 404 error.
-	if(empty($result)==0) {
+	if(empty($result)) {
 		return MENU_NOT_FOUND;
 	}
 		

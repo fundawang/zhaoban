@@ -247,10 +247,7 @@ function going_goinglist_filter($form, $form_state) {
 		'all' => '- '.t('All').' -',
 		'today' => t('Today').'('.date('n月j日').')',
 	);
-	$query=db_select('vl_going','g');
-	$query->addExpression('SUBSTR(TIME, 1, 8)', 'd');
-	$query->groupBy('d')->orderBy('d');
-	$dates=$query->execute();
+	$dates=db_query('SELECT SUBSTR(TIME,1,8) AS d FROM {vl_going} GROUP BY d ORDER BY d');
 	foreach($dates as $date) {
 		$options[$date->d]=intval(substr($date->d,4,2)).t('Month').intval(substr($date->d,6,2)).t('Day');
 	}
@@ -335,10 +332,7 @@ function going_going_edit($form, $form_state, $going=FALSE) {
 			);
 		case 'add': 
 			if(!isset($default_values)) $default_values=array();
-			$result = db_select('vl_room', 'r')
-				->fields('r')
-				->orderBy('rname', 'ASC')
-				->execute();
+			$result=db_query('SELECT * FROM {vl_room} ORDER BY rname ASC')->fetchAll();
 			
 			$rooms = array();
 			foreach ($result as $r)
@@ -445,8 +439,8 @@ function going_going_edit($form, $form_state, $going=FALSE) {
 function going_going_edit_validate($form, &$form_state) {
 	// Check if the schedule id has been taken
 	if(arg(2)=='add') {
-		$r=db_select('vl_going', 'g')->fields('g')->condition('g.gid',$form_state['values']['gid'])->countQuery()->execute()->fetchField();
-		if($r>0)
+		$r=db_query('SELECT EXISTS(SELECT * FROM {vl_going} WHERE gid=:gid)', array(':gid'=>$form_state['values']['gid']))->fetchField();
+		if($r)
 			form_set_error('gid',t('The schedule ID has already been taken.'));
 	}
 	
@@ -455,7 +449,7 @@ function going_going_edit_validate($form, &$form_state) {
 	$types=array();
 	for($i=1;$i<=going_going_MAX_EXAMS;$i++) {
 		if($form_state['values']['exam'.$i]!='0') {
-			$r=db_select('vl_exam', 'e')->fields('e',array('uid','etype','needdraw'))->condition('e.eid',$form_state['values']['exam'.$i])->execute()->fetchObject();
+			$r=exam_load($form_state['values']['exam'.$i]);
 			$exams[]=$form_state['values']['exam'.$i];
 			$sec[]=$r->uid;
 			$types[]=$r->etype;
@@ -490,7 +484,7 @@ function going_going_edit_validate($form, &$form_state) {
 
 function going_going_edit_submit($form, &$form_state) {
 	$form_state['values']['gname']=trim($form_state['values']['gname']);
-	$dep=db_select('vl_exam','e')->fields('e',array('uid'))->condition('e.eid',$form_state['values']['exam1'])->execute()->fetchField();
+	$dep=db_query('SELECT uid FROM {vl_exam} WHERE eid=:eid',array(':eid'=>$form_state['values']['exam1']))->fetchField();
 	switch(arg(2)) {
 		case 'add':
 			$exams=array();
