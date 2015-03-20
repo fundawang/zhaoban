@@ -2022,13 +2022,14 @@ function score_myscore($user=NULL) {
 	$exams = unserialize($profession->exams);
 	$rows=array();
 	foreach($rdbo as $r) {
+		if($r->eid>='300' && $r->eid<='320') continue;
 		if(isset($exams[$r->eid]) && $exams[$r->eid]==0 && substr($r->eid,0,1)!='3') continue;
-		if(!$r->rank) {
+		if(empty($r->rank)) {
 			$rows[]=array(
 				$r->ename.$r->elevel,
 				$is_passedthrough?t('Passed through'):t('Numeric Value'),
 				$is_passedthrough?t('Passed through'):t('The large the better'),
-				$is_passedthrough?t('Passed through'):$r->score==-1?t('Absence'):round($r->score, 2)
+				$is_passedthrough?t('Passed through'):($r->score==-1?t('Absence'):round($r->score, 2))
 			);
 		} else {
 			$rows[]=array(

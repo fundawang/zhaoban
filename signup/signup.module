@@ -3441,6 +3441,7 @@ function signup_3rd_round_publish($form, $form_state) {
 	else {
 		$form['submit']=array(
 			'#type' => 'submit',
+			'#access' => score_mark_3rd_round_list_check(),
 			'#value' => t('Make this result open to the students'),
 		);
 	}
