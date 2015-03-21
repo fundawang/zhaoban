@@ -3436,6 +3436,7 @@ function signup_3rd_round_by_profession() {
 
 function signup_3rd_round_publish($form, $form_state) {
 	if(empty($form)) $form=array();
+	$perms=user_role_permissions(array('5'=>''));
 	if(array_key_exists('check students own scores', $perms[5]))
 		drupal_set_message(t('The exam result are published to the students.'));
 	else {

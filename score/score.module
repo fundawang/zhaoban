@@ -2000,7 +2000,7 @@ function score_myscore($user=NULL) {
 	);
 	$output .= '</p>';
 	
-	$profession=db_query('SELECT p.plan, p.pname, p.exams, d.dname FROM {vl_professions} p '.
+	$profession=db_query('SELECT p.plan, p.pnamememo, p.pname, p.exams, d.dname FROM {vl_professions} p '.
 		'INNER JOIN {vl_department} d ON p.did=d.did '.
 		'INNER JOIN {students} s ON s.profession_major=p.pid WHERE s.uid=:uid', array(':uid'=>$uid))->fetchObject();
 	$output .= '<p>';
@@ -2106,6 +2106,13 @@ function score_myscore($user=NULL) {
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.')._score_myscore_enrollmnet_rules($student->profession_major);
 			$output .= '</b>';
+			$pid=db_query('SELECT pid FROM {students_total_score} WHERE uid=:uid AND pid<>:pid',
+				array(':uid'=>$student->uid, ':pid'=>$student->profession_major))->fetchField();
+			if(!empty($pid)) {
+				$prof=profession_load($pid);
+				$dname=db_query('SELECT dname FROM {vl_department} WHERE did=:did',array(':did'=>$prof->did))->fetchField();
+				$output.='<p>'.t('You secondary profession @pname is unqualified.', array('@pname'=>$dname.$prof->pname)).'</p>';
+			}
 			if($student->ucategory==1)
 				$output .= t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
@@ -2126,6 +2133,13 @@ function score_myscore($user=NULL) {
 			if($student->ucategory==1 ||$student->ucategory==2 )
 				$output .= t('Please consider about your willings of gaokao.')._score_myscore_enrollmnet_rules($student->profession_major);
 			$output .= '</b>';
+			$pid=db_query('SELECT pid FROM {students_total_score} WHERE uid=:uid AND pid<>:pid',
+				array(':uid'=>$student->uid, ':pid'=>$student->profession_major))->fetchField();
+			if(!empty($pid)) {
+				$prof=profession_load($pid);
+				$dname=db_query('SELECT dname FROM {vl_department} WHERE did=:did',array(':did'=>$prof->did))->fetchField();
+				$output.='<p>'.t('You secondary profession @pname is unqualified.', array('@pname'=>$dname.$prof->pname)).'</p>';
+			}
 			if($student->ucategory==1)
 				$output .= t('Please ask your school to write a recomendation letter, and mail it to students affairs\' office.');
 			break;
