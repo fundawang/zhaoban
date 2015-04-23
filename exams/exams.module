@@ -258,7 +258,7 @@ function exams_professionlist() {
 	foreach ($result as $profession) {
 		$rows[] = array(
 			$profession->pid,                               // Profession ID
-			$profession->pname,                             // Profession name
+			$profession->pname.$profession->pnamememo,      // Profession name
 			$profession->years,                             // Examination level
 			$profession->dname,                             // Department name
 			$profession->rname,                             // Research section name
