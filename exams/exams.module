@@ -484,6 +484,11 @@ function exams_exam_delete_submit($form, &$form_state) {
 function exams_profession_edit($form, $form_state, $profession=NULL) {
 
 	$form=array();
+	$form['#attached']['css']=array(
+		'div.inline-element-div {padding: 0px;}' => array('type' => 'inline'),
+		'div.inline-element-div > div {padding: 0px;}' => array('type' => 'inline'),
+		'div#edit-pnametitle {margin-bottom: 0px;}' => array('type' => 'inline'),
+	);
 
 	// if editing existing profession, we'll need to fetch the original values at first.
 	if(!empty($profession)) {
@@ -508,21 +513,32 @@ function exams_profession_edit($form, $form_state, $profession=NULL) {
 			'#required' => 'true',
 		);
 	}
+	$form['pnametitle']=array(
+		'#type' => 'item',
+		'#title' => t('Profession Name'),
+		'#required' => TRUE,
+	);
 	$form['pname'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Profession Name'),
-		'#maxlength' => '20',
-		'#required' => 'true',
+		'#title_display' => 'none',
+		'#maxlength' => 20,
+		'#size' => 15,
+		'#required' => TRUE,
 		'#default_value' => (isset($default_values->pname) ? $default_values->pname : ''),
+		'#prefix' => '<div class="inline-element-div">',
 	);
 	$form['pnamememo'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Profession Name Memo'),
-		'#maxlength' => '20',
-		'#required' => 'true',
+		'#maxlength' => 20,
+		'#size' => 15,
+		'#title_display' => 'none',
+		'#required' => FALSE,
 		'#field_prefix' => '(',
 		'#field_suffix' => ')',
 		'#default_value' => (isset($default_values->pnamememo) ? $default_values->pnamememo : ''),
+		'#suffix'=>'</div>',
 	);
 	$form['years'] = array(
 		'#type' => 'select',
@@ -653,7 +669,7 @@ function exams_profession_edit_submit($form, &$form_state) {
 			'did' => $form_state['values']['did'],
 			'uid' => $form_state['values']['uid'],
 			'pname' => $form_state['values']['pname'],
-			'pnamememo' => '('.$form_state['values']['pnamememo'].')',
+			'pnamememo' => empty($form_state['values']['pnamememo'])?'':'('.$form_state['values']['pnamememo'].')',
 			'years' => $form_state['values']['years'],
 			'enabled' => $form_state['values']['penabled'],
 			'exams' => serialize($exams),
@@ -677,7 +693,7 @@ function exams_profession_edit_submit($form, &$form_state) {
 			'did' => $form_state['values']['did'],
 			'uid' => $form_state['values']['uid'],
 			'pname' => $form_state['values']['pname'],
-			'pnamememo' => '('.$form_state['values']['pnamememo'].')',
+			'pnamememo' => empty($form_state['values']['pnamememo'])?'':'('.$form_state['values']['pnamememo'].')',
 			'years' => $form_state['values']['years'],
 			'enabled' => $form_state['values']['penabled'],
 			'exams' => serialize($exams),
