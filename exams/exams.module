@@ -488,6 +488,7 @@ function exams_profession_edit($form, $form_state, $profession=NULL) {
 	// if editing existing profession, we'll need to fetch the original values at first.
 	if(!empty($profession)) {
 		$default_values = $profession;
+		$default_values->pnamememo = substr($profession->pnamememo,1,-1);
 		$default_values_keys=array_keys($profession->exams);
 		$default_values_weights=array_values($profession->exams);
 		$form['pidv'] = array(
@@ -513,6 +514,15 @@ function exams_profession_edit($form, $form_state, $profession=NULL) {
 		'#maxlength' => '20',
 		'#required' => 'true',
 		'#default_value' => (isset($default_values->pname) ? $default_values->pname : ''),
+	);
+	$form['pnamememo'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Profession Name Memo'),
+		'#maxlength' => '20',
+		'#required' => 'true',
+		'#field_prefix' => '(',
+		'#field_suffix' => ')',
+		'#default_value' => (isset($default_values->pnamememo) ? $default_values->pnamememo : ''),
 	);
 	$form['years'] = array(
 		'#type' => 'select',
@@ -643,6 +653,7 @@ function exams_profession_edit_submit($form, &$form_state) {
 			'did' => $form_state['values']['did'],
 			'uid' => $form_state['values']['uid'],
 			'pname' => $form_state['values']['pname'],
+			'pnamememo' => '('.$form_state['values']['pnamememo'].')',
 			'years' => $form_state['values']['years'],
 			'enabled' => $form_state['values']['penabled'],
 			'exams' => serialize($exams),
@@ -666,6 +677,7 @@ function exams_profession_edit_submit($form, &$form_state) {
 			'did' => $form_state['values']['did'],
 			'uid' => $form_state['values']['uid'],
 			'pname' => $form_state['values']['pname'],
+			'pnamememo' => '('.$form_state['values']['pnamememo'].')',
 			'years' => $form_state['values']['years'],
 			'enabled' => $form_state['values']['penabled'],
 			'exams' => serialize($exams),
