@@ -493,7 +493,8 @@ function exams_profession_edit($form, $form_state, $profession=NULL) {
 	// if editing existing profession, we'll need to fetch the original values at first.
 	if(!empty($profession)) {
 		$default_values = $profession;
-		$default_values->pnamememo = substr($profession->pnamememo,1,-1);
+		if(!empty($default_values->pnamememo))
+			$default_values->pnamememo = substr($profession->pnamememo,1,-1);
 		$default_values_keys=array_keys($profession->exams);
 		$default_values_weights=array_values($profession->exams);
 		$form['pidv'] = array(
