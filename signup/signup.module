@@ -5002,7 +5002,7 @@ function signup_schools_autocomplete($string) {
 function signup_user_login($edit, $user) {
 	$r=db_query('SELECT p.allow_round1, s.pass_round1_major FROM {vl_professions} p INNER JOIN {students} s ON s.profession_major=p.pid AND s.uid=:uid',
 		array(':uid'=>$user->name))->fetchObject();
-	if($r->allow_round1==2 && $r->pass_round1_major==0)
+	if(!empty($r) && $r->allow_round1==2 && $r->pass_round1_major==0)
 		drupal_set_message(t('You are not enrolled in the 2nd round exam.'), 'warning');
 }
 
