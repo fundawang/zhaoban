@@ -485,8 +485,8 @@ function exams_profession_edit($form, $form_state, $profession=NULL) {
 
 	$form=array();
 	$form['#attached']['css']=array(
-		'div.inline-element-div {padding: 0px;}' => array('type' => 'inline'),
-		'div.inline-element-div > div {padding: 0px;}' => array('type' => 'inline'),
+		'div.inline-element-div-pname {padding: 0px; display: inline;}' => array('type' => 'inline'),
+		'div.inline-element-div-pname > div {padding: 0px; display: inline;}' => array('type' => 'inline'),
 		'div#edit-pnametitle {margin-bottom: 0px;}' => array('type' => 'inline'),
 	);
 
@@ -527,7 +527,7 @@ function exams_profession_edit($form, $form_state, $profession=NULL) {
 		'#size' => 15,
 		'#required' => TRUE,
 		'#default_value' => (isset($default_values->pname) ? $default_values->pname : ''),
-		'#prefix' => '<div class="inline-element-div">',
+		'#prefix' => '<div class="inline-element-div-pname">',
 	);
 	$form['pnamememo'] = array(
 		'#type' => 'textfield',
