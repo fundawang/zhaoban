@@ -2746,7 +2746,7 @@ function signup_search_student_submit($form, &$form_state) {
 		$form_state['rebuild']=FALSE;
 
 	if(!$form_state['rebuild'])
-		drupal_goto('signup/search/'.$form_state['values']['uid']);
+		$form_state['redirect']='signup/search'.$form_state['values']['uid'];
 }
 
 function signup_form_contact_site_form_alter(&$form, &$form_state) {
@@ -5043,9 +5043,9 @@ function signup_search_students($citera) {
 	$query->innerJoin('students','s','u.name=s.uid');
 	$query->addExpression('s.name','sname');
 	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
-	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
+	$query->leftJoin('vl_professions','p','s.profession_major=p.pid');
 	$query->fields('p',array('pname'));
-	$query->innerJoin('vl_province','pr','sg.province=pr.pid');
+	$query->leftJoin('vl_province','pr','sg.province=pr.pid');
 	$query->addExpression('pr.name','prname');
 	$query->leftJoin('students_contact','sc','s.uid=sc.uid');
 	$query->addExpression('IF(sc.contact_phone=sc.phone_roundg, sc.contact_phone, CONCAT(sc.contact_phone,\' / \',sc.phone_roundg))','phone');
@@ -5302,6 +5302,8 @@ function signup_orders_generate($user) {
 				if(!$p) {
 					if(empty($is_passthough)) break;
 				}
+				$p=db_query('SELECT profession_major FROM {students} WHERE uid=:uid',array(':uid'=>$user->name))->fetchField();
+				if(empty($p)) break;
 			}
 			db_insert('orders')->fields(array(
 				'uid' => $user->uid,
