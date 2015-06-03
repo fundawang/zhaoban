@@ -2746,7 +2746,7 @@ function signup_search_student_submit($form, &$form_state) {
 		$form_state['rebuild']=FALSE;
 
 	if(!$form_state['rebuild'])
-		$form_state['redirect']='signup/search'.$form_state['values']['uid'];
+		$form_state['redirect']='signup/search/'.$form_state['values']['uid'];
 }
 
 function signup_form_contact_site_form_alter(&$form, &$form_state) {
