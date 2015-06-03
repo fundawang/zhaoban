@@ -1564,13 +1564,13 @@ function score_prepare_3rd_overview() {
 	$total_students=db_select('students','s')->fields('s')->condition('s.pass_round1_major',1)->countQuery()->execute()->fetchField();
 	$query=db_select('students','s')->condition('s.pass_round1_major',1);
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->fields('p',array('pid','pname'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);
+	$query->fields('p',array('pid','pname','pnamememo'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);
 	$query->addExpression('count(*)','num');
 	$rdbo=$query->execute();
 	$rows=array();
 	foreach($rdbo as $r)
 		$rows[]=array(
-			l($r->pname, 'score/prepare3rd/'.$r->pid),
+			l($r->pname.$r->pnamememo, 'score/prepare3rd/'.$r->pid),
 			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
 		);
 	
@@ -3206,12 +3206,12 @@ function score_weixin($request, $user) {
 function score_cron() {
 	$timestamp=db_query('SELECT timestamp FROM {watchdog} WHERE uid<>0 AND type=:type ORDER BY timestamp DESC', array(':type'=>'score'))
 		->fetchField();
-	if($timestamp < time()-3600*24) return;
+	//if($timestamp < time()-3600*24) return;
 	// Force recalculate the total_score of all students
 	$rdbo=db_query('SELECT p.pid, p.exams FROM {vl_professions} p WHERE EXISTS( '.
 		'SELECT * FROM {students} s WHERE s.profession_major=p.pid AND s.pass_round1_major=1) AND NOT EXISTS('.
-		'SELECT * FROM {students} s1 WHERE s1.pass_round3_major<>0 AND NOT EXISTS(SELECT * FROM {students_passthrough} sp WHERE '.
-			's1.idcard_number=sp.idcard_number))')->fetchAll();
+		'SELECT * FROM {students} s1 WHERE s1.pass_round3_major<>0 AND s1.profession_major=.p.pid AND NOT EXISTS('.
+			'SELECT * FROM {students_passthrough} sp WHERE s1.idcard_number=sp.idcard_number))')->fetchAll();
 	// Compose query string
 	foreach($rdbo as $r) {
 		// Now calculate total_score
