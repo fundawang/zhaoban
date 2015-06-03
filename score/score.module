@@ -3206,7 +3206,7 @@ function score_weixin($request, $user) {
 function score_cron() {
 	$timestamp=db_query('SELECT timestamp FROM {watchdog} WHERE uid<>0 AND type=:type ORDER BY timestamp DESC', array(':type'=>'score'))
 		->fetchField();
-	//if($timestamp < time()-3600*24) return;
+	if($timestamp < time()-3600*24) return;
 	// Force recalculate the total_score of all students
 	$rdbo=db_query('SELECT p.pid, p.exams FROM {vl_professions} p WHERE EXISTS( '.
 		'SELECT * FROM {students} s WHERE s.profession_major=p.pid AND s.pass_round1_major=1) AND NOT EXISTS('.
