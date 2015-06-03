@@ -3255,7 +3255,7 @@ function signup_2nd_round_by_profession() {
 				if($GLOBALS['user']->name !== $r->uid) continue;
 			$rows[] = array(
 				$r->allow_round1==2?('<img src="/misc/watchdog-ok.png" align="middle"/>'.t('Published')):'',
-				'<nobr>'.l($r->pname.(empty($r->pnamememo)?'':'('.$r->pnamememo.')'), 'signup/2ndround/profession/'.$r->pid, array(
+				'<nobr>'.l($r->pname.(empty($r->pnamememo)?'':$r->pnamememo), 'signup/2ndround/profession/'.$r->pid, array(
 					'title' => t('Click to view the details of @prof profession', array('@prof'=>$r->pname)),
 					)
 					).'</nobr>',
