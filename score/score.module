@@ -2656,14 +2656,14 @@ function score_prepare_gk_overview() {
 	$total_students=db_select('students','s')->fields('s')->condition('s.pass_round3_major',1,'>=')->countQuery()->execute()->fetchField();
 	$query=db_select('students','s')->condition('s.pass_round3_major',1,'>=');
 	$query->innerJoin('vl_professions','p','s.profession_major=p.pid');
-	$query->fields('p',array('pid','pname'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);
+	$query->fields('p',array('pid','pname','pnamememo'))->groupBy('p.pid')->extend('TableSort')->orderByHeader($header);
 	$query->addExpression('count(*)','num');
 	$rdbo=$query->execute();
 	$rows=array();
 	foreach($rdbo as $r)
 	{
 		$rows[]=array(
-			l($r->pname, 'score/preparegk/'.$r->pid),
+			l($r->pname.$r->pnamememo, 'score/preparegk/'.$r->pid),
 			sprintf('<img src="/%s/red-dot.png" style="width:%dpx; height:10px;"/> %d (%.1f%%)', drupal_get_path('module','signup'), $r->num, $r->num, $r->num/$total_students*100),
 		);
 	}
@@ -2676,7 +2676,7 @@ function score_prepare_gk_overview() {
 
 function score_prepare_gk_detail($profession) {
 	$profession_exams = $profession->exams;
-	drupal_set_title(t('Prepare for the gk round students').' - '.$profession->pname);
+	drupal_set_title(t('Prepare for the gk round students').' - '.$profession->pname.$profession->pnamememo);
 	$output .= '<div class=\'messages\'>';
 	$output .= t('The enrollment plan of the profession is !num.',array('!num'=>$profession->plan));
 	$output .= '</blockquote></div>';
