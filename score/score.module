@@ -2699,11 +2699,15 @@ function score_prepare_gk_detail($profession) {
 	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
 		$header[]=array('data'=>t('Total average rank'), 'field'=>'tsrank', 'sort'=>'asc');
 	} else {
-		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+		if(in_array($profession->did,array('D3','D4')))
+			$header[]=array('data'=>t('Total own score'));
+		else
+			$header[]=array('data'=>t('Total own score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
-	$header[]=array('data'=>t('Chinese'));
-	$header[]=array('data'=>t('Foreign language'));
 	$header[]=array('data'=>t('Overall'));
+	if(in_array($profession->did,array('D3','D4'))) {
+		$header[]=array('data' =>t('Total overall score'), 'field'=>'total_overall', 'sort'=>'desc');
+	}
 	$header[]=array('data' =>t('Personnel record'));
 	$header[]=array('data' =>t('Memory'));
 
@@ -2721,11 +2725,15 @@ function score_prepare_gk_detail($profession) {
 	$totals=array();
 	$query->innerJoin('students_total_score','ts','s.uid=ts.uid AND s.profession_major=ts.pid');
 	$query->fields('ts',array('total_score','total_rank','outrank'));
+	$query->addExpression('sg.score_total/7.5*0.5+ts.total_score*0.5', 'total_overall');
 	$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC')->orderBy('ts.outrank');
 	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
 		$query->orderBy('total_rank','ASC');
 	} else {
-		$query->orderBy('total_score','DESC');
+		if(in_array($profession->did, array('D3','D4')))
+			$query->orderBy('total_overall','DESC');
+		else
+			$query->orderBy('total_score','DESC');
 	}
 	$query->orderBy('ts.outrank');
 
@@ -2733,9 +2741,8 @@ function score_prepare_gk_detail($profession) {
 	$i=1;
 	if($rdbo->rowCount()==0) return MENU_NOT_FOUND;
 	while($r=$rdbo->fetchAssoc()) {
-		settype($r['score_chinese'],'float');
-		settype($r['score_languages'],'float');
 		settype($r['score_total'],'float');
+		settype($r['total_overall'],'float');
 		$rows[]=array(
 			$i++,
 			//l($r['uid'],'user/'.$r['uuid']),
@@ -2744,12 +2751,12 @@ function score_prepare_gk_detail($profession) {
 			$r['pass_round3_major'] == '10' ? t('Determined'):(t('To be determined').'/'.$r['outrank']),
 			$r['gender'] == 1 ? t('Male'): t('Female'),
 			in_array($profession->did,array('D5','D6','D7','D8'))?round($r['total_rank'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
-			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_chinese'],
-			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_languages'],
-			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_total'],
-			$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'],
-			$r['is_math_subjects']?(t('Science').($r['memory']?', '.$r['memory']:'')):$r['memory'],
+			($r['ucategory']!='1'&&$r['ucategory']!='2')?t('N/A'):$r['score_total']
 		);
+		if(in_array($profession->did, array('D3','D4')))
+			$rows[count($rows)-1][]=number_format($r['total_overall'],2);
+		$rows[count($rows)-1][]=$r['ucategory']!='1'?db_select('vl_student_type','st')->condition('st.stid',$r['ucategory'])->fields('st',array('name'))->execute()->fetchField():$r['personnel_record_at'];
+		$rows[count($rows)-1][]=$r['is_math_subjects']?(t('Science').($r['memory']?', '.$r['memory']:'')):$r['memory'];
 	}
 	$output .= theme('table', array('header'=>$header, 'rows'=>$rows));
 	return $output;
