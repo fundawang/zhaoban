@@ -2735,7 +2735,7 @@ function score_prepare_gk_detail($profession) {
 		else
 			$query->orderBy('total_score','DESC');
 	}
-	$query->orderBy('ts.outrank')->orderBy('s.uid');
+	$query->orderBy('ts.outrank')->orderBy('ts.total_score')->orderBy('s.uid');
 
 	$rdbo=$query->execute();
 	$i=1;
