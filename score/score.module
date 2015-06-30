@@ -2713,7 +2713,7 @@ function score_prepare_gk_detail($profession) {
 
 	$rows=array();
 	
-	$query=db_select('students','s')->fields('s',array('uid','ucategory','name','gender','pass_round3_major'));
+	$query=db_select('students','s')->fields('s',array('uid','ucategory','idcard_number','name','gender','pass_round3_major'));
 	$query->condition('s.profession_major',$profession->pid)->condition('s.pass_round3_major',1,'>=');
 	$query->innerJoin('students_contact','sc','s.uid=sc.uid');
 	$query->innerJoin('users','u','s.uid=u.name');
@@ -2741,12 +2741,14 @@ function score_prepare_gk_detail($profession) {
 	$i=1;
 	if($rdbo->rowCount()==0) return MENU_NOT_FOUND;
 	while($r=$rdbo->fetchAssoc()) {
+		$is_passedthrough=db_query('SELECT EXISTS(SELECT * FROM {students_passthrough} WHERE idcard_number=:idcard)',
+			array(':idcard'=>$r['idcard_number']))->fetchField();
 		settype($r['score_total'],'float');
 		settype($r['total_overall'],'float');
 		$rows[]=array(
 			$i++,
 			//l($r['uid'],'user/'.$r['uuid']),
-			$r['name'],
+			$r['name'].($is_passedthrough?('/'.t('Passthrough')):''),
 			'',
 			$r['pass_round3_major'] == '10' ? t('Determined'):(t('To be determined').'/'.$r['outrank']),
 			$r['gender'] == 1 ? t('Male'): t('Female'),
