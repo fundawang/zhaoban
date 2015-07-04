@@ -2788,7 +2788,7 @@ function score_mark_gaokao_round_list() {
 		$outmainland_in=db_select('students','s')->condition('s.profession_major',$r->pid)->condition('s.ucategory',1,'<>')->condition('s.pass_roundg_major',1)->fields('s')->countQuery()->execute()->fetchField();
 		$rows[]=array(
 			$r->dname,
-			l($r->pname.($r->pnamememo?'('.$r->pnamememo.')':''), 'signup/markroundg/'.$r->pid),
+			l($r->pname.$r->pnamememo, 'signup/markroundg/'.$r->pid),
 			$mainland_in?$mainland_in:'',
 			$outmainland_in?$outmainland_in:'',
 		);
