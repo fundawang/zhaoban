@@ -3022,7 +3022,10 @@ function score_mark_gaokao_round($form, $form_state, $profession) {
 	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
 		$header[]=array('data'=>t('Total average rank'), 'field'=>'total_rank', 'sort'=>'asc');
 	} else {
-		$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
+		if(in_array($profession->did,array('D3','D4')))
+			$header[]=array('data'=>t('Total overall score'), 'field'=>'total_overall', 'sort'=>'desc');
+		else
+			$header[]=array('data'=>t('Total score'), 'field'=>'total_score', 'sort'=>'desc');
 	}
 	$header[]=array('data'=>t('Overall'), 'field'=>'score_total');
 
@@ -3037,6 +3040,16 @@ function score_mark_gaokao_round($form, $form_state, $profession) {
 	$query->addExpression('u.uid','uuid');
 	$query->innerJoin('students_total_score','ts','ts.uid=s.uid AND ts.pid=s.profession_major');
 	$query->fields('ts',array('total_score','total_rank','rank','outrank'));
+	$query->addExpression('sg.score_total/7.5*0.5+ts.total_score*0.5', 'total_overall');
+	$query->orderBy('sg.memory','ASC')->orderBy('s.pass_round3_major','DESC');
+	if(in_array($profession->did,array('D5','D6','D7','D8'))) {
+		$query->orderBy('total_rank','ASC');
+	} else {
+		if(in_array($profession->did, array('D3','D4')))
+			$query->orderBy('total_overall','DESC');
+		else
+			$query->orderBy('total_score','DESC');
+	}
 	
 	$totals=array();
 	$query->extend('TableSort')->orderByHeader($header);
@@ -3052,7 +3065,7 @@ function score_mark_gaokao_round($form, $form_state, $profession) {
 			$r['name'],
 			$r['gender'] == 1 ? t('Male'): t('Female'),
 			$r['pass_round3_major']?($r['pass_round3_major']==1?t('To be determined').'/'.$r['outrank']:t('Determined')):t('None'),
-			in_array($profession->did,array('D5','D6','D7','D8'))?round($r['total_rank'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,''),
+			in_array($profession->did,array('D5','D6','D7','D8'))?round($r['total_rank'],2):(in_array($profession->did,array('D3','D4'))?round($r['total_overall'],2):number_format($r['total_score']>100?100:$r['total_score'], 2, '.' ,'')),
 			$r['score_total'],
 		);
 		
