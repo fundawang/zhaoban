@@ -3150,9 +3150,12 @@ function score_myscore_roundg() {
 		array('!scode'=>$r->sid)
 	).'</p>';
 	
-	$d=kuaidi100_get_status('score','gaokao,'.$r->uid);
-	$output .= '<p><dl><dt>'.t('The latest deliver log of your paper goes:').'</dt><dd>'.
-		format_date($d->timestamp).' '.$d->statustext.'</dd></dl>';
+	if(module_exists('kuadi100')) {
+		$d=kuaidi100_get_status('score','gaokao,'.$r->uid);
+		if($d->timestamp)
+			$output .= '<p><dl><dt>'.t('The latest deliver log of your paper goes:').'</dt><dd>'.
+				format_date($d->timestamp).' '.$d->statustext.'</dd></dl>';
+	}
 	
 	return $output;
 }
