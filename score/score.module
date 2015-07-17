@@ -3109,20 +3109,13 @@ function score_mark_gaokao_round_submit($form, &$form_state) {
 }
 
 function score_myscore_roundg() {
-	global $user;
-	$uid=$user->name;
-	
-	$query=db_select('students','s')->condition('s.uid',$uid)->fields('s', array('uid','name'));
-	$query->innerJoin('vl_professions', 'p', 'p.pid=s.profession_major');
-	$query->innerJoin('vl_department', 'd', 'p.did = d.did');
-	$query->fields('p',array('pname','plan'))->fields('d',array('dname'));
-	$query->innerJoin('students_contact','sc','sc.uid=s.uid');
-	$query->fields('sc',array('emscode_roundg'));
-	$query->innerJoin('students_gk','sg','s.uid=sg.uid');
-	$query->fields('sg',array('sid'));
-	
-	
-	$r=$query->execute()->fetchObject();
+	$r=db_query('SELECT s.uid, s.name, p.pname, d.dname, sc.emscode_roundg, sg.sid '.
+		'FROM {students} s INNER JOIN {vl_professions} p ON s.profession_major=p.pid '.
+		'INNER JOIN {vl_department} d ON p.did=d.did '.
+		'INNER JOIN {students_contact} sc ON sc.uid=s.uid '.
+		'INNER JOIN {students_gk} sg ON s.uid=sg.uid '.
+		'WHERE s.uid=:uid', array(':uid'=>$GLOBALS['user']->name)
+	)->fetchObject();
 	
 	$output = '<p>';
 	$output .= t('Dear student !uid !name, ',
