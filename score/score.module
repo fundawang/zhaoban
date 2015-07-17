@@ -3143,7 +3143,7 @@ function score_myscore_roundg() {
 		array('!scode'=>$r->sid)
 	).'</p>';
 	
-	if(module_exists('kuadi100')) {
+	if(module_exists('kuaidi100')) {
 		$d=kuaidi100_get_status('score','gaokao,'.$r->uid);
 		if($d->timestamp)
 			$output .= '<p><dl><dt>'.t('The latest deliver log of your paper goes:').'</dt><dd>'.
